@@ -225,3 +225,10 @@
 .ngg-graph-root[data-graph-hovered="true"] [data-testid="ngg-toggle-rotate"] {
   border-color: rgba(92, 245, 182, 0.85);
 }
+[data-testid="ngg-help"] {
+  transition: color 150ms ease-out;
+}
+.ngg-graph-root[data-graph-hovered="true"] [data-testid="ngg-help"] {
+  color: #fff;
+  font-weight: 700;
+}

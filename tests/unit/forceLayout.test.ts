@@ -192,4 +192,39 @@ describe("forceLayout3D", () => {
       expect(Number.isFinite(p.x)).toBe(true);
     }
   });
+
+  it("higher edge weight pulls endpoints closer to rest length", () => {
+    // Two nodes from the seed, one edge. Run twice: once with weight 1,
+    // once with weight 8. Higher weight beats repulsion harder, so the
+    // settled distance drops toward the rest length.
+    const nodes = evangelion.nodes.slice(0, 2);
+    const restLength = 1.5;
+    const mkEdge = (weight: number): Edge => ({
+      from: nodes[0]!.id,
+      to: nodes[1]!.id,
+      kind: "magi_link",
+      weight,
+      notes: "synthetic",
+    });
+    const dist = (positions: Map<string, { x: number; y: number; z: number }>) => {
+      const a = positions.get(nodes[0]!.id)!;
+      const b = positions.get(nodes[1]!.id)!;
+      return Math.sqrt(
+        (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2,
+      );
+    };
+    const lightOpts = {
+      iterations: 600,
+      springLengthByKind: { magi_link: restLength },
+      seed: 7,
+    };
+    const lightRun = forceLayout3D(nodes, [mkEdge(1)], lightOpts);
+    const heavyRun = forceLayout3D(nodes, [mkEdge(8)], lightOpts);
+    const lightDist = dist(lightRun.positions);
+    const heavyDist = dist(heavyRun.positions);
+    // Heavy spring should equilibrate closer to rest length than the light
+    // one --- repulsion still pushes them apart, but the spring wins more.
+    expect(heavyDist).toBeLessThan(lightDist);
+    expect(heavyDist).toBeGreaterThan(restLength);
+  });
 });

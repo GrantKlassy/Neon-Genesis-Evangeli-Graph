@@ -28,6 +28,12 @@ interface NodeBase {
   id: string;
   kind: NodeKind;
   /**
+   * Human-readable label drawn directly on the node in the 3D scene
+   * (centered on the node, depth-disabled so it always reads on top).
+   * Required for every node kind.
+   */
+  displayName: string;
+  /**
    * Genesis shortcodes connected to this node, ordered most-canonical first.
    * Must contain at least one entry that resolves in src/genesis.
    */
@@ -38,7 +44,6 @@ interface NodeBase {
 
 export interface CharacterNode extends NodeBase {
   kind: "character";
-  displayName: string;
   role: string;
 }
 
@@ -54,7 +59,7 @@ export interface AngelNode extends NodeBase {
 
 export interface MagiNode extends NodeBase {
   kind: "magi";
-  /** Display name with hyphenated index ("Casper-3", "Melchior-1"). */
+  /** Magi name with hyphenated index ("Casper-3", "Melchior-1"). */
   name: string;
   /** Personality fragment carried by this node ("Woman", "Scientist", "Mother"). */
   personality: string;
@@ -71,6 +76,14 @@ export interface Edge {
    * structural-only edges (the magi triangle, the angel sequence chain).
    */
   shortcodes?: string[];
+  /**
+   * Spring weight multiplier in the force layout. Values > 1 pull the
+   * endpoints toward the rest length more aggressively (tighter group);
+   * values < 1 let repulsion overshoot rest more (looser group). Defaults
+   * to 1 when unset. The 3-in-1 magi triangle uses a higher weight so the
+   * three magi sit as a tight cluster even after the post-layout squish.
+   */
+  weight?: number;
   notes: string;
 }
 

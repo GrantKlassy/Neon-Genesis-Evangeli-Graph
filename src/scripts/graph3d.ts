@@ -60,6 +60,58 @@ interface EdgeLineData {
 
 const BG_COLOR = new THREE.Color("#050507");
 
+/**
+ * Render a node's displayName onto an offscreen 2D canvas and wrap it as a
+ * texture for a billboarded sprite label.
+ *
+ * Shrink-to-fit keeps long names readable inside the same canvas without
+ * inflating the sprite footprint --- short names paint big and bold; longer
+ * ones step down in font size until they clear a 90% width margin. A dark
+ * stroke keeps the white fill legible over any node color (NERV red, magi
+ * green, EVA-orange clusters).
+ */
+const LABEL_CANVAS_W = 1024;
+const LABEL_CANVAS_H = 256;
+
+function makeLabelTexture(text: string): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = LABEL_CANVAS_W;
+  canvas.height = LABEL_CANVAS_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return new THREE.CanvasTexture(canvas);
+  }
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const fontStack =
+    'ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", monospace';
+  let fontPx = 140;
+  const minFontPx = 56;
+  while (fontPx > minFontPx) {
+    ctx.font = `bold ${fontPx}px ${fontStack}`;
+    if (ctx.measureText(text).width <= LABEL_CANVAS_W * 0.9) break;
+    fontPx -= 4;
+  }
+  ctx.font = `bold ${fontPx}px ${fontStack}`;
+
+  ctx.lineWidth = Math.max(4, fontPx * 0.14);
+  ctx.lineJoin = "round";
+  ctx.miterLimit = 2;
+  ctx.strokeStyle = "rgba(5, 5, 7, 0.92)";
+  ctx.strokeText(text, LABEL_CANVAS_W / 2, LABEL_CANVAS_H / 2);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(text, LABEL_CANVAS_W / 2, LABEL_CANVAS_H / 2);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = 4;
+  tex.needsUpdate = true;
+  return tex;
+}
+
 function detectWebGL(): { ok: boolean; version: 1 | 2 | null } {
   try {
     const c = document.createElement("canvas");
@@ -143,16 +195,18 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   const scene = new THREE.Scene();
   scene.background = BG_COLOR;
 
-  // Subtle radial fog for depth.
-  scene.fog = new THREE.Fog(BG_COLOR, 14, 42);
+  // Subtle radial fog for depth. Pulled back to match the wider graph radius
+  // (TARGET_RADIUS=12) so the cluster fronts stay crisp and only the far
+  // side dims into the void.
+  scene.fog = new THREE.Fog(BG_COLOR, 22, 64);
 
   const camera = new THREE.PerspectiveCamera(
     50,
     1, // re-set on resize
     0.1,
-    100,
+    150,
   );
-  camera.position.set(0, 0, 18);
+  camera.position.set(0, 0, 28);
   camera.lookAt(0, 0, 0);
 
   // Layout the graph. Magi-link rest length is tiny so the triad clusters tight.
@@ -161,10 +215,13 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   });
 
   // Normalize so the full graph fits a fixed bounding sphere from origin,
-  // independent of node count. Camera sits at z=18 with FOV 50 -> a radius
-  // around 7 keeps everything inside the frustum and away from the fog wall.
+  // independent of node count. Camera sits at z=28 with FOV 50 -> a radius
+  // around 12 keeps everything inside the frustum and away from the fog
+  // wall. The radius is intentionally generous: a tighter target would
+  // squish the 18-link angel chain (and the 3-magi triangle inside it)
+  // until individual nodes overlapped after scaling.
   {
-    const TARGET_RADIUS = 7;
+    const TARGET_RADIUS = 12;
     let maxR = 0;
     for (const p of layout.positions.values()) {
       const r = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
@@ -190,6 +247,13 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   const sphereGeoCache = new Map<string, THREE.SphereGeometry>();
   const materials: THREE.Material[] = [];
   const geometries: THREE.BufferGeometry[] = [];
+  const textures: THREE.Texture[] = [];
+
+  // Sprite scale for displayName labels. Width ~3 world units reads at the
+  // default camera distance; height preserves the 4:1 canvas aspect.
+  const LABEL_SPRITE_W = 3.0;
+  const LABEL_SPRITE_H =
+    LABEL_SPRITE_W * (LABEL_CANVAS_H / LABEL_CANVAS_W);
 
   for (const node of evangelion.nodes) {
     const radius = nodeRadius(node);
@@ -227,6 +291,27 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     halo.position.copy(mesh.position);
     halo.userData = { halo: true };
     sceneGroup.add(halo);
+
+    // Display-name label: billboard sprite at the node's center. Depth test
+    // is disabled and renderOrder is high so the label always paints on top
+    // of the sphere (and any overlapping geometry) regardless of viewing
+    // angle. Fog is disabled so labels stay readable on far nodes.
+    const labelTex = makeLabelTexture(node.displayName);
+    textures.push(labelTex);
+    const labelMat = new THREE.SpriteMaterial({
+      map: labelTex,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      fog: false,
+    });
+    materials.push(labelMat);
+    const labelSprite = new THREE.Sprite(labelMat);
+    labelSprite.scale.set(LABEL_SPRITE_W, LABEL_SPRITE_H, 1);
+    labelSprite.position.copy(mesh.position);
+    labelSprite.renderOrder = 999;
+    labelSprite.userData = { label: true, nodeId: node.id };
+    sceneGroup.add(labelSprite);
 
     const data: NodeMeshData = { node, mesh, baseScale: 1 };
     nodeMeshes.push(data);
@@ -272,7 +357,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
 
   // Wireframe AT-field shell --- a faint icosahedron framing the graph.
   {
-    const geo = new THREE.IcosahedronGeometry(8.5, 1);
+    const geo = new THREE.IcosahedronGeometry(13.5, 1);
     const mat = new THREE.MeshBasicMaterial({
       color: new THREE.Color("#ff2a3c"),
       wireframe: true,
@@ -316,8 +401,8 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   let pitch = 0;
   let targetYaw = 0;
   let targetPitch = 0.18;
-  let camDistance = 18;
-  let targetCamDistance = 18;
+  let camDistance = 28;
+  let targetCamDistance = 28;
   let panX = 0;
   let panY = 0;
   let targetPanX = 0;
@@ -388,7 +473,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
     const factor = Math.exp(e.deltaY * 0.001);
-    targetCamDistance = Math.max(8, Math.min(40, targetCamDistance * factor));
+    targetCamDistance = Math.max(14, Math.min(64, targetCamDistance * factor));
     lastInteractionTs = performance.now();
     userInteracting = true;
     setTimeout(() => {
@@ -564,6 +649,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     root.removeEventListener("pointerleave", onRootLeave);
     for (const g of geometries) g.dispose();
     for (const m of materials) m.dispose();
+    for (const t of textures) t.dispose();
     renderer.dispose();
   };
 

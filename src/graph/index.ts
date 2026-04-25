@@ -61,19 +61,13 @@ export const ANGEL_UNIFORM_COLOR = "#ff003c";
 
 /** Per-edge-kind line colors. */
 export const EDGE_COLORS: Record<EdgeKind, string> = {
-  magi_link: "#5cf5b6", // matches the magi green
+  // Magi triangle inherits the same green as the magi nodes themselves --- the
+  // edge is a continuation of the "3-in-1" body, not a separate visual class.
+  magi_link: MAGI_UNIFORM_COLOR,
   angel_sequence: "#ff6c2a", // warm orange chain
 };
 
-/**
- * Recommended spring rest length per edge kind. Magi links are extremely
- * short so the three nodes sit on top of each other ("3 in 1"). Angel
- * sequence is moderate so the canonical chain reads as a curve.
- */
-export const EDGE_SPRING_LENGTH: Record<EdgeKind, number> = {
-  magi_link: 0.5,
-  angel_sequence: 1.8,
-};
+export { EDGE_SPRING_LENGTH, EDGE_WEIGHT } from "./layoutTuning";
 
 /** Build adjacency: nodeId -> edges that touch it (either direction). */
 export function adjacency(graph: EvangelionGraph): Map<string, Edge[]> {
@@ -117,6 +111,10 @@ export function validateGraph(graph: EvangelionGraph): void {
       throw new Error(`Duplicate node id: ${node.id}`);
     }
     ids.add(node.id);
+
+    if (typeof node.displayName !== "string" || node.displayName.trim() === "") {
+      throw new Error(`Node ${node.id} must declare a non-empty displayName`);
+    }
 
     if (!Array.isArray(node.shortcodes) || node.shortcodes.length === 0) {
       throw new Error(

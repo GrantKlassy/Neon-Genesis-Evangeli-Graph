@@ -27,6 +27,14 @@ export interface LayoutOptions {
   damping?: number;
   /** Cap per-step displacement to keep things stable. */
   maxStep?: number;
+  /**
+   * Per-step force pulling every node toward origin, proportional to its
+   * radius. Bounds the layout: without it, nodes that have only repulsion
+   * (e.g. characters carrying no edges) drift indefinitely outward and
+   * dominate the post-layout normalization, squashing the rest of the
+   * graph into a tiny ball. Set to 0 to disable.
+   */
+  centerForce?: number;
   /** Deterministic seed for reproducible layouts. */
   seed?: number;
 }
@@ -42,6 +50,7 @@ const DEFAULT_OPTS: Required<Omit<LayoutOptions, "springLengthByKind">> & {
   springLengthByKind: {},
   damping: 0.85,
   maxStep: 0.4,
+  centerForce: 0.02,
   seed: 0xc0ffee,
 };
 
@@ -87,20 +96,22 @@ export function forceLayout3D(
 
   // De-duplicate edges for layout (we don't want multi-edges to over-attract).
   // When duplicates exist with different kinds, keep the SHORTEST rest length
-  // so a tight kind (e.g. magi_link) wins over a loose one.
+  // so a tight kind (e.g. magi_link) wins over a loose one. Weight is taken
+  // from the surviving edge (defaults to 1 when unset).
   const edgeKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const layoutEdgeByKey = new Map<
     string,
-    { a: string; b: string; restLength: number }
+    { a: string; b: string; restLength: number; weight: number }
   >();
   for (const e of edges) {
     if (e.from === e.to) continue;
     const key = edgeKey(e.from, e.to);
     const restLength =
       opts.springLengthByKind[e.kind] ?? opts.springLength;
+    const weight = e.weight ?? 1;
     const existing = layoutEdgeByKey.get(key);
     if (!existing || restLength < existing.restLength) {
-      layoutEdgeByKey.set(key, { a: e.from, b: e.to, restLength });
+      layoutEdgeByKey.set(key, { a: e.from, b: e.to, restLength, weight });
     }
   }
   const layoutEdges = [...layoutEdgeByKey.values()];
@@ -136,7 +147,22 @@ export function forceLayout3D(
       }
     }
 
-    // Spring attraction along edges.
+    // Soft pull toward origin so disconnected components (characters in the
+    // basic seed) don't drift to infinity under pure repulsion and dominate
+    // the post-layout normalization.
+    if (opts.centerForce > 0) {
+      for (const n of nodes) {
+        const p = positions.get(n.id)!;
+        const f = forces.get(n.id)!;
+        f.x -= opts.centerForce * p.x;
+        f.y -= opts.centerForce * p.y;
+        f.z -= opts.centerForce * p.z;
+      }
+    }
+
+    // Spring attraction along edges. Per-edge weight scales the spring
+    // constant: weight > 1 pulls the endpoints toward rest length harder
+    // (tight cluster); weight < 1 lets repulsion dominate longer.
     for (const e of layoutEdges) {
       const pa = positions.get(e.a)!;
       const pb = positions.get(e.b)!;
@@ -145,7 +171,7 @@ export function forceLayout3D(
       const dz = pb.z - pa.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
       const stretch = dist - e.restLength;
-      const force = opts.springK * stretch;
+      const force = opts.springK * e.weight * stretch;
       const fx = (dx / dist) * force;
       const fy = (dy / dist) * force;
       const fz = (dz / dist) * force;

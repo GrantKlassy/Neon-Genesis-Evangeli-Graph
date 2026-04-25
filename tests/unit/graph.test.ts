@@ -3,6 +3,7 @@ import {
   ANGEL_UNIFORM_COLOR,
   EDGE_COLORS,
   EDGE_SPRING_LENGTH,
+  EDGE_WEIGHT,
   MAGI_UNIFORM_COLOR,
   adjacency,
   colorFor,
@@ -86,6 +87,27 @@ describe("evangelion graph", () => {
     );
   });
 
+  it("every node declares a non-empty displayName for the 3D label", () => {
+    for (const n of evangelion.nodes) {
+      expect(typeof n.displayName, `${n.id} displayName not a string`).toBe(
+        "string",
+      );
+      expect(
+        n.displayName.trim().length,
+        `${n.id} displayName is empty`,
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("angel and magi displayNames mirror their canonical names", () => {
+    for (const a of evangelion.nodes.filter(isAngel)) {
+      expect(a.displayName).toBe(a.name);
+    }
+    for (const m of evangelion.nodes.filter(isMagi)) {
+      expect(m.displayName).toBe(m.name);
+    }
+  });
+
   it("every node declares at least one shortcode that resolves in genesis", () => {
     for (const n of evangelion.nodes) {
       expect(n.shortcodes.length, `${n.id} has no shortcodes`).toBeGreaterThan(
@@ -144,6 +166,30 @@ describe("evangelion graph", () => {
     );
     for (const [_, len] of others) {
       expect(EDGE_SPRING_LENGTH.magi_link).toBeLessThan(len);
+    }
+  });
+
+  it("EDGE_WEIGHT covers every edge kind in use and stays > 1", () => {
+    const kinds = new Set(evangelion.edges.map((e) => e.kind));
+    for (const k of kinds) {
+      expect(EDGE_WEIGHT[k]).toBeGreaterThan(1);
+    }
+  });
+
+  it("magi_link carries the highest spring weight (3-in-1 invariant)", () => {
+    const others = Object.entries(EDGE_WEIGHT).filter(
+      ([k]) => k !== "magi_link",
+    );
+    for (const [_, w] of others) {
+      expect(EDGE_WEIGHT.magi_link).toBeGreaterThan(w);
+    }
+  });
+
+  it("every edge stamps weight matching EDGE_WEIGHT for its kind", () => {
+    for (const e of evangelion.edges) {
+      expect(e.weight, `edge ${e.from}->${e.to} has no weight`).toBe(
+        EDGE_WEIGHT[e.kind],
+      );
     }
   });
 
@@ -268,7 +314,20 @@ describe("validateGraph throws for invalid inputs", () => {
     ).toThrow(/Self-loop/);
   });
 
-  it("rejects nodes with empty shortcodes array", () => {
+  it("rejects nodes with an empty displayName", () => {
+    const broken = {
+      ...evangelion.nodes[0]!,
+      displayName: "   ",
+    };
+    expect(() =>
+      validateGraph({
+        ...evangelion,
+        nodes: [broken, ...evangelion.nodes.slice(1)],
+      }),
+    ).toThrow(/non-empty displayName/);
+  });
+
+  it("rejects nodes with an empty shortcodes array", () => {
     const broken = {
       ...evangelion.nodes[0]!,
       shortcodes: [] as string[],

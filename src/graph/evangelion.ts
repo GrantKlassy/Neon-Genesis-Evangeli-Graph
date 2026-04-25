@@ -5,6 +5,7 @@ import type {
   EvangelionGraph,
   MagiNode,
 } from "./types";
+import { EDGE_WEIGHT } from "./layoutTuning";
 
 /**
  * Initial seed for the Neon Genesis Evangeli-Graph.
@@ -106,6 +107,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 1,
     name: "Adam",
+    displayName: "Adam",
     shortcodes: ["adam"],
     spoilerLevel: "spoiler",
     introducedEpisode: "Backstory",
@@ -117,6 +119,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 2,
     name: "Lilith",
+    displayName: "Lilith",
     shortcodes: ["lilith"],
     spoilerLevel: "spoiler",
     introducedEpisode: "Backstory",
@@ -128,6 +131,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 3,
     name: "Sachiel",
+    displayName: "Sachiel",
     shortcodes: ["sachiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 1",
@@ -138,6 +142,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 4,
     name: "Shamshel",
+    displayName: "Shamshel",
     shortcodes: ["shamshel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 3",
@@ -148,6 +153,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 5,
     name: "Ramiel",
+    displayName: "Ramiel",
     shortcodes: ["ramiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 5",
@@ -159,6 +165,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 6,
     name: "Gaghiel",
+    displayName: "Gaghiel",
     shortcodes: ["gaghiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 8",
@@ -169,6 +176,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 7,
     name: "Israfel",
+    displayName: "Israfel",
     shortcodes: ["israfel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 9",
@@ -180,6 +188,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 8,
     name: "Sandalphon",
+    displayName: "Sandalphon",
     shortcodes: ["sandalphon"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 10",
@@ -190,6 +199,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 9,
     name: "Matarael",
+    displayName: "Matarael",
     shortcodes: ["matarael"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 11",
@@ -200,6 +210,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 10,
     name: "Sahaquiel",
+    displayName: "Sahaquiel",
     shortcodes: ["sahaquiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 12",
@@ -210,6 +221,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 11,
     name: "Iruel",
+    displayName: "Iruel",
     shortcodes: ["iruel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 13",
@@ -221,6 +233,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 12,
     name: "Leliel",
+    displayName: "Leliel",
     shortcodes: ["leliel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 16",
@@ -232,6 +245,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 13,
     name: "Bardiel",
+    displayName: "Bardiel",
     shortcodes: ["bardiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 18",
@@ -243,6 +257,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 14,
     name: "Zeruel",
+    displayName: "Zeruel",
     shortcodes: ["zeruel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 19",
@@ -254,6 +269,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 15,
     name: "Arael",
+    displayName: "Arael",
     shortcodes: ["arael"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 22",
@@ -265,6 +281,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 16,
     name: "Armisael",
+    displayName: "Armisael",
     shortcodes: ["armisael"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 23",
@@ -275,6 +292,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 17,
     name: "Tabris",
+    displayName: "Tabris",
     shortcodes: ["tabris"],
     spoilerLevel: "spoiler",
     introducedEpisode: "Ep. 24",
@@ -286,6 +304,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 18,
     name: "Lilim",
+    displayName: "Lilim",
     shortcodes: ["lilim"],
     spoilerLevel: "spoiler",
     introducedEpisode: "End of Evangelion",
@@ -299,6 +318,7 @@ const magi: MagiNode[] = [
     id: "magi_casper",
     kind: "magi",
     name: "Casper-3",
+    displayName: "Casper-3",
     personality: "Woman",
     shortcodes: ["casper"],
     spoilerLevel: "open",
@@ -309,6 +329,7 @@ const magi: MagiNode[] = [
     id: "magi_melchior",
     kind: "magi",
     name: "Melchior-1",
+    displayName: "Melchior-1",
     personality: "Scientist",
     shortcodes: ["melchior"],
     spoilerLevel: "open",
@@ -318,6 +339,7 @@ const magi: MagiNode[] = [
     id: "magi_balthasar",
     kind: "magi",
     name: "Balthasar-2",
+    displayName: "Balthasar-2",
     personality: "Mother",
     shortcodes: ["balthasar"],
     spoilerLevel: "open",
@@ -331,6 +353,10 @@ const magi: MagiNode[] = [
  *   - angel_sequence: chain angel(N) -> angel(N+1) for N = 1..17, mirroring
  *     the canonical TV-series numbering.
  *
+ * Each edge is stamped with its kind's spring weight (EDGE_WEIGHT) so the
+ * force layout equilibrates at a predictable distance: magi cling tight,
+ * angels stay grouped along the canon order without overlapping.
+ *
  * Characters do not yet have edges to anything; that is reserved for future
  * relationship layers (pilot <-> EVA, guardian <-> ward, ...).
  */
@@ -339,26 +365,31 @@ function buildEdges(): Edge[] {
 
   // Magi triangle: every pair, both directions are not needed --- a single
   // edge per pair is enough for the layout. Three pairs total.
+  const magiWeight = EDGE_WEIGHT.magi_link;
   out.push({
     from: "magi_casper",
     to: "magi_melchior",
     kind: "magi_link",
+    weight: magiWeight,
     notes: "Casper <-> Melchior (3-in-1)",
   });
   out.push({
     from: "magi_melchior",
     to: "magi_balthasar",
     kind: "magi_link",
+    weight: magiWeight,
     notes: "Melchior <-> Balthasar (3-in-1)",
   });
   out.push({
     from: "magi_balthasar",
     to: "magi_casper",
     kind: "magi_link",
+    weight: magiWeight,
     notes: "Balthasar <-> Casper (3-in-1)",
   });
 
   // Angel canonical sequence.
+  const angelWeight = EDGE_WEIGHT.angel_sequence;
   const sorted = [...angels].sort((a, b) => a.number - b.number);
   for (let i = 0; i < sorted.length - 1; i++) {
     const from = sorted[i]!;
@@ -367,6 +398,7 @@ function buildEdges(): Edge[] {
       from: from.id,
       to: to.id,
       kind: "angel_sequence",
+      weight: angelWeight,
       notes: `Angel #${from.number} (${from.name}) -> Angel #${to.number} (${to.name})`,
     });
   }
