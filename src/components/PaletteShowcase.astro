@@ -1,0 +1,142 @@
+---
+import {
+  entitiesByCategory,
+  entityKeyToSlug,
+  palette,
+  type EntityCategory,
+  type EntityKey,
+} from "../theme/palette";
+
+interface CategoryGroup {
+  id: EntityCategory;
+  title: string;
+  bracket: "red" | "green";
+}
+
+const groups: CategoryGroup[] = [
+  { id: "character", title: "Characters", bracket: "red" },
+  { id: "eva", title: "Evangelion Units", bracket: "red" },
+  { id: "organization", title: "Organizations", bracket: "green" },
+  { id: "magi", title: "Magi System", bracket: "green" },
+  { id: "concept", title: "Concepts", bracket: "green" },
+];
+
+const totalEntities = (Object.keys(palette) as EntityKey[]).length;
+---
+
+<section
+  class="mx-auto mt-10 max-w-6xl px-4 pb-12 sm:mt-14 sm:px-8"
+  data-testid="ngg-palette-showcase"
+>
+  <header class="mb-5">
+    <p
+      class="font-mono text-[0.65rem] tracking-[0.3em] text-[color:var(--color-magi-green)] uppercase sm:text-xs"
+    >
+      Theme &middot; canon &middot; rev. 0
+    </p>
+    <h2
+      class="ngg-bracket-red mt-1 font-mono text-base font-bold tracking-[0.2em] text-[color:var(--color-text)] uppercase sm:text-lg"
+    >
+      Palette
+    </h2>
+    <p
+      class="mt-2 max-w-2xl text-sm text-[color:var(--color-text-dim)] sm:text-base"
+    >
+      The single source of truth for entity colors across the site. {
+        totalEntities
+      }
+      entities, each with one primary and a small ordered set of secondaries. Reference
+      from CSS as
+      <code class="font-mono text-[color:var(--color-magi-green)]"
+        >var(--palette-asuka-primary)</code
+      > or import the typed map from
+      <code class="font-mono text-[color:var(--color-magi-green)]"
+        >src/theme/palette</code
+      >. The current graph still uses its own cluster tokens; future revs will
+      read from here.
+    </p>
+  </header>
+
+  {
+    groups.map((group) => {
+      const keys = entitiesByCategory(group.id);
+      if (keys.length === 0) return null;
+      return (
+        <div class="mt-6" data-testid={`palette-category-${group.id}`}>
+          <h3
+            class:list={[
+              "font-mono text-xs tracking-[0.2em] uppercase sm:text-sm",
+              group.bracket === "red"
+                ? "ngg-bracket-red text-[color:var(--color-nerv-red)]"
+                : "ngg-bracket-green text-[color:var(--color-magi-green)]",
+            ]}
+          >
+            {group.title}
+          </h3>
+          <ul class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {keys.map((key) => {
+              const ent = palette[key];
+              const slug = entityKeyToSlug(key);
+              return (
+                <li
+                  class="border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel)] p-3 transition-colors hover:border-[color:var(--color-text-dim)]/45"
+                  data-testid={`palette-entity-${key}`}
+                  data-entity-key={key}
+                  data-entity-slug={slug}
+                >
+                  <div
+                    class="flex h-12 overflow-hidden rounded-sm"
+                    aria-hidden="true"
+                  >
+                    <span
+                      class="block flex-[3]"
+                      style={`background:${ent.primary}`}
+                      data-testid={`palette-primary-${key}`}
+                      title={`${ent.displayName} primary ${ent.primary}`}
+                    />
+                    {ent.secondary.map((c, i) => (
+                      <span
+                        class="block flex-1 border-l border-black/30"
+                        style={`background:${c}`}
+                        title={`${ent.displayName} secondary ${i + 1} ${c}`}
+                      />
+                    ))}
+                  </div>
+                  <div class="mt-2 flex items-baseline justify-between gap-2">
+                    <p class="truncate text-sm font-bold text-[color:var(--color-text)] sm:text-base">
+                      {ent.displayName}
+                    </p>
+                    <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)] uppercase">
+                      {key}
+                    </p>
+                  </div>
+                  <dl class="mt-1.5 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 font-mono text-[0.65rem] sm:text-xs">
+                    <dt class="text-[color:var(--color-text-dim)] uppercase">
+                      primary
+                    </dt>
+                    <dd class="text-[color:var(--color-text)]">
+                      {ent.primary}
+                    </dd>
+                    {ent.secondary.length > 0 && (
+                      <>
+                        <dt class="text-[color:var(--color-text-dim)] uppercase">
+                          secondary
+                        </dt>
+                        <dd class="text-[color:var(--color-text-dim)]">
+                          {ent.secondary.join(" / ")}
+                        </dd>
+                      </>
+                    )}
+                  </dl>
+                  <p class="mt-2 text-[0.7rem] leading-snug text-[color:var(--color-text-dim)] sm:text-xs">
+                    {ent.notes}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      );
+    })
+  }
+</section>

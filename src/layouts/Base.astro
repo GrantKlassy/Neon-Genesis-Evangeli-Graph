@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { paletteAsCssVars } from "../theme/palette";
 
 interface Props {
   title: string;
@@ -10,6 +11,8 @@ const {
   title,
   description = "Neon Genesis Evangeli-Graph --- 3D visualization of the wordword4numbers Reddit account-cluster investigation.",
 } = Astro.props;
+
+const paletteCss = paletteAsCssVars();
 ---
 
 <!doctype html>
@@ -54,6 +57,8 @@ const {
         font-display: swap;
       }
     </style>
+    <style is:inline set:html={paletteCss} data-testid="ngg-palette-vars"
+    ></style>
   </head>
   <body
     class="ngg-grid-bg min-h-screen font-sans antialiased"
