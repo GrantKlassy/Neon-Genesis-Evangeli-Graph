@@ -1,4 +1,6 @@
 ---
+import G from "./G.astro";
+
 interface Props {
   graphId: string;
   characterCount: number;
@@ -18,9 +20,9 @@ const { graphId, characterCount, angelCount, magiCount, edgeCount } =
   <div class="mx-auto max-w-6xl">
     <p
       class="font-mono text-[0.65rem] tracking-[0.3em] text-[color:var(--color-magi-green)] uppercase sm:text-xs"
+      data-testid="ngg-header-tagline"
     >
-      <span class="text-[color:var(--color-nerv-red)]">NERV</span>
-      &middot; magi system &middot; canon graph &middot; rev. 0
+      <G text="NERV" /> &middot; magi system &middot; canon graph &middot; rev. 1
     </p>
     <h1
       class="mt-2 text-center font-bold tracking-tight text-[#FFFFFF] uppercase"
@@ -45,11 +47,18 @@ const { graphId, characterCount, angelCount, magiCount, edgeCount } =
     </p>
     <p
       class="mt-3 max-w-2xl text-sm text-[color:var(--color-text-dim)] sm:text-base"
+      data-testid="ngg-header-blurb"
     >
       A three-dimensional reading of the
       <code class="font-mono text-[color:var(--color-magi-green)]">{graphId}</code> canon.
-      Eight characters, eighteen angels in canonical order, and the three Magi
-      bound as one. Scroll down to enter the graph.
+      Eight <G text="CHARACTERS" /> --- <G text="Shinji Ikari" />, <G
+        text="Asuka Langley Soryu"
+      />, <G text="Rei Ayanami" />, <G text="Misato Katsuragi" />,
+      <G text="Kaworu Nagisa" />, <G text="Gendo Ikari" />, <G
+        text="Ritsuko Akagi"
+      />, <G text="Mari" /> --- eighteen <G text="ANGELS" /> in canonical order,
+      and the three <G text="Magi" /> bound as one. Scroll down to enter the
+      graph.
     </p>
     <dl
       class="mt-4 grid grid-cols-2 gap-2 font-mono text-[0.65rem] tracking-wider uppercase sm:max-w-xl sm:grid-cols-4 sm:text-xs"

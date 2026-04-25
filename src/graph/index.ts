@@ -9,7 +9,12 @@ import type {
   NodeKind,
   SpoilerLevel,
 } from "./types";
-import { palette } from "../theme/palette";
+import {
+  assertGenesisValid,
+  colorOf,
+  isShortcode,
+  validateGenesis,
+} from "../genesis";
 
 export type {
   AngelNode,
@@ -88,6 +93,12 @@ export function adjacency(graph: EvangelionGraph): Map<string, Edge[]> {
 /**
  * Validate graph integrity. Throws on first failure with a descriptive message.
  *
+ * Now also enforces:
+ *   - Every node has a non-empty shortcodes array.
+ *   - Every shortcode referenced by a node resolves in the genesis registry.
+ *   - The genesis registry itself passes its own invariants
+ *     (validateGenesis()).
+ *
  * Note: orphan-node check is intentionally NOT enforced. Characters do not
  * yet carry edges in the basic seed, and that is deliberate --- relationship
  * layers (pilot/EVA, spoiler-gated angel/character mappings, ...) come later.
@@ -97,12 +108,28 @@ export function validateGraph(graph: EvangelionGraph): void {
     throw new Error("Graph missing id or title");
   }
 
+  // The genesis registry must be self-consistent before we trust references.
+  assertGenesisValid();
+
   const ids = new Set<string>();
   for (const node of graph.nodes) {
     if (ids.has(node.id)) {
       throw new Error(`Duplicate node id: ${node.id}`);
     }
     ids.add(node.id);
+
+    if (!Array.isArray(node.shortcodes) || node.shortcodes.length === 0) {
+      throw new Error(
+        `Node ${node.id} must declare at least one genesis shortcode`,
+      );
+    }
+    for (const code of node.shortcodes) {
+      if (!isShortcode(code)) {
+        throw new Error(
+          `Node ${node.id} references unknown shortcode "${code}"`,
+        );
+      }
+    }
   }
 
   for (const edge of graph.edges) {
@@ -118,6 +145,15 @@ export function validateGraph(graph: EvangelionGraph): void {
     }
     if (edge.from === edge.to) {
       throw new Error(`Self-loop edge on ${edge.from}`);
+    }
+    if (edge.shortcodes) {
+      for (const code of edge.shortcodes) {
+        if (!isShortcode(code)) {
+          throw new Error(
+            `Edge ${edge.from} -> ${edge.to} references unknown shortcode "${code}"`,
+          );
+        }
+      }
     }
   }
 
@@ -135,6 +171,25 @@ export function validateGraph(graph: EvangelionGraph): void {
   }
 }
 
+/**
+ * Combined validation result --- registry + graph in one shot. The precommit
+ * hook calls this so a single command surfaces every invariant.
+ */
+export function validateAll(graph: EvangelionGraph): {
+  ok: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+  const reg = validateGenesis();
+  errors.push(...reg.errors);
+  try {
+    validateGraph(graph);
+  } catch (err) {
+    errors.push((err as Error).message);
+  }
+  return { ok: errors.length === 0, errors };
+}
+
 /** Pick a node radius. Characters are largest, magi smallest (so the triad reads tight). */
 export function nodeRadius(node: GraphNode): number {
   if (isCharacter(node)) return 0.6;
@@ -143,15 +198,15 @@ export function nodeRadius(node: GraphNode): number {
 }
 
 /**
- * Resolve a node's render color. Characters use their palette primary;
- * angels share the AT-field uniform; magi share the green uniform (3-in-1 joke).
+ * Resolve a node's render color. Characters use their primary shortcode's
+ * color from the genesis registry; angels share the AT-field uniform; magi
+ * share the green uniform (3-in-1 joke).
  */
 export function colorFor(node: GraphNode): string {
   if (isMagi(node)) return MAGI_UNIFORM_COLOR;
   if (isAngel(node)) return ANGEL_UNIFORM_COLOR;
-  // character: look up palette by paletteKey
-  const ent = (palette as Record<string, { primary: string } | undefined>)[
-    node.paletteKey
-  ];
-  return ent?.primary ?? "#cccccc";
+  // character: look up genesis by primary shortcode (the first entry).
+  const primaryCode = node.shortcodes[0];
+  if (!primaryCode) return "#cccccc";
+  return colorOf(primaryCode);
 }

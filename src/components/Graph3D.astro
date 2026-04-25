@@ -4,15 +4,15 @@ import {
   EDGE_COLORS,
   MAGI_UNIFORM_COLOR,
 } from "../graph";
-import { palette } from "../theme/palette";
+import { colorOf } from "../genesis";
 
 // Characters are individually colored; the legend uses Asuka's primary as
 // the swatch sample because the show's marketing has trained the eye on it.
 const nodeLegend = [
   {
     id: "character",
-    label: "Characters (per palette)",
-    color: palette.asuka.primary,
+    label: "Characters (per shortcode)",
+    color: colorOf("asuka"),
   },
   {
     id: "angel",
@@ -257,17 +257,19 @@ const edgeLegend = [
       if (metaEl) {
         metaEl.innerHTML = "";
         const rows: [string, string][] = [];
+        const codes = node.shortcodes.join(" / ");
         if (isCharacter(node)) {
           rows.push(["role", node.role]);
-          rows.push(["palette", node.paletteKey]);
+          rows.push(["shortcodes", codes]);
           rows.push(["spoiler", node.spoilerLevel]);
         } else if (isAngel(node)) {
           rows.push(["number", String(node.number)]);
           rows.push(["intro", node.introducedEpisode]);
+          rows.push(["shortcodes", codes]);
           rows.push(["spoiler", node.spoilerLevel]);
         } else if (isMagi(node)) {
           rows.push(["personality", node.personality]);
-          rows.push(["palette", node.paletteKey]);
+          rows.push(["shortcodes", codes]);
         }
         for (const [k, v] of rows) {
           const dt = document.createElement("dt");

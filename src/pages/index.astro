@@ -3,7 +3,7 @@ import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
 import Graph3D from "../components/Graph3D.astro";
 import Readout from "../components/Readout.astro";
-import PaletteShowcase from "../components/PaletteShowcase.astro";
+import GenesisShowcase from "../components/GenesisShowcase.astro";
 import { evangelion, isAngel, isCharacter, isMagi } from "../graph";
 
 const characterCount = evangelion.nodes.filter(isCharacter).length;
@@ -22,5 +22,5 @@ const edgeCount = evangelion.edges.length;
   />
   <Graph3D />
   <Readout />
-  <PaletteShowcase />
+  <GenesisShowcase />
 </Base>

@@ -10,9 +10,13 @@ import type {
  * Initial seed for the Neon Genesis Evangeli-Graph.
  *
  * Three top-level concepts:
- *   - 8 main-cast characters (matches src/theme/palette character entries).
+ *   - 8 main-cast characters (matches src/genesis character entries).
  *   - 18 angels in canonical NGE TV-series order (Adam = 1, Lilim = 18).
  *   - 3 Magi nodes connected as a tight triangle (the "3-in-1" joke).
+ *
+ * Each node lists the genesis shortcodes it links to. Shinji Ikari maps to
+ * BOTH `shinji` (given name) and `ikari` (family) so the family shortcode is
+ * shared between Shinji and Gendo's nodes.
  *
  * No character <-> angel edges yet: that is where spoiler gating belongs
  * (e.g. Kaworu <-> Tabris would reveal the 17th-Angel twist), so those
@@ -24,7 +28,7 @@ const characters: CharacterNode[] = [
     id: "char_shinji",
     kind: "character",
     displayName: "Shinji Ikari",
-    paletteKey: "shinji",
+    shortcodes: ["shinji", "ikari"],
     role: "Third Child / Pilot of Unit-01",
     spoilerLevel: "open",
     notes: "The protagonist. Reluctant pilot of Evangelion Unit-01.",
@@ -33,7 +37,7 @@ const characters: CharacterNode[] = [
     id: "char_asuka",
     kind: "character",
     displayName: "Asuka Langley Soryu",
-    paletteKey: "asuka",
+    shortcodes: ["asuka", "langley"],
     role: "Second Child / Pilot of Unit-02",
     spoilerLevel: "open",
     notes: "Hot-headed German-American pilot of Evangelion Unit-02.",
@@ -42,7 +46,7 @@ const characters: CharacterNode[] = [
     id: "char_rei",
     kind: "character",
     displayName: "Rei Ayanami",
-    paletteKey: "rei",
+    shortcodes: ["rei", "ayanami"],
     role: "First Child / Pilot of Unit-00",
     spoilerLevel: "spoiler",
     notes: "Quiet pilot of Unit-00. Origins are a late-series reveal.",
@@ -51,7 +55,7 @@ const characters: CharacterNode[] = [
     id: "char_misato",
     kind: "character",
     displayName: "Misato Katsuragi",
-    paletteKey: "misato",
+    shortcodes: ["misato", "katsuragi"],
     role: "NERV Operations Director",
     spoilerLevel: "open",
     notes: "Tactical commander during angel attacks. Shinji's guardian.",
@@ -60,7 +64,7 @@ const characters: CharacterNode[] = [
     id: "char_kaworu",
     kind: "character",
     displayName: "Kaworu Nagisa",
-    paletteKey: "kaworu",
+    shortcodes: ["kaworu", "nagisa"],
     role: "Fifth Child",
     spoilerLevel: "spoiler",
     notes:
@@ -70,7 +74,7 @@ const characters: CharacterNode[] = [
     id: "char_gendo",
     kind: "character",
     displayName: "Gendo Ikari",
-    paletteKey: "gendo",
+    shortcodes: ["gendo", "ikari"],
     role: "NERV Commander",
     spoilerLevel: "open",
     notes: "Shinji's estranged father. Runs NERV with his own agenda.",
@@ -79,7 +83,7 @@ const characters: CharacterNode[] = [
     id: "char_ritsuko",
     kind: "character",
     displayName: "Ritsuko Akagi",
-    paletteKey: "ritsuko",
+    shortcodes: ["ritsuko", "akagi"],
     role: "NERV Chief Scientist",
     spoilerLevel: "open",
     notes:
@@ -89,7 +93,7 @@ const characters: CharacterNode[] = [
     id: "char_mari",
     kind: "character",
     displayName: "Mari Makinami Illustrious",
-    paletteKey: "mari",
+    shortcodes: ["mari", "makinami"],
     role: "Pilot (Rebuild)",
     spoilerLevel: "open",
     notes: "Rebuild-only pilot. Excitable, opportunistic, sings in combat.",
@@ -102,6 +106,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 1,
     name: "Adam",
+    shortcodes: ["adam"],
     spoilerLevel: "spoiler",
     introducedEpisode: "Backstory",
     notes:
@@ -112,6 +117,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 2,
     name: "Lilith",
+    shortcodes: ["lilith"],
     spoilerLevel: "spoiler",
     introducedEpisode: "Backstory",
     notes:
@@ -122,6 +128,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 3,
     name: "Sachiel",
+    shortcodes: ["sachiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 1",
     notes: "First Angel encountered on screen. Defeated in Tokyo-3 by Unit-01.",
@@ -131,6 +138,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 4,
     name: "Shamshel",
+    shortcodes: ["shamshel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 3",
     notes: "Tendril-whip angel. Defeated by Unit-01 in close combat.",
@@ -140,6 +148,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 5,
     name: "Ramiel",
+    shortcodes: ["ramiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 5",
     notes:
@@ -150,6 +159,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 6,
     name: "Gaghiel",
+    shortcodes: ["gaghiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 8",
     notes: "Underwater angel. The Pacific fleet engagement with Unit-02.",
@@ -159,6 +169,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 7,
     name: "Israfel",
+    shortcodes: ["israfel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 9",
     notes:
@@ -169,6 +180,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 8,
     name: "Sandalphon",
+    shortcodes: ["sandalphon"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 10",
     notes: "Embryonic angel pulled out of Mt. Asama by Unit-02.",
@@ -178,6 +190,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 9,
     name: "Matarael",
+    shortcodes: ["matarael"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 11",
     notes: "Spider-shaped acid-rain angel. Defeated during the blackout.",
@@ -187,6 +200,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 10,
     name: "Sahaquiel",
+    shortcodes: ["sahaquiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 12",
     notes: "Orbital angel that body-checks Tokyo-3. Caught by all three EVAs.",
@@ -196,6 +210,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 11,
     name: "Iruel",
+    shortcodes: ["iruel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 13",
     notes:
@@ -206,6 +221,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 12,
     name: "Leliel",
+    shortcodes: ["leliel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 16",
     notes:
@@ -216,6 +232,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 13,
     name: "Bardiel",
+    shortcodes: ["bardiel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 18",
     notes:
@@ -226,6 +243,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 14,
     name: "Zeruel",
+    shortcodes: ["zeruel"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 19",
     notes:
@@ -236,6 +254,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 15,
     name: "Arael",
+    shortcodes: ["arael"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 22",
     notes:
@@ -246,6 +265,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 16,
     name: "Armisael",
+    shortcodes: ["armisael"],
     spoilerLevel: "open",
     introducedEpisode: "Ep. 23",
     notes: "Helix angel that fuses with Unit-00. Forces Rei to self-destruct.",
@@ -255,6 +275,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 17,
     name: "Tabris",
+    shortcodes: ["tabris"],
     spoilerLevel: "spoiler",
     introducedEpisode: "Ep. 24",
     notes:
@@ -265,6 +286,7 @@ const angels: AngelNode[] = [
     kind: "angel",
     number: 18,
     name: "Lilim",
+    shortcodes: ["lilim"],
     spoilerLevel: "spoiler",
     introducedEpisode: "End of Evangelion",
     notes:
@@ -278,7 +300,8 @@ const magi: MagiNode[] = [
     kind: "magi",
     name: "Casper-3",
     personality: "Woman",
-    paletteKey: "casper",
+    shortcodes: ["casper"],
+    spoilerLevel: "open",
     notes:
       "Naoko Akagi's woman fragment. The terminal-green default Magi node.",
   },
@@ -287,7 +310,8 @@ const magi: MagiNode[] = [
     kind: "magi",
     name: "Melchior-1",
     personality: "Scientist",
-    paletteKey: "melchior",
+    shortcodes: ["melchior"],
+    spoilerLevel: "open",
     notes: "Naoko Akagi's scientist fragment. Lead vote on cold logic.",
   },
   {
@@ -295,7 +319,8 @@ const magi: MagiNode[] = [
     kind: "magi",
     name: "Balthasar-2",
     personality: "Mother",
-    paletteKey: "balthasar",
+    shortcodes: ["balthasar"],
+    spoilerLevel: "open",
     notes: "Naoko Akagi's mother fragment. Tiebreaker on protective calls.",
   },
 ];

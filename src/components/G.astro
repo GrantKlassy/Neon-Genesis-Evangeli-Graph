@@ -1,0 +1,23 @@
+---
+import { highlightToHtml } from "../genesis";
+
+/**
+ * Inline genesis-aware text. Wraps any aliases the registry knows about in
+ * colored spans so "Shinji Ikari" reads with `shinji` and `ikari` tints.
+ *
+ *   <G text="Shinji Ikari and Misato" />
+ *
+ * Renders as a <span> by default; pass `as="p"` etc. when block semantics
+ * are wanted. The `text` prop is plain text (HTML-escaped before scan).
+ */
+export interface Props {
+  text: string;
+  as?: keyof HTMLElementTagNameMap;
+  class?: string;
+}
+
+const { text, as: Tag = "span", class: className } = Astro.props;
+const html = highlightToHtml(text);
+---
+
+<Tag class={className} set:html={html} />

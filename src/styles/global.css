@@ -73,6 +73,22 @@
 }
 
 @layer components {
+  /*
+   * Genesis-highlight inline span. The `--g-color` custom property is set
+   * inline by the highlighter; here we just attach the typography treatment
+   * (slight emphasis, no underline) so matched aliases read as live links
+   * without disrupting line-height.
+   */
+  .g-shortcode {
+    color: var(--g-color, currentColor);
+    font-weight: 600;
+    text-decoration: none;
+    transition: filter 120ms ease-out;
+  }
+  .g-shortcode:hover {
+    filter: brightness(1.18) saturate(1.15);
+  }
+
   .ngg-bracket-red::before {
     content: "[";
     color: var(--color-nerv-red);

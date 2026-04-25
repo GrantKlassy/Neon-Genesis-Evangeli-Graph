@@ -12,6 +12,11 @@ tasks:
       - pnpm run check
       - pnpm run test:unit
 
+  check:graph-invariants:
+    desc: Graph + genesis invariants. Fast subset for the pre-commit hook.
+    cmds:
+      - pnpm run test:invariants
+
   test:
     desc: Run the full test suite (unit + e2e)
     cmds:

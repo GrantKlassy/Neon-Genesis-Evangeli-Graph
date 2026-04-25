@@ -7,29 +7,26 @@ import {
   isCharacter,
   isMagi,
 } from "../graph";
-import { palette } from "../theme/palette";
+import { colorOf } from "../genesis";
+import G from "./G.astro";
 
 interface CharacterCard {
   id: string;
   displayName: string;
   role: string;
   color: string;
+  shortcodes: string[];
 }
 
 const characters: CharacterCard[] = evangelion.nodes
   .filter(isCharacter)
-  .map((c) => {
-    const ent =
-      (palette as Record<string, { primary: string } | undefined>)[
-        c.paletteKey
-      ];
-    return {
-      id: c.id,
-      displayName: c.displayName,
-      role: c.role,
-      color: ent?.primary ?? "#cccccc",
-    };
-  });
+  .map((c) => ({
+    id: c.id,
+    displayName: c.displayName,
+    role: c.role,
+    color: colorOf(c.shortcodes[0] ?? ""),
+    shortcodes: c.shortcodes,
+  }));
 
 const angels = evangelion.nodes
   .filter(isAngel)
@@ -58,9 +55,10 @@ const magi = evangelion.nodes.filter(isMagi);
       Characters
     </h3>
     <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
-      Cast nodes. Each renders in its palette primary. Spoiler-tagged
-      characters keep their late-show identities gated for now (no edges
-      placed that would reveal them).
+      Cast nodes. Each name renders in its genesis-shortcode primary; family
+      shortcodes (<G text="Ikari" />, <G text="Akagi" />) cross-link related characters.
+      Spoiler-tagged characters keep their late-show identities gated for
+      now.
     </p>
     <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
       {
@@ -68,6 +66,7 @@ const magi = evangelion.nodes.filter(isMagi);
           <li
             class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
             data-testid={`character-${c.id}`}
+            data-shortcodes={c.shortcodes.join(",")}
           >
             <span
               class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
@@ -76,10 +75,13 @@ const magi = evangelion.nodes.filter(isMagi);
             />
             <div class="min-w-0">
               <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
-                {c.displayName}
+                <G text={c.displayName} />
               </p>
               <p class="font-mono text-[0.65rem] tracking-wider text-[color:var(--color-text-dim)] uppercase">
                 {c.role}
+              </p>
+              <p class="mt-1 font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
+                shortcodes &middot; {c.shortcodes.join(" / ")}
               </p>
             </div>
           </li>
@@ -98,10 +100,9 @@ const magi = evangelion.nodes.filter(isMagi);
       Angels (1 -- 18, canonical order)
     </h3>
     <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
-      The 18 canonical angels of the TV series, numbered as Adam = 1 through
-      Lilim = 18. Spoiler-flagged entries (Adam, Lilith, Tabris, Lilim) are
-      visible by name but their cross-character connections stay locked until
-      the spoiler gate is unlocked.
+      The 18 canonical angels of the TV series, numbered as <G text="Adam" />
+      = 1 through <G text="Lilim" /> = 18. Spoiler-flagged entries keep their
+      cross-character connections locked until the spoiler gate is unlocked.
     </p>
     <ol class="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
       {
@@ -115,6 +116,7 @@ const magi = evangelion.nodes.filter(isMagi);
             ]}
             data-testid={`angel-${a.number}`}
             data-spoiler={a.spoilerLevel}
+            data-shortcodes={a.shortcodes.join(",")}
           >
             <span
               class="font-mono text-[0.7rem] tracking-wider"
@@ -123,7 +125,7 @@ const magi = evangelion.nodes.filter(isMagi);
               #{String(a.number).padStart(2, "0")}
             </span>
             <span class="truncate text-sm font-bold text-[color:var(--color-text)]">
-              {a.name}
+              <G text={a.name} />
             </span>
             <span class="ml-auto font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)] uppercase">
               {a.introducedEpisode}
@@ -145,9 +147,9 @@ const magi = evangelion.nodes.filter(isMagi);
     </h3>
     <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
       The three Magi share one color and one tight spring in the layout ---
-      a visual rendering of the show's "three personalities, one machine"
-      gag. Casper, Melchior, and Balthasar carry Naoko Akagi's woman,
-      scientist, and mother fragments respectively.
+      a visual rendering of the show's "three personalities, one machine" gag.
+      <G text="Casper" />, <G text="Melchior" />, and <G text="Balthasar" />
+      carry Naoko Akagi's woman, scientist, and mother fragments respectively.
     </p>
     <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
       {
@@ -155,6 +157,7 @@ const magi = evangelion.nodes.filter(isMagi);
           <li
             class="flex items-start gap-2 border border-[color:var(--color-magi-green)]/30 bg-[color:var(--color-panel-2)]/40 p-2"
             data-testid={`magi-${m.id}`}
+            data-shortcodes={m.shortcodes.join(",")}
           >
             <span
               class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
@@ -163,7 +166,7 @@ const magi = evangelion.nodes.filter(isMagi);
             />
             <div class="min-w-0">
               <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
-                {m.name}
+                <G text={m.name} />
               </p>
               <p class="font-mono text-[0.65rem] tracking-wider text-[color:var(--color-magi-green)] uppercase">
                 {m.personality}
@@ -189,7 +192,8 @@ const magi = evangelion.nodes.filter(isMagi);
       &middot; deterministic seed
     </p>
     <p class="mt-1">
-      basic seed &middot; relationship layers &amp; spoiler-gated edges to follow
+      basic seed &middot; relationship layers &amp; spoiler-gated edges to
+      follow
     </p>
   </footer>
 </section>

@@ -14,7 +14,7 @@ import {
   nodeRadius,
   validateGraph,
 } from "../../src/graph";
-import { palette } from "../../src/theme/palette";
+import { genesis, isShortcode } from "../../src/genesis";
 
 describe("evangelion graph", () => {
   it("validates without throwing", () => {
@@ -86,13 +86,37 @@ describe("evangelion graph", () => {
     );
   });
 
-  it("every character paletteKey resolves in the palette", () => {
-    for (const c of evangelion.nodes.filter(isCharacter)) {
-      expect(
-        palette,
-        `character ${c.id} paletteKey ${c.paletteKey} not in palette`,
-      ).toHaveProperty(c.paletteKey);
+  it("every node declares at least one shortcode that resolves in genesis", () => {
+    for (const n of evangelion.nodes) {
+      expect(n.shortcodes.length, `${n.id} has no shortcodes`).toBeGreaterThan(
+        0,
+      );
+      for (const code of n.shortcodes) {
+        expect(
+          isShortcode(code),
+          `${n.id}: shortcode "${code}" not in genesis`,
+        ).toBe(true);
+      }
     }
+  });
+
+  it("Shinji Ikari node is connected to BOTH 'shinji' and 'ikari' shortcodes", () => {
+    const shinji = evangelion.nodes.find((n) => n.id === "char_shinji");
+    expect(shinji).toBeDefined();
+    expect(shinji!.shortcodes).toContain("shinji");
+    expect(shinji!.shortcodes).toContain("ikari");
+  });
+
+  it("Gendo Ikari node ALSO references the 'ikari' family shortcode", () => {
+    const gendo = evangelion.nodes.find((n) => n.id === "char_gendo");
+    expect(gendo).toBeDefined();
+    expect(gendo!.shortcodes).toContain("gendo");
+    expect(gendo!.shortcodes).toContain("ikari");
+  });
+
+  it("'shinji' and 'ikari' shortcodes are both kind CHARACTERS", () => {
+    expect(genesis.shinji.kind).toBe("CHARACTERS");
+    expect(genesis.ikari.kind).toBe("CHARACTERS");
   });
 
   it("the three Magi are present and tightly linked (triangle)", () => {
@@ -242,6 +266,32 @@ describe("validateGraph throws for invalid inputs", () => {
         ],
       }),
     ).toThrow(/Self-loop/);
+  });
+
+  it("rejects nodes with empty shortcodes array", () => {
+    const broken = {
+      ...evangelion.nodes[0]!,
+      shortcodes: [] as string[],
+    };
+    expect(() =>
+      validateGraph({
+        ...evangelion,
+        nodes: [broken, ...evangelion.nodes.slice(1)],
+      }),
+    ).toThrow(/at least one genesis shortcode/);
+  });
+
+  it("rejects nodes referencing unknown shortcodes", () => {
+    const broken = {
+      ...evangelion.nodes[0]!,
+      shortcodes: ["not_a_real_shortcode"],
+    };
+    expect(() =>
+      validateGraph({
+        ...evangelion,
+        nodes: [broken, ...evangelion.nodes.slice(1)],
+      }),
+    ).toThrow(/unknown shortcode/);
   });
 
   it("rejects non-contiguous angel numbering", () => {

@@ -6,6 +6,10 @@
  *   - angel: the 18 canonical angels of NGE, numbered 1-18.
  *   - magi: the three Magi system nodes (Casper-3, Melchior-1, Balthasar-2).
  *
+ * Genesis linkage: every node carries a non-empty `shortcodes` array of
+ * keys into src/genesis. "Shinji Ikari" -> ["shinji", "ikari"]. The first
+ * shortcode is treated as the node's primary identity for color / sort.
+ *
  * Spoiler gate: some entities (and edges between them) reveal late-show
  * plot points. Anything tagged `spoilerLevel: "spoiler"` (or, in the
  * future, edges of that level) should be hidden by default once a
@@ -20,40 +24,40 @@ export type SpoilerLevel = "open" | "spoiler";
 
 export type EdgeKind = "magi_link" | "angel_sequence";
 
-export interface CharacterNode {
+interface NodeBase {
   id: string;
-  kind: "character";
-  displayName: string;
-  /** Key into src/theme/palette for primary color. */
-  paletteKey: string;
-  role: string;
+  kind: NodeKind;
+  /**
+   * Genesis shortcodes connected to this node, ordered most-canonical first.
+   * Must contain at least one entry that resolves in src/genesis.
+   */
+  shortcodes: string[];
   spoilerLevel: SpoilerLevel;
   notes: string;
 }
 
-export interface AngelNode {
-  id: string;
+export interface CharacterNode extends NodeBase {
+  kind: "character";
+  displayName: string;
+  role: string;
+}
+
+export interface AngelNode extends NodeBase {
   kind: "angel";
   /** Canonical angel number 1-18. Fixed ordering across the show. */
   number: number;
   /** Canonical angel name (Sachiel, Ramiel, Tabris, ...). */
   name: string;
-  spoilerLevel: SpoilerLevel;
   /** Episode of first appearance, freeform ("Ep. 5", "Backstory", ...). */
   introducedEpisode: string;
-  notes: string;
 }
 
-export interface MagiNode {
-  id: string;
+export interface MagiNode extends NodeBase {
   kind: "magi";
   /** Display name with hyphenated index ("Casper-3", "Melchior-1"). */
   name: string;
   /** Personality fragment carried by this node ("Woman", "Scientist", "Mother"). */
   personality: string;
-  /** Key into src/theme/palette (kept for lore tooltips; renderer paints all 3 the same). */
-  paletteKey: string;
-  notes: string;
 }
 
 export type GraphNode = CharacterNode | AngelNode | MagiNode;
@@ -62,6 +66,11 @@ export interface Edge {
   from: string;
   to: string;
   kind: EdgeKind;
+  /**
+   * Genesis shortcodes implicated by the relationship (optional). Empty for
+   * structural-only edges (the magi triangle, the angel sequence chain).
+   */
+  shortcodes?: string[];
   notes: string;
 }
 
