@@ -311,14 +311,19 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     root.dataset.highlightedNode = highlightId;
   }
 
-  // ---- Interaction: drag to rotate, wheel to zoom ----
+  // ---- Interaction: drag to rotate, right-drag to pan, wheel to zoom ----
   let yaw = 0;
   let pitch = 0;
   let targetYaw = 0;
   let targetPitch = 0.18;
   let camDistance = 18;
   let targetCamDistance = 18;
+  let panX = 0;
+  let panY = 0;
+  let targetPanX = 0;
+  let targetPanY = 0;
   let pointerDown = false;
+  let panMode = false;
   let lastPointerX = 0;
   let lastPointerY = 0;
   let userInteracting = false;
@@ -326,6 +331,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
 
   const onPointerDown = (e: PointerEvent) => {
     pointerDown = true;
+    panMode = e.button === 2;
     userInteracting = true;
     lastInteractionTs = performance.now();
     lastPointerX = e.clientX;
@@ -339,22 +345,47 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     const dy = e.clientY - lastPointerY;
     lastPointerX = e.clientX;
     lastPointerY = e.clientY;
-    targetYaw += dx * 0.0055;
-    targetPitch += dy * 0.0055;
-    targetPitch = Math.max(
-      -Math.PI / 2 + 0.05,
-      Math.min(Math.PI / 2 - 0.05, targetPitch),
-    );
+    if (panMode) {
+      // Map pixel delta to world units at the focal plane (origin) so 1px of
+      // mouse travel = 1px of scene travel on screen.
+      const fovRad = (camera.fov * Math.PI) / 180;
+      const visibleHeight = 2 * camDistance * Math.tan(fovRad / 2);
+      const worldPerPixel =
+        visibleHeight / (canvas.clientHeight || canvas.height || 1);
+      targetPanX += dx * worldPerPixel;
+      targetPanY -= dy * worldPerPixel;
+    } else {
+      targetYaw += dx * 0.0055;
+      targetPitch += dy * 0.0055;
+      targetPitch = Math.max(
+        -Math.PI / 2 + 0.05,
+        Math.min(Math.PI / 2 - 0.05, targetPitch),
+      );
+    }
     lastInteractionTs = performance.now();
   };
   const onPointerUp = (e: PointerEvent) => {
     pointerDown = false;
+    panMode = false;
     canvas.releasePointerCapture?.(e.pointerId);
     setTimeout(() => {
       userInteracting = false;
     }, 800);
   };
+  // Right-click drags the camera; the native context menu would interrupt that.
+  const onContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+  };
+  const onRootEnter = () => {
+    root.dataset.graphHovered = "true";
+  };
+  const onRootLeave = () => {
+    root.dataset.graphHovered = "false";
+  };
   const onWheel = (e: WheelEvent) => {
+    // Plain wheel scrolls the page (so the pin runway can release the
+    // viewport). Hold ctrl/cmd to zoom the camera instead.
+    if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
     const factor = Math.exp(e.deltaY * 0.001);
     targetCamDistance = Math.max(8, Math.min(40, targetCamDistance * factor));
@@ -370,6 +401,9 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   canvas.addEventListener("pointerup", onPointerUp);
   canvas.addEventListener("pointercancel", onPointerUp);
   canvas.addEventListener("wheel", onWheel, { passive: false });
+  canvas.addEventListener("contextmenu", onContextMenu);
+  root.addEventListener("pointerenter", onRootEnter);
+  root.addEventListener("pointerleave", onRootLeave);
 
   // Click selection (raycaster).
   const raycaster = new THREE.Raycaster();
@@ -486,9 +520,12 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     yaw += (targetYaw - yaw) * Math.min(1, dt * 6);
     pitch += (targetPitch - pitch) * Math.min(1, dt * 6);
     camDistance += (targetCamDistance - camDistance) * Math.min(1, dt * 6);
+    panX += (targetPanX - panX) * Math.min(1, dt * 6);
+    panY += (targetPanY - panY) * Math.min(1, dt * 6);
 
     sceneGroup.rotation.y = yaw;
     sceneGroup.rotation.x = pitch;
+    sceneGroup.position.set(panX, panY, 0);
 
     camera.position.setFromSpherical(
       new THREE.Spherical(camDistance, Math.PI / 2, 0),
@@ -522,6 +559,9 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     canvas.removeEventListener("pointercancel", onPointerUp);
     canvas.removeEventListener("wheel", onWheel);
     canvas.removeEventListener("click", onClick);
+    canvas.removeEventListener("contextmenu", onContextMenu);
+    root.removeEventListener("pointerenter", onRootEnter);
+    root.removeEventListener("pointerleave", onRootLeave);
     for (const g of geometries) g.dispose();
     for (const m of materials) m.dispose();
     renderer.dispose();

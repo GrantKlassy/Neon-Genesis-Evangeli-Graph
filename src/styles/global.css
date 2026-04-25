@@ -119,42 +119,93 @@
     );
     mix-blend-mode: screen;
   }
+
+  /*
+   * The 3D graph host. The HTML controls position via Tailwind utilities
+   * (e.g. `absolute inset-0` to fill the sticky stage). Keeping this rule in
+   * @layer components lets utilities win the cascade; an unlayered rule
+   * here would override them.
+   */
+  .ngg-graph-root {
+    background: radial-gradient(
+      ellipse at center,
+      #0a0a12 0%,
+      var(--color-bg) 70%
+    );
+    border: 1px solid rgba(255, 42, 60, 0.18);
+    overflow: hidden;
+  }
+
+  .ngg-graph-root canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    cursor: grab;
+    /*
+     * pan-y lets the browser scroll the page through the pin runway on touch
+     * devices while still leaving horizontal drag for yaw rotation. Trade-off:
+     * pitch (vertical drag rotation) is unavailable on touch.
+     */
+    touch-action: pan-y;
+  }
+  .ngg-graph-root canvas:active {
+    cursor: grabbing;
+  }
+
+  .ngg-graph-root[data-state="no-webgl"] .ngg-fallback,
+  .ngg-graph-root[data-state="error"] .ngg-fallback {
+    display: flex;
+  }
+  .ngg-graph-root[data-state="ready"] .ngg-fallback,
+  .ngg-graph-root[data-state="init"] .ngg-fallback {
+    display: none;
+  }
+  /*
+   * The loading layer fades to invisible once the renderer has reached any
+   * terminal state. Without the no-webgl/error rules, the "Initializing
+   * Magi…" message stays painted on top of the fallback in browsers that
+   * refuse a WebGL context (e.g. LibreWolf with fingerprint protection).
+   */
+  .ngg-graph-root[data-state="ready"] .ngg-loading,
+  .ngg-graph-root[data-state="no-webgl"] .ngg-loading,
+  .ngg-graph-root[data-state="error"] .ngg-loading {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /*
+   * The pinning pattern: a tall outer wrapper hosts a sticky-top stage that
+   * fills the viewport. As the user scrolls, the WebGL stage stays pinned to
+   * the top of the viewport for the runway height (outer height minus stage
+   * height), then releases as the next section scrolls into view.
+   */
+  .ngg-pin {
+    /* 100vh stage + 100vh runway. Anything taller feels like a hijack. */
+    min-height: 200vh;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /*
+     * Honor the user's preference: collapse the runway so the page reads as
+     * a conventional, non-pinned layout without scroll-driven theatre.
+     */
+    .ngg-pin {
+      min-height: 100vh;
+    }
+  }
 }
 
-/* The 3D graph host. Sized by parent. */
-.ngg-graph-root {
-  position: relative;
-  width: 100%;
-  background: radial-gradient(
-    ellipse at center,
-    #0a0a12 0%,
-    var(--color-bg) 70%
-  );
-  border: 1px solid rgba(255, 42, 60, 0.18);
-  overflow: hidden;
+/*
+ * Unlayered: when the cursor is anywhere over the graph area, brighten the
+ * gray-by-default controls so the user knows they're live. These rules sit
+ * outside `@layer components` so they beat Tailwind utility classes
+ * (`text-[color:...]`, `border-[color:...]`) which live in @layer utilities.
+ * Hover state is set on the root by the renderer (`pointerenter`/`leave`).
+ */
+.ngg-graph-root[data-graph-hovered="true"]
+  [data-testid="ngg-clear-selection"] {
+  color: var(--color-text);
+  border-color: rgba(226, 226, 226, 0.6);
 }
-
-.ngg-graph-root canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
-  cursor: grab;
-  touch-action: none;
-}
-.ngg-graph-root canvas:active {
-  cursor: grabbing;
-}
-
-.ngg-graph-root[data-state="no-webgl"] .ngg-fallback,
-.ngg-graph-root[data-state="error"] .ngg-fallback {
-  display: flex;
-}
-.ngg-graph-root[data-state="ready"] .ngg-fallback,
-.ngg-graph-root[data-state="init"] .ngg-fallback {
-  display: none;
-}
-
-.ngg-graph-root[data-state="ready"] .ngg-loading {
-  opacity: 0;
-  pointer-events: none;
+.ngg-graph-root[data-graph-hovered="true"] [data-testid="ngg-toggle-rotate"] {
+  border-color: rgba(92, 245, 182, 0.85);
 }
