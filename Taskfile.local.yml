@@ -1,0 +1,23 @@
+version: "3"
+
+tasks:
+  dev:
+    desc: Start the Astro dev server
+    cmds:
+      - pnpm run dev
+
+  check:
+    desc: Repo-local checks --- TS + unit tests
+    cmds:
+      - pnpm run check
+      - pnpm run test:unit
+
+  test:
+    desc: Run the full test suite (unit + e2e)
+    cmds:
+      - pnpm run test
+
+  build:
+    desc: Static build to dist/
+    cmds:
+      - pnpm run build

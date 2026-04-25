@@ -4,3 +4,19 @@
 .env.*.local
 *.pem
 *.key
+
+# Astro / Node
+node_modules/
+dist/
+.astro/
+.wrangler/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Vitest
+coverage/
+
+# Lighthouse CI output
+.lighthouseci/

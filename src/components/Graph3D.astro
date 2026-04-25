@@ -1,0 +1,312 @@
+---
+import { CLUSTER_COLORS, EDGE_COLORS } from "../graph";
+
+const clusterLegend = [
+  { id: "CL2_late_night_pair", label: "Late-night pair (A7+A8)" },
+  { id: "CL1b_activity_compression", label: "Activity compression (A1)" },
+  { id: "CL1_hidden_profiles", label: "Hidden profiles (A3, A4)" },
+  { id: "CL4_normal_users", label: "Normal users (A2, A5, A6)" },
+] as const;
+
+const edgeLegend = [
+  { id: "temporal_proximity", label: "Temporal proximity" },
+  { id: "comments_on_post", label: "Direct comment" },
+  { id: "comments_in", label: "Comments in" },
+  { id: "posts_in", label: "Posts in" },
+] as const;
+---
+
+<section
+  class="relative mx-auto mt-4 max-w-6xl px-4 sm:mt-6 sm:px-8"
+  data-testid="ngg-graph-section"
+>
+  <div
+    class="ngg-graph-root ngg-scan h-[60vh] min-h-[420px] sm:h-[68vh] lg:h-[72vh]"
+    data-testid="ngg-graph-root"
+    data-state="init"
+    id="ngg-graph-root"
+  >
+    <canvas
+      class="block"
+      data-testid="ngg-canvas"
+      id="ngg-graph-canvas"
+      aria-label="3D graph of accounts and communities"></canvas>
+
+    <div
+      class="ngg-loading pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-500"
+      data-testid="ngg-loading"
+    >
+      <p
+        class="font-mono text-xs tracking-[0.3em] text-[color:var(--color-magi-green)] uppercase"
+      >
+        Initializing Magi&hellip;
+      </p>
+    </div>
+
+    <div
+      class="ngg-fallback absolute inset-0 hidden flex-col items-center justify-center gap-3 px-6 text-center"
+      data-testid="ngg-fallback"
+    >
+      <p
+        class="font-mono text-sm tracking-[0.2em] text-[color:var(--color-nerv-red)] uppercase"
+      >
+        AT field collapse :: WebGL unavailable
+      </p>
+      <p class="max-w-sm text-sm text-[color:var(--color-text-dim)]">
+        This browser is missing a WebGL context. The graph still loads as raw
+        data below.
+      </p>
+    </div>
+
+    <!-- Cluster + edge legend (top-left overlay). -->
+    <aside
+      class="pointer-events-none absolute top-2 left-2 max-w-[55%] sm:top-4 sm:left-4 sm:max-w-xs"
+      data-testid="ngg-legend"
+    >
+      <div
+        class="border border-[color:var(--color-nerv-red)]/30 bg-[color:var(--color-panel)]/85 p-2 backdrop-blur-sm sm:p-3"
+      >
+        <p
+          class="font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase sm:text-[0.65rem]"
+        >
+          Clusters
+        </p>
+        <ul class="mt-1 space-y-0.5 text-[0.7rem] sm:text-xs">
+          {
+            clusterLegend.map((c) => (
+              <li class="flex items-center gap-2">
+                <span
+                  class="inline-block h-2.5 w-2.5 rounded-full"
+                  style={`background:${CLUSTER_COLORS[c.id]}`}
+                  aria-hidden="true"
+                />
+                <span class="leading-tight">{c.label}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p
+          class="mt-2 font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase sm:text-[0.65rem]"
+        >
+          Edges
+        </p>
+        <ul class="mt-1 space-y-0.5 text-[0.7rem] sm:text-xs">
+          {
+            edgeLegend.map((e) => (
+              <li class="flex items-center gap-2">
+                <span
+                  class="inline-block h-0.5 w-3"
+                  style={`background:${EDGE_COLORS[e.id]}`}
+                  aria-hidden="true"
+                />
+                <span class="leading-tight">{e.label}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Selected node panel (bottom overlay). Hidden when nothing selected. -->
+    <aside
+      id="ngg-selected"
+      class="pointer-events-none absolute right-2 bottom-2 left-2 hidden max-w-md border border-[color:var(--color-magi-green)]/40 bg-[color:var(--color-panel)]/92 p-3 backdrop-blur-sm sm:right-4 sm:bottom-4 sm:left-auto sm:p-4"
+      data-testid="ngg-selected"
+      data-empty="true"
+    >
+      <p
+        class="font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase"
+      >
+        <span data-testid="ngg-selected-kind">node</span>
+      </p>
+      <p
+        class="mt-1 truncate text-sm font-bold text-[color:var(--color-text)] sm:text-base"
+        data-testid="ngg-selected-title"
+      >
+        ---
+      </p>
+      <dl
+        class="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[0.65rem] sm:text-xs"
+        data-testid="ngg-selected-meta"
+      >
+      </dl>
+      <p
+        class="mt-2 text-[0.7rem] leading-snug text-[color:var(--color-text-dim)] sm:text-xs"
+        data-testid="ngg-selected-notes"
+      >
+      </p>
+    </aside>
+  </div>
+
+  <!-- Controls (top-right overlay) + help line -->
+  <div
+    class="mt-2 flex items-center justify-between gap-2"
+    data-testid="ngg-controls"
+  >
+    <div class="flex gap-2">
+      <button
+        id="ngg-toggle-rotate"
+        type="button"
+        class="border border-[color:var(--color-magi-green)]/40 bg-[color:var(--color-panel)] px-3 py-1 font-mono text-[0.65rem] tracking-[0.2em] text-[color:var(--color-magi-green)] uppercase transition-colors hover:bg-[color:var(--color-panel-2)] sm:text-xs"
+        data-testid="ngg-toggle-rotate"
+        aria-pressed="true"
+      >
+        <span data-rotate-label>rotating</span>
+      </button>
+      <button
+        id="ngg-clear-selection"
+        type="button"
+        class="border border-[color:var(--color-text-dim)]/30 bg-[color:var(--color-panel)] px-3 py-1 font-mono text-[0.65rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase transition-colors hover:bg-[color:var(--color-panel-2)] hover:text-[color:var(--color-text)] sm:text-xs"
+        data-testid="ngg-clear-selection"
+      >
+        clear
+      </button>
+    </div>
+    <p
+      class="hidden font-mono text-[0.6rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase sm:block sm:text-xs"
+    >
+      drag &middot; pinch / wheel to zoom &middot; tap nodes for readout
+    </p>
+  </div>
+  <p
+    class="mt-2 text-center font-mono text-[0.55rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase sm:hidden"
+  >
+    drag &middot; pinch &middot; tap nodes
+  </p>
+</section>
+
+<script>
+  import { initGraph3D } from "../scripts/graph3d";
+  import { wordword4numbers } from "../graph";
+  import { isAccount } from "../graph/index";
+  import type { GraphNode } from "../graph/types";
+
+  function bootstrap() {
+    const root = document.getElementById(
+      "ngg-graph-root",
+    ) as HTMLElement | null;
+    const canvas = document.getElementById(
+      "ngg-graph-canvas",
+    ) as HTMLCanvasElement | null;
+    const panelEl = document.getElementById(
+      "ngg-selected",
+    ) as HTMLElement | null;
+    if (!root || !canvas || !panelEl) return;
+    const panel: HTMLElement = panelEl;
+
+    const titleEl = panel.querySelector('[data-testid="ngg-selected-title"]');
+    const kindEl = panel.querySelector('[data-testid="ngg-selected-kind"]');
+    const metaEl = panel.querySelector('[data-testid="ngg-selected-meta"]');
+    const notesEl = panel.querySelector('[data-testid="ngg-selected-notes"]');
+
+    function fmt(n: number | null): string {
+      if (n === null || n === undefined) return "n/a";
+      return n.toLocaleString();
+    }
+
+    function renderSelected(node: GraphNode | null) {
+      if (!node) {
+        panel.classList.add("hidden");
+        panel.dataset.empty = "true";
+        return;
+      }
+      panel.classList.remove("hidden");
+      panel.dataset.empty = "false";
+      if (kindEl)
+        kindEl.textContent = isAccount(node)
+          ? `account ${node.id} ${node.cluster.replace(/_/g, " ")}`
+          : `community ${node.id}`;
+      if (titleEl) {
+        titleEl.textContent = isAccount(node) ? node.username : node.name;
+      }
+      if (metaEl) {
+        metaEl.innerHTML = "";
+        if (isAccount(node)) {
+          const rows: [string, string][] = [
+            ["pattern", node.pattern],
+            ["created", node.created],
+            ["karma", fmt(node.karma)],
+            [
+              "link / comment",
+              `${fmt(node.linkKarma)} / ${fmt(node.commentKarma)}`,
+            ],
+            ["language", node.language],
+            ["peak utc", node.peakUtc],
+            [
+              "removal",
+              node.removalRatePct === null ? "n/a" : `${node.removalRatePct}%`,
+            ],
+            ["mod", node.isMod ? "yes" : "no"],
+          ];
+          for (const [k, v] of rows) {
+            const dt = document.createElement("dt");
+            dt.className = "text-[color:var(--color-text-dim)] uppercase";
+            dt.textContent = k;
+            const dd = document.createElement("dd");
+            dd.className = "text-[color:var(--color-text)]";
+            dd.textContent = v;
+            metaEl.appendChild(dt);
+            metaEl.appendChild(dd);
+          }
+        } else {
+          const rows: [string, string][] = [
+            ["subscribers", fmt(node.subscribers)],
+          ];
+          for (const [k, v] of rows) {
+            const dt = document.createElement("dt");
+            dt.className = "text-[color:var(--color-text-dim)] uppercase";
+            dt.textContent = k;
+            const dd = document.createElement("dd");
+            dd.className = "text-[color:var(--color-text)]";
+            dd.textContent = v;
+            metaEl.appendChild(dt);
+            metaEl.appendChild(dd);
+          }
+        }
+      }
+      if (notesEl) notesEl.textContent = node.notes;
+    }
+
+    const handle = initGraph3D({
+      root,
+      canvas,
+      onSelect: renderSelected,
+    });
+
+    // Sanity: surface counts for tests via dataset.
+    root.dataset.expectedNodes = String(wordword4numbers.nodes.length);
+    root.dataset.expectedEdges = String(wordword4numbers.edges.length);
+
+    // Wire pause/play toggle.
+    const toggleBtn = document.getElementById("ngg-toggle-rotate");
+    const rotateLabel = toggleBtn?.querySelector("[data-rotate-label]");
+    const updateToggle = () => {
+      if (!toggleBtn || !rotateLabel) return;
+      toggleBtn.setAttribute(
+        "aria-pressed",
+        handle.autoRotate ? "true" : "false",
+      );
+      rotateLabel.textContent = handle.autoRotate ? "rotating" : "paused";
+    };
+    toggleBtn?.addEventListener("click", () => {
+      handle.setAutoRotate(!handle.autoRotate);
+      updateToggle();
+    });
+    updateToggle();
+
+    // Wire clear-selection.
+    const clearBtn = document.getElementById("ngg-clear-selection");
+    clearBtn?.addEventListener("click", () => {
+      handle.selectNodeById(null);
+    });
+  }
+
+  if (
+    document.readyState === "complete" ||
+    document.readyState === "interactive"
+  ) {
+    bootstrap();
+  } else {
+    document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
+  }
+</script>

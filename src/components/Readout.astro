@@ -1,0 +1,207 @@
+---
+import { CLUSTER_COLORS, isAccount, wordword4numbers } from "../graph";
+import type { Cluster } from "../graph/types";
+
+interface ClusterDisplay {
+  id: Cluster;
+  title: string;
+  members: string;
+  description: string;
+}
+
+const clusterDisplays: ClusterDisplay[] = [
+  {
+    id: "CL2_late_night_pair",
+    title: "CL2 --- Late-night US pair",
+    members: "A7 + A8",
+    description:
+      "Same-minute activity in evangelion subs on 2026-03-22. Overlapping peak hours (04:00-09:00 UTC). Strongest sync signal in the dataset.",
+  },
+  {
+    id: "CL1b_activity_compression",
+    title: "CL1b --- Activity compression",
+    members: "A1",
+    description:
+      "Profile not hidden. 82 events crammed into a 2-day window on an 11-month-old account. Either dormant burst or recently activated.",
+  },
+  {
+    id: "CL1_hidden_profiles",
+    title: "CL1 --- Privacy-conscious",
+    members: "A3 + A4",
+    description:
+      "Two accounts using Reddit's 'hide posts from profile' setting. Created 7 days apart, both underscore-format. Standard feature, but coincidence noted.",
+  },
+  {
+    id: "CL4_normal_users",
+    title: "CL4 --- Normal users",
+    members: "A2, A5, A6",
+    description:
+      "Consistent personas. A2 = Spanish anime fan with rule-violation pattern. A5 = Indian anime fan, no flags. A6 = US poweruser (468K karma).",
+  },
+];
+
+const anomalies = [
+  "A3+A4 hidden profiles 7 days apart, both underscore-format.",
+  "A1 activity compression: 82 events in 2 days on 11-month-old account.",
+  "A2 removal rate 31% --- 15/18 from primary community (Darkraiposting).",
+  "A7+A8 same-minute activity 2026-03-22 in overlapping subs.",
+  "A4 commented on TWO different A2 posts. Repeated cross-target interaction.",
+  "A8 trolls Dell, Xyzal, APlaceforMom corporate ad posts.",
+  "Auto-gen name format tracks Reddit's algorithm changes by account age.",
+];
+
+const openThreads = [
+  { done: true, text: "Verify A3/A4 empty profile APIs (privacy setting)." },
+  { done: false, text: "Monitor A1 for continued activity compression." },
+  {
+    done: false,
+    text: "Investigate Darkraiposting moderation re: A2 removals.",
+  },
+  { done: false, text: "Cross-reference A7/A8 outside captured windows." },
+  {
+    done: false,
+    text: "Check SeaworthinessNew7587 (cross-thread appearances).",
+  },
+  {
+    done: false,
+    text: "Quantify auto-gen density baseline across other subs.",
+  },
+];
+
+const accountsByCluster = new Map<Cluster, string[]>();
+for (const node of wordword4numbers.nodes) {
+  if (!isAccount(node)) continue;
+  const list = accountsByCluster.get(node.cluster) ?? [];
+  list.push(`${node.id} ${node.username}`);
+  accountsByCluster.set(node.cluster, list);
+}
+---
+
+<section
+  class="mx-auto mt-8 max-w-6xl px-4 pb-12 sm:mt-12 sm:px-8"
+  data-testid="ngg-readout"
+>
+  <h2
+    class="ngg-bracket-red font-mono text-base font-bold tracking-[0.25em] text-[color:var(--color-text)] uppercase sm:text-lg"
+  >
+    Investigation readout
+  </h2>
+
+  <div class="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-2">
+    {
+      clusterDisplays.map((c) => (
+        <article
+          class="border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel)] p-4 transition-colors hover:border-[color:var(--color-text-dim)]/40"
+          data-testid={`cluster-${c.id}`}
+        >
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-block h-2.5 w-2.5 rounded-full"
+              style={`background:${CLUSTER_COLORS[c.id]}`}
+              aria-hidden="true"
+            />
+            <h3 class="font-mono text-xs tracking-[0.18em] text-[color:var(--color-text)] uppercase sm:text-sm">
+              {c.title}
+            </h3>
+          </div>
+          <p class="mt-1 font-mono text-[0.7rem] tracking-wider text-[color:var(--color-magi-green)] uppercase">
+            members: {c.members}
+          </p>
+          <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+            {c.description}
+          </p>
+          <ul class="mt-3 flex flex-wrap gap-1.5 font-mono text-[0.65rem]">
+            {(accountsByCluster.get(c.id) ?? []).map((label) => (
+              <li class="border border-[color:var(--color-text-dim)]/30 px-1.5 py-0.5 text-[color:var(--color-text)]">
+                {label}
+              </li>
+            ))}
+          </ul>
+        </article>
+      ))
+    }
+  </div>
+
+  <div class="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-5">
+    <article
+      class="border border-[color:var(--color-eva-orange)]/30 bg-[color:var(--color-panel)] p-4"
+      data-testid="ngg-anomalies"
+    >
+      <h3
+        class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-eva-orange)] uppercase sm:text-sm"
+      >
+        Anomalies
+      </h3>
+      <ul class="mt-3 space-y-2 text-sm leading-snug">
+        {
+          anomalies.map((a) => (
+            <li class="flex gap-2">
+              <span
+                class="mt-1 h-1.5 w-1.5 shrink-0 bg-[color:var(--color-eva-orange)]"
+                aria-hidden="true"
+              />
+              <span class="text-[color:var(--color-text-dim)]">{a}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </article>
+
+    <article
+      class="border border-[color:var(--color-magi-green)]/30 bg-[color:var(--color-panel)] p-4"
+      data-testid="ngg-open-threads"
+    >
+      <h3
+        class="ngg-bracket-green font-mono text-xs tracking-[0.2em] text-[color:var(--color-magi-green)] uppercase sm:text-sm"
+      >
+        Open threads
+      </h3>
+      <ul class="mt-3 space-y-2 text-sm leading-snug">
+        {
+          openThreads.map((t) => (
+            <li class="flex gap-2">
+              <span
+                class:list={[
+                  "mt-0.5 inline-block w-3 shrink-0 font-mono",
+                  t.done
+                    ? "text-[color:var(--color-magi-green)]"
+                    : "text-[color:var(--color-nerv-red)]",
+                ]}
+                aria-hidden="true"
+              >
+                {t.done ? "[x]" : "[ ]"}
+              </span>
+              <span
+                class:list={[
+                  t.done
+                    ? "text-[color:var(--color-text-dim)] line-through"
+                    : "text-[color:var(--color-text)]",
+                ]}
+              >
+                {t.text}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </article>
+  </div>
+
+  <footer
+    class="mt-10 border-t border-[color:var(--color-text-dim)]/15 pt-5 font-mono text-[0.7rem] tracking-wider text-[color:var(--color-text-dim)] uppercase sm:text-xs"
+    data-testid="ngg-footer"
+  >
+    <p>
+      source &middot; <span class="text-[color:var(--color-magi-green)]"
+        >{wordword4numbers.source}</span
+      >
+    </p>
+    <p class="mt-1">
+      visualization &middot; three.js webgl &middot; force-directed 3d layout
+      &middot; deterministic seed
+    </p>
+    <p class="mt-1">
+      no exploitation &middot; no contact with targets &middot; public data only
+    </p>
+  </footer>
+</section>
