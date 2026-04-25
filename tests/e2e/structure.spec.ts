@@ -2,65 +2,78 @@ import { expect, test } from "@playwright/test";
 import { waitForGraphState } from "./_helpers";
 
 test.describe("graph structure visible in the DOM", () => {
-  test("legend shows clusters and edge kinds", async ({ page }) => {
+  test("legend shows node kinds and edge kinds", async ({ page }) => {
     await page.goto("/");
     await waitForGraphState(page);
     const legend = page.locator('[data-testid="ngg-legend"]');
     await expect(legend).toBeVisible();
-    await expect(legend).toContainText(/Late-night pair/i);
-    await expect(legend).toContainText(/Activity compression/i);
-    await expect(legend).toContainText(/Hidden profiles/i);
-    await expect(legend).toContainText(/Normal users/i);
-    await expect(legend).toContainText(/Temporal proximity/i);
-    await expect(legend).toContainText(/Direct comment/i);
+    await expect(legend).toContainText(/Characters/i);
+    await expect(legend).toContainText(/Angels/i);
+    await expect(legend).toContainText(/Magi/i);
+    await expect(legend).toContainText(/Magi link/i);
+    await expect(legend).toContainText(/Angel sequence/i);
   });
 
-  test("readout has all four cluster cards", async ({ page }) => {
+  test("readout has the three top-level sections", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator('[data-testid="cluster-CL2_late_night_pair"]'),
+      page.locator('[data-testid="ngg-section-characters"]'),
     ).toBeVisible();
     await expect(
-      page.locator('[data-testid="cluster-CL1b_activity_compression"]'),
+      page.locator('[data-testid="ngg-section-angels"]'),
     ).toBeVisible();
     await expect(
-      page.locator('[data-testid="cluster-CL1_hidden_profiles"]'),
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-testid="cluster-CL4_normal_users"]'),
+      page.locator('[data-testid="ngg-section-magi"]'),
     ).toBeVisible();
   });
 
-  test("CL2 card lists A7 + A8 as members", async ({ page }) => {
-    await page.goto("/");
-    const cl2 = page.locator('[data-testid="cluster-CL2_late_night_pair"]');
-    await expect(cl2).toContainText(/A7/);
-    await expect(cl2).toContainText(/A8/);
-    await expect(cl2).toContainText(/Local-Combination-46/);
-    await expect(cl2).toContainText(/Vast-Walk-5938/);
-  });
-
-  test("anomalies and open threads sections are populated", async ({
+  test("characters section lists the eight expected pilots/cast", async ({
     page,
   }) => {
     await page.goto("/");
-    const anomalies = page.locator('[data-testid="ngg-anomalies"]');
-    await expect(anomalies).toBeVisible();
-    const anomalyItems = anomalies.locator("li");
-    expect(await anomalyItems.count()).toBeGreaterThanOrEqual(5);
-
-    const openThreads = page.locator('[data-testid="ngg-open-threads"]');
-    await expect(openThreads).toBeVisible();
-    const threadItems = openThreads.locator("li");
-    expect(await threadItems.count()).toBeGreaterThanOrEqual(5);
+    const section = page.locator('[data-testid="ngg-section-characters"]');
+    for (const id of [
+      "char_shinji",
+      "char_asuka",
+      "char_rei",
+      "char_misato",
+      "char_kaworu",
+      "char_gendo",
+      "char_ritsuko",
+      "char_mari",
+    ]) {
+      await expect(
+        section.locator(`[data-testid="character-${id}"]`),
+      ).toBeVisible();
+    }
   });
 
-  test("source attribution links the GRAPH.md path", async ({ page }) => {
+  test("angels section lists all 18 in canonical order", async ({ page }) => {
+    await page.goto("/");
+    const section = page.locator('[data-testid="ngg-section-angels"]');
+    const items = section.locator("li");
+    await expect(items).toHaveCount(18);
+    for (let i = 1; i <= 18; i++) {
+      await expect(
+        section.locator(`[data-testid="angel-${i}"]`),
+      ).toBeVisible();
+    }
+  });
+
+  test("magi section lists three nodes", async ({ page }) => {
+    await page.goto("/");
+    const section = page.locator('[data-testid="ngg-section-magi"]');
+    const items = section.locator("li");
+    await expect(items).toHaveCount(3);
+    await expect(section).toContainText(/Casper/);
+    await expect(section).toContainText(/Melchior/);
+    await expect(section).toContainText(/Balthasar/);
+  });
+
+  test("source attribution names the show", async ({ page }) => {
     await page.goto("/");
     const footer = page.locator('[data-testid="ngg-footer"]');
-    await expect(footer).toContainText(
-      /funny3\/investigations\/wordword4numbers\/GRAPH\.md/,
-    );
+    await expect(footer).toContainText(/Neon Genesis Evangelion/);
   });
 
   test("selected panel starts hidden", async ({ page }) => {

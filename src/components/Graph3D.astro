@@ -1,18 +1,34 @@
 ---
-import { CLUSTER_COLORS, EDGE_COLORS } from "../graph";
+import {
+  ANGEL_UNIFORM_COLOR,
+  EDGE_COLORS,
+  MAGI_UNIFORM_COLOR,
+} from "../graph";
+import { palette } from "../theme/palette";
 
-const clusterLegend = [
-  { id: "CL2_late_night_pair", label: "Late-night pair (A7+A8)" },
-  { id: "CL1b_activity_compression", label: "Activity compression (A1)" },
-  { id: "CL1_hidden_profiles", label: "Hidden profiles (A3, A4)" },
-  { id: "CL4_normal_users", label: "Normal users (A2, A5, A6)" },
+// Characters are individually colored; the legend uses Asuka's primary as
+// the swatch sample because the show's marketing has trained the eye on it.
+const nodeLegend = [
+  {
+    id: "character",
+    label: "Characters (per palette)",
+    color: palette.asuka.primary,
+  },
+  {
+    id: "angel",
+    label: "Angels (1-18)",
+    color: ANGEL_UNIFORM_COLOR,
+  },
+  {
+    id: "magi",
+    label: "Magi (3-in-1)",
+    color: MAGI_UNIFORM_COLOR,
+  },
 ] as const;
 
 const edgeLegend = [
-  { id: "temporal_proximity", label: "Temporal proximity" },
-  { id: "comments_on_post", label: "Direct comment" },
-  { id: "comments_in", label: "Comments in" },
-  { id: "posts_in", label: "Posts in" },
+  { id: "magi_link", label: "Magi link" },
+  { id: "angel_sequence", label: "Angel sequence" },
 ] as const;
 ---
 
@@ -30,7 +46,7 @@ const edgeLegend = [
       class="block"
       data-testid="ngg-canvas"
       id="ngg-graph-canvas"
-      aria-label="3D graph of accounts and communities"></canvas>
+      aria-label="3D graph of characters, angels, and the Magi"></canvas>
 
     <div
       class="ngg-loading pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-500"
@@ -58,7 +74,7 @@ const edgeLegend = [
       </p>
     </div>
 
-    <!-- Cluster + edge legend (top-left overlay). -->
+    <!-- Node + edge legend (top-left overlay). -->
     <aside
       class="pointer-events-none absolute top-2 left-2 max-w-[55%] sm:top-4 sm:left-4 sm:max-w-xs"
       data-testid="ngg-legend"
@@ -69,15 +85,15 @@ const edgeLegend = [
         <p
           class="font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase sm:text-[0.65rem]"
         >
-          Clusters
+          Nodes
         </p>
         <ul class="mt-1 space-y-0.5 text-[0.7rem] sm:text-xs">
           {
-            clusterLegend.map((c) => (
+            nodeLegend.map((c) => (
               <li class="flex items-center gap-2">
                 <span
                   class="inline-block h-2.5 w-2.5 rounded-full"
-                  style={`background:${CLUSTER_COLORS[c.id]}`}
+                  style={`background:${c.color}`}
                   aria-hidden="true"
                 />
                 <span class="leading-tight">{c.label}</span>
@@ -177,8 +193,7 @@ const edgeLegend = [
 
 <script>
   import { initGraph3D } from "../scripts/graph3d";
-  import { wordword4numbers } from "../graph";
-  import { isAccount } from "../graph/index";
+  import { evangelion, isAngel, isCharacter, isMagi } from "../graph";
   import type { GraphNode } from "../graph/types";
 
   function bootstrap() {
@@ -199,11 +214,6 @@ const edgeLegend = [
     const metaEl = panel.querySelector('[data-testid="ngg-selected-meta"]');
     const notesEl = panel.querySelector('[data-testid="ngg-selected-notes"]');
 
-    function fmt(n: number | null): string {
-      if (n === null || n === undefined) return "n/a";
-      return n.toLocaleString();
-    }
-
     function renderSelected(node: GraphNode | null) {
       if (!node) {
         panel.classList.add("hidden");
@@ -212,56 +222,45 @@ const edgeLegend = [
       }
       panel.classList.remove("hidden");
       panel.dataset.empty = "false";
-      if (kindEl)
-        kindEl.textContent = isAccount(node)
-          ? `account ${node.id} ${node.cluster.replace(/_/g, " ")}`
-          : `community ${node.id}`;
+      if (kindEl) {
+        if (isCharacter(node)) {
+          kindEl.textContent = `character ${node.id}`;
+        } else if (isAngel(node)) {
+          kindEl.textContent = `angel #${node.number} ${node.spoilerLevel === "spoiler" ? "(spoiler)" : ""}`.trim();
+        } else if (isMagi(node)) {
+          kindEl.textContent = `magi ${node.id}`;
+        }
+      }
       if (titleEl) {
-        titleEl.textContent = isAccount(node) ? node.username : node.name;
+        if (isCharacter(node)) titleEl.textContent = node.displayName;
+        else if (isAngel(node))
+          titleEl.textContent = `#${node.number} --- ${node.name}`;
+        else if (isMagi(node)) titleEl.textContent = node.name;
       }
       if (metaEl) {
         metaEl.innerHTML = "";
-        if (isAccount(node)) {
-          const rows: [string, string][] = [
-            ["pattern", node.pattern],
-            ["created", node.created],
-            ["karma", fmt(node.karma)],
-            [
-              "link / comment",
-              `${fmt(node.linkKarma)} / ${fmt(node.commentKarma)}`,
-            ],
-            ["language", node.language],
-            ["peak utc", node.peakUtc],
-            [
-              "removal",
-              node.removalRatePct === null ? "n/a" : `${node.removalRatePct}%`,
-            ],
-            ["mod", node.isMod ? "yes" : "no"],
-          ];
-          for (const [k, v] of rows) {
-            const dt = document.createElement("dt");
-            dt.className = "text-[color:var(--color-text-dim)] uppercase";
-            dt.textContent = k;
-            const dd = document.createElement("dd");
-            dd.className = "text-[color:var(--color-text)]";
-            dd.textContent = v;
-            metaEl.appendChild(dt);
-            metaEl.appendChild(dd);
-          }
-        } else {
-          const rows: [string, string][] = [
-            ["subscribers", fmt(node.subscribers)],
-          ];
-          for (const [k, v] of rows) {
-            const dt = document.createElement("dt");
-            dt.className = "text-[color:var(--color-text-dim)] uppercase";
-            dt.textContent = k;
-            const dd = document.createElement("dd");
-            dd.className = "text-[color:var(--color-text)]";
-            dd.textContent = v;
-            metaEl.appendChild(dt);
-            metaEl.appendChild(dd);
-          }
+        const rows: [string, string][] = [];
+        if (isCharacter(node)) {
+          rows.push(["role", node.role]);
+          rows.push(["palette", node.paletteKey]);
+          rows.push(["spoiler", node.spoilerLevel]);
+        } else if (isAngel(node)) {
+          rows.push(["number", String(node.number)]);
+          rows.push(["intro", node.introducedEpisode]);
+          rows.push(["spoiler", node.spoilerLevel]);
+        } else if (isMagi(node)) {
+          rows.push(["personality", node.personality]);
+          rows.push(["palette", node.paletteKey]);
+        }
+        for (const [k, v] of rows) {
+          const dt = document.createElement("dt");
+          dt.className = "text-[color:var(--color-text-dim)] uppercase";
+          dt.textContent = k;
+          const dd = document.createElement("dd");
+          dd.className = "text-[color:var(--color-text)]";
+          dd.textContent = v;
+          metaEl.appendChild(dt);
+          metaEl.appendChild(dd);
         }
       }
       if (notesEl) notesEl.textContent = node.notes;
@@ -274,8 +273,8 @@ const edgeLegend = [
     });
 
     // Sanity: surface counts for tests via dataset.
-    root.dataset.expectedNodes = String(wordword4numbers.nodes.length);
-    root.dataset.expectedEdges = String(wordword4numbers.edges.length);
+    root.dataset.expectedNodes = String(evangelion.nodes.length);
+    root.dataset.expectedEdges = String(evangelion.edges.length);
 
     // Wire pause/play toggle.
     const toggleBtn = document.getElementById("ngg-toggle-rotate");

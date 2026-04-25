@@ -22,15 +22,17 @@ test.describe("smoke", () => {
     await expect(readout).toBeVisible();
   });
 
-  test("stat counters reflect the wordword4numbers graph (8/6/30+)", async ({
+  test("stat counters reflect the canon seed (8 chars / 18 angels / 3 magi)", async ({
     page,
   }) => {
     await page.goto("/");
-    await expect(page.getByTestId("stat-accounts")).toHaveText("8");
-    await expect(page.getByTestId("stat-communities")).toHaveText("6");
+    await expect(page.getByTestId("stat-characters")).toHaveText("8");
+    await expect(page.getByTestId("stat-angels")).toHaveText("18");
+    await expect(page.getByTestId("stat-magi")).toHaveText("3");
     const edgesText = await page.getByTestId("stat-edges").innerText();
     const edges = Number(edgesText);
-    expect(edges).toBeGreaterThanOrEqual(30);
+    // 3 magi triangle + 17 angel sequence = 20 edges in the basic seed.
+    expect(edges).toBeGreaterThanOrEqual(20);
   });
 
   test("graph host element reaches a terminal state", async ({ page }) => {

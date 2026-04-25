@@ -1,4 +1,4 @@
-import type { Edge, GraphNode } from "../graph/types";
+import type { Edge, EdgeKind, GraphNode } from "../graph/types";
 
 export interface Vec3 {
   x: number;
@@ -19,8 +19,10 @@ export interface LayoutOptions {
   repulsion?: number;
   /** Spring coefficient on edges (higher = edges contract harder). */
   springK?: number;
-  /** Rest length of edge springs. */
+  /** Default rest length of edge springs (overridden per-kind via springLengthByKind). */
   springLength?: number;
+  /** Optional per-edge-kind override of rest length. Lets the magi triad sit very tight. */
+  springLengthByKind?: Partial<Record<EdgeKind, number>>;
   /** Multiplicative velocity damping per step. */
   damping?: number;
   /** Cap per-step displacement to keep things stable. */
@@ -29,12 +31,15 @@ export interface LayoutOptions {
   seed?: number;
 }
 
-const DEFAULT_OPTS: Required<LayoutOptions> = {
+const DEFAULT_OPTS: Required<Omit<LayoutOptions, "springLengthByKind">> & {
+  springLengthByKind: Partial<Record<EdgeKind, number>>;
+} = {
   iterations: 500,
   initialSpread: 5,
   repulsion: 6.5,
   springK: 0.06,
   springLength: 2.6,
+  springLengthByKind: {},
   damping: 0.85,
   maxStep: 0.4,
   seed: 0xc0ffee,
@@ -81,16 +86,24 @@ export function forceLayout3D(
   }
 
   // De-duplicate edges for layout (we don't want multi-edges to over-attract).
+  // When duplicates exist with different kinds, keep the SHORTEST rest length
+  // so a tight kind (e.g. magi_link) wins over a loose one.
   const edgeKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
-  const seenEdges = new Set<string>();
-  const layoutEdges: { a: string; b: string }[] = [];
+  const layoutEdgeByKey = new Map<
+    string,
+    { a: string; b: string; restLength: number }
+  >();
   for (const e of edges) {
     if (e.from === e.to) continue;
     const key = edgeKey(e.from, e.to);
-    if (seenEdges.has(key)) continue;
-    seenEdges.add(key);
-    layoutEdges.push({ a: e.from, b: e.to });
+    const restLength =
+      opts.springLengthByKind[e.kind] ?? opts.springLength;
+    const existing = layoutEdgeByKey.get(key);
+    if (!existing || restLength < existing.restLength) {
+      layoutEdgeByKey.set(key, { a: e.from, b: e.to, restLength });
+    }
   }
+  const layoutEdges = [...layoutEdgeByKey.values()];
 
   for (let step = 0; step < opts.iterations; step++) {
     const forces = new Map<string, Vec3>();
@@ -131,7 +144,7 @@ export function forceLayout3D(
       const dy = pb.y - pa.y;
       const dz = pb.z - pa.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
-      const stretch = dist - opts.springLength;
+      const stretch = dist - e.restLength;
       const force = opts.springK * stretch;
       const fx = (dx / dist) * force;
       const fy = (dy / dist) * force;

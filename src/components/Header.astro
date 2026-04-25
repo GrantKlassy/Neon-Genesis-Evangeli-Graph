@@ -1,12 +1,13 @@
 ---
 interface Props {
-  investigationId: string;
-  accountCount: number;
-  communityCount: number;
+  graphId: string;
+  characterCount: number;
+  angelCount: number;
+  magiCount: number;
   edgeCount: number;
 }
 
-const { investigationId, accountCount, communityCount, edgeCount } =
+const { graphId, characterCount, angelCount, magiCount, edgeCount } =
   Astro.props;
 ---
 
@@ -19,7 +20,7 @@ const { investigationId, accountCount, communityCount, edgeCount } =
       class="font-mono text-[0.65rem] tracking-[0.3em] text-[color:var(--color-magi-green)] uppercase sm:text-xs"
     >
       <span class="text-[color:var(--color-nerv-red)]">NERV</span>
-      &middot; magi system &middot; investigation graph &middot; rev. 0
+      &middot; magi system &middot; canon graph &middot; rev. 0
     </p>
     <h1
       class="mt-2 font-bold tracking-tight text-[color:var(--color-nerv-red)] uppercase"
@@ -37,42 +38,52 @@ const { investigationId, accountCount, communityCount, edgeCount } =
       class="mt-3 max-w-2xl text-sm text-[color:var(--color-text-dim)] sm:text-base"
     >
       A three-dimensional reading of the
-      <code class="font-mono text-[color:var(--color-magi-green)]"
-        >{investigationId}</code
-      > investigation. Eight Reddit accounts, six communities, edges colored by relation
-      strength. Drag to rotate. Scroll to zoom. Tap a node for the readout.
+      <code class="font-mono text-[color:var(--color-magi-green)]">{graphId}</code> canon.
+      Eight characters, eighteen angels in canonical order, and the three Magi
+      bound as one. Drag to rotate. Scroll to zoom. Tap a node for the readout.
     </p>
     <dl
-      class="mt-4 grid grid-cols-3 gap-2 font-mono text-[0.65rem] tracking-wider uppercase sm:max-w-md sm:text-xs"
+      class="mt-4 grid grid-cols-2 gap-2 font-mono text-[0.65rem] tracking-wider uppercase sm:max-w-xl sm:grid-cols-4 sm:text-xs"
     >
       <div
         class="border border-[color:var(--color-nerv-red)]/30 bg-[color:var(--color-panel)] px-3 py-2"
       >
-        <dt class="text-[color:var(--color-text-dim)]">accounts</dt>
+        <dt class="text-[color:var(--color-text-dim)]">characters</dt>
         <dd
           class="mt-1 text-base text-[color:var(--color-nerv-red)] sm:text-lg"
-          data-testid="stat-accounts"
+          data-testid="stat-characters"
         >
-          {accountCount}
-        </dd>
-      </div>
-      <div
-        class="border border-[color:var(--color-magi-green)]/30 bg-[color:var(--color-panel)] px-3 py-2"
-      >
-        <dt class="text-[color:var(--color-text-dim)]">communities</dt>
-        <dd
-          class="mt-1 text-base text-[color:var(--color-magi-green)] sm:text-lg"
-          data-testid="stat-communities"
-        >
-          {communityCount}
+          {characterCount}
         </dd>
       </div>
       <div
         class="border border-[color:var(--color-eva-orange)]/30 bg-[color:var(--color-panel)] px-3 py-2"
       >
-        <dt class="text-[color:var(--color-text-dim)]">edges</dt>
+        <dt class="text-[color:var(--color-text-dim)]">angels</dt>
         <dd
           class="mt-1 text-base text-[color:var(--color-eva-orange)] sm:text-lg"
+          data-testid="stat-angels"
+        >
+          {angelCount}
+        </dd>
+      </div>
+      <div
+        class="border border-[color:var(--color-magi-green)]/30 bg-[color:var(--color-panel)] px-3 py-2"
+      >
+        <dt class="text-[color:var(--color-text-dim)]">magi</dt>
+        <dd
+          class="mt-1 text-base text-[color:var(--color-magi-green)] sm:text-lg"
+          data-testid="stat-magi"
+        >
+          {magiCount}
+        </dd>
+      </div>
+      <div
+        class="border border-[color:var(--color-edge-blue)]/30 bg-[color:var(--color-panel)] px-3 py-2"
+      >
+        <dt class="text-[color:var(--color-text-dim)]">edges</dt>
+        <dd
+          class="mt-1 text-base text-[color:var(--color-edge-blue)] sm:text-lg"
           data-testid="stat-edges"
         >
           {edgeCount}

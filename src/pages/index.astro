@@ -4,18 +4,20 @@ import Header from "../components/Header.astro";
 import Graph3D from "../components/Graph3D.astro";
 import Readout from "../components/Readout.astro";
 import PaletteShowcase from "../components/PaletteShowcase.astro";
-import { isAccount, isCommunity, wordword4numbers } from "../graph";
+import { evangelion, isAngel, isCharacter, isMagi } from "../graph";
 
-const accountCount = wordword4numbers.nodes.filter(isAccount).length;
-const communityCount = wordword4numbers.nodes.filter(isCommunity).length;
-const edgeCount = wordword4numbers.edges.length;
+const characterCount = evangelion.nodes.filter(isCharacter).length;
+const angelCount = evangelion.nodes.filter(isAngel).length;
+const magiCount = evangelion.nodes.filter(isMagi).length;
+const edgeCount = evangelion.edges.length;
 ---
 
 <Base title="Neon Genesis Evangeli-Graph">
   <Header
-    investigationId={wordword4numbers.id}
-    accountCount={accountCount}
-    communityCount={communityCount}
+    graphId={evangelion.id}
+    characterCount={characterCount}
+    angelCount={angelCount}
+    magiCount={magiCount}
     edgeCount={edgeCount}
   />
   <Graph3D />

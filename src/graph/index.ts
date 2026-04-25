@@ -1,59 +1,77 @@
 import type {
-  AccountNode,
-  Cluster,
-  CommunityNode,
+  AngelNode,
+  CharacterNode,
   Edge,
   EdgeKind,
+  EvangelionGraph,
   GraphNode,
-  InvestigationGraph,
+  MagiNode,
+  NodeKind,
+  SpoilerLevel,
 } from "./types";
+import { palette } from "../theme/palette";
 
 export type {
-  AccountNode,
-  Cluster,
-  CommunityNode,
+  AngelNode,
+  CharacterNode,
   Edge,
   EdgeKind,
+  EvangelionGraph,
   GraphNode,
-  InvestigationGraph,
+  MagiNode,
+  NodeKind,
+  SpoilerLevel,
 };
 
-export { wordword4numbers } from "./wordword4numbers";
+export { evangelion } from "./evangelion";
 
-export function isAccount(node: GraphNode): node is AccountNode {
-  return node.kind === "account";
+export function isCharacter(node: GraphNode): node is CharacterNode {
+  return node.kind === "character";
 }
 
-export function isCommunity(node: GraphNode): node is CommunityNode {
-  return node.kind === "community";
+export function isAngel(node: GraphNode): node is AngelNode {
+  return node.kind === "angel";
 }
 
-export function nodeIndex(graph: InvestigationGraph): Map<string, GraphNode> {
+export function isMagi(node: GraphNode): node is MagiNode {
+  return node.kind === "magi";
+}
+
+export function nodeIndex(graph: EvangelionGraph): Map<string, GraphNode> {
   return new Map(graph.nodes.map((n) => [n.id, n]));
 }
 
-/** Color tokens for cluster classification. NERV/Magi-inspired. */
-export const CLUSTER_COLORS: Record<Cluster, string> = {
-  CL1_hidden_profiles: "#8a2be2", // SEELE purple --- privacy/hidden
-  CL1b_activity_compression: "#ffae00", // EVA-01 yellow/orange --- anomaly
-  CL2_late_night_pair: "#ff2a3c", // NERV red --- highest concern (sync pair)
-  CL3_apr13_burst: "#ff8800", // burst orange
-  CL4_normal_users: "#5cf5b6", // Magi green --- normal
-  CL_unassigned: "#888888",
-};
+/**
+ * Uniform color for every Magi node --- the visual punchline of the
+ * "3-in-1" joke. Chosen to match the --color-magi-green token used in
+ * the rest of the chrome.
+ */
+export const MAGI_UNIFORM_COLOR = "#5cf5b6";
 
-/** Color tokens for edge kinds. */
+/**
+ * Uniform color for every Angel. AT-field crimson is the visual signature
+ * shared by every angel encounter; basic seed paints them all the same.
+ */
+export const ANGEL_UNIFORM_COLOR = "#ff003c";
+
+/** Per-edge-kind line colors. */
 export const EDGE_COLORS: Record<EdgeKind, string> = {
-  posts_in: "#3a8fff", // blue --- structural membership
-  comments_in: "#62b8ff", // light blue
-  comments_on_post: "#ff6c2a", // orange --- direct human interaction
-  temporal_proximity: "#ff2a3c", // red --- sync signal (most suspicious)
+  magi_link: "#5cf5b6", // matches the magi green
+  angel_sequence: "#ff6c2a", // warm orange chain
 };
 
-export const COMMUNITY_COLOR = "#c9c9c9";
+/**
+ * Recommended spring rest length per edge kind. Magi links are extremely
+ * short so the three nodes sit on top of each other ("3 in 1"). Angel
+ * sequence is moderate so the canonical chain reads as a curve.
+ */
+export const EDGE_SPRING_LENGTH: Record<EdgeKind, number> = {
+  magi_link: 0.5,
+  angel_sequence: 1.8,
+};
 
 /** Build adjacency: nodeId -> edges that touch it (either direction). */
-export function adjacency(graph: InvestigationGraph): Map<string, Edge[]> {
+export function adjacency(graph: EvangelionGraph): Map<string, Edge[]> {
   const adj = new Map<string, Edge[]>();
   for (const node of graph.nodes) {
     adj.set(node.id, []);
@@ -69,9 +87,12 @@ export function adjacency(graph: InvestigationGraph): Map<string, Edge[]> {
 
 /**
  * Validate graph integrity. Throws on first failure with a descriptive message.
- * Used by tests and (optionally) by the renderer to fail fast.
+ *
+ * Note: orphan-node check is intentionally NOT enforced. Characters do not
+ * yet carry edges in the basic seed, and that is deliberate --- relationship
+ * layers (pilot/EVA, spoiler-gated angel/character mappings, ...) come later.
  */
-export function validateGraph(graph: InvestigationGraph): void {
+export function validateGraph(graph: EvangelionGraph): void {
   if (!graph.id || !graph.title) {
     throw new Error("Graph missing id or title");
   }
@@ -98,36 +119,39 @@ export function validateGraph(graph: InvestigationGraph): void {
     if (edge.from === edge.to) {
       throw new Error(`Self-loop edge on ${edge.from}`);
     }
-    if (edge.kind === "temporal_proximity" && edge.deltaMinutes === null) {
+  }
+
+  // Angels must have unique sequential numbers 1..N (canonical NGE order).
+  const angelNumbers = graph.nodes
+    .filter(isAngel)
+    .map((a) => a.number)
+    .sort((a, b) => a - b);
+  for (let i = 0; i < angelNumbers.length; i++) {
+    if (angelNumbers[i] !== i + 1) {
       throw new Error(
-        `temporal_proximity edge ${edge.from} -> ${edge.to} missing deltaMinutes`,
+        `Angel numbers must be a contiguous 1..N sequence; got ${angelNumbers.join(",")}`,
       );
     }
   }
-
-  // Every node should be touched by at least one edge.
-  const adj = adjacency(graph);
-  for (const node of graph.nodes) {
-    const edges = adj.get(node.id);
-    if (!edges || edges.length === 0) {
-      throw new Error(`Orphan node has no edges: ${node.id} (${node.kind})`);
-    }
-  }
 }
 
-/** Pick a node radius based on log-karma for accounts; fixed for communities. */
+/** Pick a node radius. Characters are largest, magi smallest (so the triad reads tight). */
 export function nodeRadius(node: GraphNode): number {
-  if (node.kind === "community") {
-    return 0.55;
-  }
-  // log10(karma+10) / 6 maps roughly: 100 -> 0.34, 1k -> 0.50, 10k -> 0.67, 100k -> 0.83, 500k -> ~0.95
-  const lk = Math.log10(Math.max(10, node.karma) + 10);
-  return Math.min(1.0, Math.max(0.25, lk / 6));
+  if (isCharacter(node)) return 0.6;
+  if (isAngel(node)) return 0.55;
+  return 0.42; // magi
 }
 
+/**
+ * Resolve a node's render color. Characters use their palette primary;
+ * angels share the AT-field uniform; magi share the green uniform (3-in-1 joke).
+ */
 export function colorFor(node: GraphNode): string {
-  if (node.kind === "community") {
-    return COMMUNITY_COLOR;
-  }
-  return CLUSTER_COLORS[node.cluster];
+  if (isMagi(node)) return MAGI_UNIFORM_COLOR;
+  if (isAngel(node)) return ANGEL_UNIFORM_COLOR;
+  // character: look up palette by paletteKey
+  const ent = (palette as Record<string, { primary: string } | undefined>)[
+    node.paletteKey
+  ];
+  return ent?.primary ?? "#cccccc";
 }

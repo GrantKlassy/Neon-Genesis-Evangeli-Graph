@@ -1,68 +1,71 @@
 /**
  * Graph schema. Source of truth for types used across data, rendering, and tests.
+ *
+ * Three top-level node kinds:
+ *   - character: cast members (Shinji, Asuka, Rei, Misato, ...).
+ *   - angel: the 18 canonical angels of NGE, numbered 1-18.
+ *   - magi: the three Magi system nodes (Casper-3, Melchior-1, Balthasar-2).
+ *
+ * Spoiler gate: some entities (and edges between them) reveal late-show
+ * plot points. Anything tagged `spoilerLevel: "spoiler"` (or, in the
+ * future, edges of that level) should be hidden by default once a
+ * "no-spoilers" mode is wired up. The first basic seed simply omits the
+ * spoiler-revealing edges (e.g. char_kaworu <-> angel_17_tabris) entirely
+ * so the bare graph cannot give that away.
  */
 
-export type NodeKind = "account" | "community";
+export type NodeKind = "character" | "angel" | "magi";
 
-export type Cluster =
-  | "CL1_hidden_profiles"
-  | "CL1b_activity_compression"
-  | "CL2_late_night_pair"
-  | "CL3_apr13_burst"
-  | "CL4_normal_users"
-  | "CL_unassigned";
+export type SpoilerLevel = "open" | "spoiler";
 
-export type EdgeKind =
-  | "posts_in"
-  | "comments_in"
-  | "comments_on_post"
-  | "temporal_proximity";
+export type EdgeKind = "magi_link" | "angel_sequence";
 
-export type UsernamePattern =
-  | "Word_Word_NNNN"
-  | "WordWordNNNN"
-  | "Word-Word-NNNN"
-  | "Word-Word-NN";
-
-export interface AccountNode {
+export interface CharacterNode {
   id: string;
-  kind: "account";
-  username: string;
-  pattern: UsernamePattern;
-  created: string;
-  karma: number;
-  linkKarma: number;
-  commentKarma: number;
-  isMod: boolean;
-  language: "English" | "Spanish";
-  peakUtc: string;
-  removalRatePct: number | null;
-  cluster: Cluster;
+  kind: "character";
+  displayName: string;
+  /** Key into src/theme/palette for primary color. */
+  paletteKey: string;
+  role: string;
+  spoilerLevel: SpoilerLevel;
   notes: string;
 }
 
-export interface CommunityNode {
+export interface AngelNode {
   id: string;
-  kind: "community";
+  kind: "angel";
+  /** Canonical angel number 1-18. Fixed ordering across the show. */
+  number: number;
+  /** Canonical angel name (Sachiel, Ramiel, Tabris, ...). */
   name: string;
-  subscribers: number | null;
+  spoilerLevel: SpoilerLevel;
+  /** Episode of first appearance, freeform ("Ep. 5", "Backstory", ...). */
+  introducedEpisode: string;
   notes: string;
 }
 
-export type GraphNode = AccountNode | CommunityNode;
+export interface MagiNode {
+  id: string;
+  kind: "magi";
+  /** Display name with hyphenated index ("Casper-3", "Melchior-1"). */
+  name: string;
+  /** Personality fragment carried by this node ("Woman", "Scientist", "Mother"). */
+  personality: string;
+  /** Key into src/theme/palette (kept for lore tooltips; renderer paints all 3 the same). */
+  paletteKey: string;
+  notes: string;
+}
+
+export type GraphNode = CharacterNode | AngelNode | MagiNode;
 
 export interface Edge {
   from: string;
   to: string;
   kind: EdgeKind;
-  /** For temporal_proximity: minute delta between two events. Otherwise null. */
-  deltaMinutes: number | null;
-  /** ISO date or freeform timestamp string. */
-  timestamp: string | null;
   notes: string;
 }
 
-export interface InvestigationGraph {
+export interface EvangelionGraph {
   id: string;
   title: string;
   source: string;

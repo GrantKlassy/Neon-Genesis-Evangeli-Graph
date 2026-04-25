@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { forceLayout3D } from "../../src/lib/forceLayout";
-import { wordword4numbers } from "../../src/graph";
+import { EDGE_SPRING_LENGTH, evangelion } from "../../src/graph";
 import type { Edge, GraphNode } from "../../src/graph/types";
 
 describe("forceLayout3D", () => {
   it("places every node and produces finite coordinates", () => {
     const { positions } = forceLayout3D(
-      wordword4numbers.nodes,
-      wordword4numbers.edges,
+      evangelion.nodes,
+      evangelion.edges,
       { iterations: 80 },
     );
-    expect(positions.size).toBe(wordword4numbers.nodes.length);
+    expect(positions.size).toBe(evangelion.nodes.length);
     for (const [id, p] of positions) {
       expect(Number.isFinite(p.x), `${id}.x finite`).toBe(true);
       expect(Number.isFinite(p.y), `${id}.y finite`).toBe(true);
@@ -19,11 +19,11 @@ describe("forceLayout3D", () => {
   });
 
   it("is deterministic for the same seed", () => {
-    const a = forceLayout3D(wordword4numbers.nodes, wordword4numbers.edges, {
+    const a = forceLayout3D(evangelion.nodes, evangelion.edges, {
       iterations: 60,
       seed: 42,
     });
-    const b = forceLayout3D(wordword4numbers.nodes, wordword4numbers.edges, {
+    const b = forceLayout3D(evangelion.nodes, evangelion.edges, {
       iterations: 60,
       seed: 42,
     });
@@ -33,11 +33,11 @@ describe("forceLayout3D", () => {
   });
 
   it("differs for different seeds", () => {
-    const a = forceLayout3D(wordword4numbers.nodes, wordword4numbers.edges, {
+    const a = forceLayout3D(evangelion.nodes, evangelion.edges, {
       iterations: 60,
       seed: 1,
     });
-    const b = forceLayout3D(wordword4numbers.nodes, wordword4numbers.edges, {
+    const b = forceLayout3D(evangelion.nodes, evangelion.edges, {
       iterations: 60,
       seed: 2,
     });
@@ -53,8 +53,8 @@ describe("forceLayout3D", () => {
 
   it("centers on origin (centroid near zero)", () => {
     const { positions } = forceLayout3D(
-      wordword4numbers.nodes,
-      wordword4numbers.edges,
+      evangelion.nodes,
+      evangelion.edges,
       { iterations: 200 },
     );
     let cx = 0,
@@ -76,9 +76,9 @@ describe("forceLayout3D", () => {
 
   it("keeps connected nodes closer than disconnected ones (on average)", () => {
     const { positions } = forceLayout3D(
-      wordword4numbers.nodes,
-      wordword4numbers.edges,
-      { iterations: 400 },
+      evangelion.nodes,
+      evangelion.edges,
+      { iterations: 400, springLengthByKind: EDGE_SPRING_LENGTH },
     );
     const dist = (a: string, b: string) => {
       const pa = positions.get(a)!;
@@ -88,11 +88,11 @@ describe("forceLayout3D", () => {
       );
     };
     const edgePairs = new Set<string>();
-    for (const e of wordword4numbers.edges) {
+    for (const e of evangelion.edges) {
       const k = e.from < e.to ? `${e.from}|${e.to}` : `${e.to}|${e.from}`;
       edgePairs.add(k);
     }
-    const ids = wordword4numbers.nodes.map((n) => n.id);
+    const ids = evangelion.nodes.map((n) => n.id);
     let connSum = 0,
       connN = 0;
     let discSum = 0,
@@ -119,14 +119,55 @@ describe("forceLayout3D", () => {
     expect(connectedAvg).toBeLessThan(disconnectedAvg);
   });
 
+  it("places the three Magi much closer to each other than to non-magi nodes", () => {
+    const { positions } = forceLayout3D(
+      evangelion.nodes,
+      evangelion.edges,
+      { iterations: 600, springLengthByKind: EDGE_SPRING_LENGTH },
+    );
+    const dist = (a: string, b: string) => {
+      const pa = positions.get(a)!;
+      const pb = positions.get(b)!;
+      return Math.sqrt(
+        (pa.x - pb.x) ** 2 + (pa.y - pb.y) ** 2 + (pa.z - pb.z) ** 2,
+      );
+    };
+    const magiIds = ["magi_casper", "magi_melchior", "magi_balthasar"];
+    let magiSum = 0,
+      magiN = 0;
+    for (let i = 0; i < magiIds.length; i++) {
+      for (let j = i + 1; j < magiIds.length; j++) {
+        magiSum += dist(magiIds[i]!, magiIds[j]!);
+        magiN += 1;
+      }
+    }
+    const magiAvg = magiSum / magiN;
+
+    const otherIds = evangelion.nodes
+      .filter((n) => n.kind !== "magi")
+      .map((n) => n.id);
+    let mixSum = 0,
+      mixN = 0;
+    for (const m of magiIds) {
+      for (const o of otherIds) {
+        mixSum += dist(m, o);
+        mixN += 1;
+      }
+    }
+    const mixAvg = mixSum / mixN;
+
+    // Magi triad should be dramatically tighter than magi-to-others.
+    expect(magiAvg).toBeLessThan(mixAvg / 2);
+  });
+
   it("does not collapse all nodes onto one point (repulsion is active)", () => {
     const { positions } = forceLayout3D(
-      wordword4numbers.nodes,
-      wordword4numbers.edges,
+      evangelion.nodes,
+      evangelion.edges,
       { iterations: 300 },
     );
     const all = [...positions.values()];
-    let minDist = Infinity;
+    let maxDist = 0;
     for (let i = 0; i < all.length; i++) {
       for (let j = i + 1; j < all.length; j++) {
         const d = Math.sqrt(
@@ -134,14 +175,16 @@ describe("forceLayout3D", () => {
             (all[i]!.y - all[j]!.y) ** 2 +
             (all[i]!.z - all[j]!.z) ** 2,
         );
-        if (d < minDist) minDist = d;
+        if (d > maxDist) maxDist = d;
       }
     }
-    expect(minDist).toBeGreaterThan(0.4);
+    // Without per-pair separation, layout would be a point. With repulsion
+    // the graph spans well over a unit, even with tightly-bound magi.
+    expect(maxDist).toBeGreaterThan(2);
   });
 
   it("handles the empty edge case gracefully", () => {
-    const nodes: GraphNode[] = wordword4numbers.nodes.slice(0, 3);
+    const nodes: GraphNode[] = evangelion.nodes.slice(0, 3);
     const edges: Edge[] = [];
     const { positions } = forceLayout3D(nodes, edges, { iterations: 50 });
     expect(positions.size).toBe(3);

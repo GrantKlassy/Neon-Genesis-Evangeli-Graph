@@ -61,24 +61,24 @@ test.describe("graph controls + programmatic API", () => {
       () =>
         (window as { __nggGraph?: { nodeIds: string[] } }).__nggGraph?.nodeIds,
     );
-    expect(ids).toContain("A7");
-    expect(ids).toContain("A8");
-    expect(ids).toContain("C1");
+    expect(ids).toContain("char_shinji");
+    expect(ids).toContain("angel_05_ramiel");
+    expect(ids).toContain("magi_casper");
 
     await page.evaluate(() => {
       const h = (
         window as { __nggGraph?: { selectNodeById: (id: string) => void } }
       ).__nggGraph;
-      h?.selectNodeById("A7");
+      h?.selectNodeById("char_shinji");
     });
 
     const panel = page.getByTestId("ngg-selected");
     await expect(panel).toHaveAttribute("data-empty", "false");
     await expect(page.getByTestId("ngg-selected-title")).toContainText(
-      /Local-Combination-46/,
+      /Shinji Ikari/,
     );
     await expect(page.getByTestId("ngg-selected-kind")).toContainText(
-      /late.night.pair/i,
+      /character/i,
     );
   });
 
@@ -92,9 +92,12 @@ test.describe("graph controls + programmatic API", () => {
       const h = (
         window as { __nggGraph?: { selectNodeById: (id: string) => void } }
       ).__nggGraph;
-      h?.selectNodeById("A7");
+      h?.selectNodeById("magi_casper");
     });
-    await expect(root).toHaveAttribute("data-highlighted-node", "A7");
+    await expect(root).toHaveAttribute(
+      "data-highlighted-node",
+      "magi_casper",
+    );
 
     await page.evaluate(() => {
       const h = (

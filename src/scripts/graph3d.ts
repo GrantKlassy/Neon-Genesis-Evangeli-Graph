@@ -1,14 +1,17 @@
 import * as THREE from "three";
 import {
-  CLUSTER_COLORS,
+  ANGEL_UNIFORM_COLOR,
   EDGE_COLORS,
-  COMMUNITY_COLOR,
+  EDGE_SPRING_LENGTH,
+  MAGI_UNIFORM_COLOR,
   adjacency,
   colorFor,
-  isAccount,
+  evangelion,
+  isAngel,
+  isCharacter,
+  isMagi,
   nodeRadius,
   validateGraph,
-  wordword4numbers,
 } from "../graph";
 import { forceLayout3D } from "../lib/forceLayout";
 import type { GraphNode } from "../graph/types";
@@ -100,7 +103,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   };
   window.__nggGraph = handle;
 
-  validateGraph(wordword4numbers);
+  validateGraph(evangelion);
 
   const webgl = detectWebGL();
   if (!webgl.ok) {
@@ -152,8 +155,30 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   camera.position.set(0, 0, 18);
   camera.lookAt(0, 0, 0);
 
-  // Layout the graph.
-  const layout = forceLayout3D(wordword4numbers.nodes, wordword4numbers.edges);
+  // Layout the graph. Magi-link rest length is tiny so the triad clusters tight.
+  const layout = forceLayout3D(evangelion.nodes, evangelion.edges, {
+    springLengthByKind: EDGE_SPRING_LENGTH,
+  });
+
+  // Normalize so the full graph fits a fixed bounding sphere from origin,
+  // independent of node count. Camera sits at z=18 with FOV 50 -> a radius
+  // around 7 keeps everything inside the frustum and away from the fog wall.
+  {
+    const TARGET_RADIUS = 7;
+    let maxR = 0;
+    for (const p of layout.positions.values()) {
+      const r = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+      if (r > maxR) maxR = r;
+    }
+    if (maxR > TARGET_RADIUS && maxR > 0) {
+      const k = TARGET_RADIUS / maxR;
+      for (const p of layout.positions.values()) {
+        p.x *= k;
+        p.y *= k;
+        p.z *= k;
+      }
+    }
+  }
 
   // Group everything that should rotate together.
   const sceneGroup = new THREE.Group();
@@ -166,7 +191,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   const materials: THREE.Material[] = [];
   const geometries: THREE.BufferGeometry[] = [];
 
-  for (const node of wordword4numbers.nodes) {
+  for (const node of evangelion.nodes) {
     const radius = nodeRadius(node);
     const segKey = `${radius.toFixed(2)}`;
     let geo = sphereGeoCache.get(segKey);
@@ -211,17 +236,12 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   // Build edges.
   const edgeLines: EdgeLineData[] = [];
   const edgesByNode = new Map<string, EdgeLineData[]>();
-  for (const edge of wordword4numbers.edges) {
+  for (const edge of evangelion.edges) {
     const a = layout.positions.get(edge.from);
     const b = layout.positions.get(edge.to);
     if (!a || !b) continue;
     const colorHex = EDGE_COLORS[edge.kind];
-    const opacity =
-      edge.kind === "temporal_proximity"
-        ? 0.95
-        : edge.kind === "comments_on_post"
-          ? 0.7
-          : 0.32;
+    const opacity = edge.kind === "magi_link" ? 0.95 : 0.5;
     const mat = new THREE.LineBasicMaterial({
       color: new THREE.Color(colorHex),
       transparent: true,
@@ -266,7 +286,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   }
 
   handle.nodeCount = nodeMeshes.length;
-  handle.edgeCount = wordword4numbers.edges.length;
+  handle.edgeCount = evangelion.edges.length;
   handle.nodeIds = nodeMeshes.map((m) => m.node.id);
 
   /**
@@ -512,15 +532,17 @@ export function initGraph3D(options: InitOptions): GraphHandle {
 
 /** Convenience: count adjacency for a node id (used in side panel). */
 export function neighborCount(nodeId: string): number {
-  const adj = adjacency(wordword4numbers);
+  const adj = adjacency(evangelion);
   return adj.get(nodeId)?.length ?? 0;
 }
 
 /** Re-export for the page UI. */
 export {
-  CLUSTER_COLORS,
+  ANGEL_UNIFORM_COLOR,
   EDGE_COLORS,
-  COMMUNITY_COLOR,
-  isAccount,
-  wordword4numbers,
+  MAGI_UNIFORM_COLOR,
+  evangelion,
+  isAngel,
+  isCharacter,
+  isMagi,
 };

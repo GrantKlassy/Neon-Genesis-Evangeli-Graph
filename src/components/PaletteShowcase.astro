@@ -52,8 +52,8 @@ const totalEntities = (Object.keys(palette) as EntityKey[]).length;
       > or import the typed map from
       <code class="font-mono text-[color:var(--color-magi-green)]"
         >src/theme/palette</code
-      >. The current graph still uses its own cluster tokens; future revs will
-      read from here.
+      >. Character nodes in the graph already pull their primary color from
+      this map by <code class="font-mono">paletteKey</code>.
     </p>
   </header>
 
