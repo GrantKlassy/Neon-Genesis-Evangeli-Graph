@@ -1,0 +1,114 @@
+version: "3"
+
+# Repo-local custom tasks (optional). Any Taskfile.local.yml in the repo root
+# is loaded under the `local:` namespace --- e.g. `task local:ship`. Invoke the
+# local `check` task (if defined) as part of the standard check fan-out.
+includes:
+  local:
+    taskfile: ./Taskfile.local.yml
+    optional: true
+
+tasks:
+  check:
+    desc: Run all standard repo checks
+    cmds:
+      - task: check:author
+      - task: check:readme
+      - task: check:license
+      - task: check:history
+      - task: check:last-updated
+      - task: check:env-hygiene
+      - task: check:gitignore-baseline
+      - task: check:no-emdash
+      - cmd: |
+          if [ -f Taskfile.local.yml ]; then
+            task local:check
+          fi
+        silent: true
+
+  check:author:
+    desc: Verify git identity is GrantKlassy
+    cmds:
+      - |
+        NAME=$(git config user.name)
+        if [ "$NAME" != "GrantKlassy" ]; then
+          echo "ERROR: git user.name is '$NAME' --- expected 'GrantKlassy'"
+          exit 1
+        fi
+        echo "OK: git user.name is GrantKlassy"
+
+  check:readme:
+    desc: Verify README.md exists
+    cmds:
+      - |
+        if [ ! -f README.md ]; then
+          echo "ERROR: README.md missing"
+          exit 1
+        fi
+        echo "OK: README.md exists"
+
+  check:license:
+    desc: Verify LICENSE.txt exists
+    cmds:
+      - |
+        if [ ! -f LICENSE.txt ]; then
+          echo "ERROR: LICENSE.txt missing"
+          exit 1
+        fi
+        echo "OK: LICENSE.txt exists"
+
+  check:history:
+    desc: Verify no Co-Authored-By in git history
+    cmds:
+      - |
+        COUNT=$(git log --all --grep="Co-Authored-By" --oneline | wc -l)
+        if [ "$COUNT" -gt 0 ]; then
+          echo "ERROR: $COUNT commits contain Co-Authored-By trailers"
+          git log --all --grep="Co-Authored-By" --oneline
+          exit 1
+        fi
+        echo "OK: no Co-Authored-By contamination"
+
+  check:last-updated:
+    desc: Verify README "Code last updated" badge matches the most recent substantive commit
+    cmds:
+      - ~/git/grantklassy/tools/update-last-updated --check .
+
+  check:env-hygiene:
+    desc: Verify .env hygiene (.env.example exists, .env is gitignored and not tracked)
+    cmds:
+      - ~/git/grantklassy/tools/rules/env_hygiene.sh .
+
+  check:gitignore-baseline:
+    desc: Verify .gitignore has baseline security-adjacent entries
+    cmds:
+      - ~/git/grantklassy/tools/rules/gitignore_baseline.sh .
+
+  check:no-emdash:
+    desc: Verify no U+2014 em dash or named/numeric mdash HTML entity in tracked files (AI-slop tell)
+    cmds:
+      - |
+        EMDASH_EXCLUDE=$(python3 ~/git/grantklassy/tools/lib/rules.py no-emdash-excludes "$(basename "$PWD")") \
+          ~/git/grantklassy/tools/rules/no_emdash.sh .
+
+  fix:emdash:
+    desc: Replace emdashes with '---' in staged files and re-stage (pre-commit flow)
+    cmds:
+      - |
+        EMDASH_SCOPE=staged FIX=1 \
+          EMDASH_EXCLUDE=$(python3 ~/git/grantklassy/tools/lib/rules.py no-emdash-excludes "$(basename "$PWD")") \
+          ~/git/grantklassy/tools/rules/no_emdash.sh .
+
+  fix:badge:
+    desc: Write the README "Code last updated" badge and stage it (pre-commit flow --- uses staged files to predict substantivity)
+    cmds:
+      - ~/git/grantklassy/tools/update-last-updated --pre-commit .
+      - |
+        if [ -f README.md ]; then
+          git add README.md
+        fi
+
+  dev:
+    desc: Run the repo-local dev task (defined in Taskfile.local.yml as `dev`)
+    cmds:
+      - task: local:dev

@@ -1,0 +1,6 @@
+# Baseline entries --- see tools/rules/gitignore_baseline.sh
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
