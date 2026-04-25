@@ -26,3 +26,9 @@ tasks:
     desc: Static build to dist/
     cmds:
       - pnpm run build
+
+  deploy:
+    desc: Build and deploy dist/ to Cloudflare Pages production
+    cmds:
+      - task: build
+      - pnpm dlx wrangler@3 pages deploy dist --project-name=neongenesisevangeligraph --branch=main

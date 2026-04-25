@@ -39,3 +39,8 @@ pre-push:
   jobs:
     - name: repo-standards
       run: task check
+    - name: deploy
+      run: |
+        if [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]; then
+          task local:deploy || echo "deploy failed --- push proceeding anyway"
+        fi
