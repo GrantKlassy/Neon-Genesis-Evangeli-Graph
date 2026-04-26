@@ -4,6 +4,7 @@ import {
   CONCEPT_UNIFORM_COLOR,
   EDGE_COLORS,
   EVA_UNIFORM_COLOR,
+  FAMILY_UNIFORM_COLOR,
   LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
   ORGANIZATION_UNIFORM_COLOR,
@@ -48,12 +49,18 @@ const nodeLegend = [
     label: "Concepts",
     color: CONCEPT_UNIFORM_COLOR,
   },
+  {
+    id: "family",
+    label: "Families (uniform)",
+    color: FAMILY_UNIFORM_COLOR,
+  },
 ] as const;
 
 const edgeLegend = [
   { id: "magi_link", label: "Magi link" },
   { id: "angel_sequence", label: "Angel sequence" },
   { id: "pilots", label: "Pilots EVA" },
+  { id: "member_of_family", label: "Member of family" },
 ] as const;
 ---
 
@@ -243,6 +250,7 @@ const edgeLegend = [
     isConcept,
     isEva,
     isEvent,
+    isFamily,
     isLocation,
     isMagi,
     isOrganization,
@@ -306,6 +314,8 @@ const edgeLegend = [
           kindEl.textContent = `concept ${node.id}`;
         } else if (isEva(node)) {
           kindEl.textContent = `eva ${node.id}`;
+        } else if (isFamily(node)) {
+          kindEl.textContent = `family ${node.id}`;
         }
       }
       if (titleEl) {
@@ -317,9 +327,10 @@ const edgeLegend = [
         else if (isMagi(node)) titleEl.textContent = mask(node.name);
         else if (isEvent(node)) titleEl.textContent = mask(node.name);
         else if (isOrganization(node)) titleEl.textContent = mask(node.name);
-        else if (isLocation(node)) titleEl.textContent = mask(node.name);
+        else if (isLocation(node)) titleEl.textContent = mask(node.displayName);
         else if (isConcept(node)) titleEl.textContent = mask(node.name);
         else if (isEva(node)) titleEl.textContent = mask(node.name);
+        else if (isFamily(node)) titleEl.textContent = mask(node.displayName);
       }
       if (metaEl) {
         metaEl.innerHTML = "";
@@ -352,6 +363,10 @@ const edgeLegend = [
           rows.push(["gate", gateLabel(node.revealedAt)]);
         } else if (isEva(node)) {
           rows.push(["unit", masked ? "███" : node.name]);
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isFamily(node)) {
+          rows.push(["family", mask(node.name)]);
           rows.push(["shortcodes", codes]);
           rows.push(["gate", gateLabel(node.revealedAt)]);
         }

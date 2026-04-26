@@ -1,10 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { SPOILER_FULL, seedSpoilerProgress } from "./_helpers";
 
 test.describe("genesis registry CSS variables propagate to the page", () => {
-  test.beforeEach(async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
-  });
+  // No spoiler-gate setup --- these tests assert CSS-variable / DOM presence,
+  // both of which resolve under the gate overlay.
 
   test("iconic entity variables resolve at :root with valid hex values (genesis-prefixed)", async ({
     page,
@@ -113,11 +111,10 @@ test.describe("genesis registry CSS variables propagate to the page", () => {
 });
 
 test.describe("genesis text highlighter wraps aliases inline", () => {
-  test.beforeEach(async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
-  });
+  // The header blurb is rendered server-side; the gate overlay does not
+  // affect its highlighter spans.
 
-  test("Header blurb tints 'Shinji Ikari' across two shortcode spans", async ({
+  test("Header blurb tints 'Shinji Ikari' as a single shinji shortcode span", async ({
     page,
   }) => {
     await page.goto("/");
@@ -127,10 +124,13 @@ test.describe("genesis text highlighter wraps aliases inline", () => {
       'span.g-shortcode[data-shortcode="shinji"]',
     );
     await expect(shinjiSpans.first()).toBeVisible();
+    await expect(shinjiSpans.first()).toHaveText("Shinji Ikari");
+    // The bare 'Ikari' family shortcode does NOT appear here --- the longest
+    // alias ('Shinji Ikari') wins, so the whole label paints in shinji navy.
     const ikariSpans = blurb.locator(
       'span.g-shortcode[data-shortcode="ikari"]',
     );
-    await expect(ikariSpans.first()).toBeVisible();
+    await expect(ikariSpans).toHaveCount(0);
   });
 
   test("highlighted Shinji span paints the Shinji primary color", async ({

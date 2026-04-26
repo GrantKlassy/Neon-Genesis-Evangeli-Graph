@@ -2,33 +2,46 @@ import { expect, test } from "@playwright/test";
 import {
   SPOILER_FULL,
   SPOILER_NONE,
-  seedSpoilerProgress,
+  revealWithProgress,
   waitForGraphState,
 } from "./_helpers";
 
-test.describe("spoiler gate --- first visit", () => {
-  test("opens the gate when no progress is stored", async ({ page }) => {
+test.describe("spoiler gate --- always shown", () => {
+  test("opens the gate on every page load", async ({ page }) => {
     await page.goto("/");
     const gate = page.getByTestId("ngg-spoiler-gate");
     await expect(gate).toBeVisible();
     await expect(gate).toHaveAttribute("data-state", "visible");
   });
 
-  test("revealing with default settings persists progress and closes gate", async ({
-    page,
-  }) => {
+  test("opens again on a second visit (no persistence)", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-reveal").click();
+    await expect(page.getByTestId("ngg-spoiler-gate")).toBeHidden();
+
+    // Reload the same page --- the gate must come back even though the user
+    // just dismissed it.
+    await page.reload();
+    await expect(page.getByTestId("ngg-spoiler-gate")).toBeVisible();
+  });
+
+  test("does NOT write to localStorage on reveal", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-reveal").click();
+    await expect(page.getByTestId("ngg-spoiler-gate")).toBeHidden();
+
+    const stored = await page.evaluate(() =>
+      localStorage.getItem("ngg-spoiler-progress"),
+    );
+    expect(stored).toBeNull();
+  });
+
+  test("revealing closes the gate", async ({ page }) => {
     await page.goto("/");
     const gate = page.getByTestId("ngg-spoiler-gate");
     await expect(gate).toBeVisible();
     await page.getByTestId("ngg-spoiler-reveal").click();
     await expect(gate).toBeHidden();
-
-    const stored = await page.evaluate(() =>
-      localStorage.getItem("ngg-spoiler-progress"),
-    );
-    expect(stored).not.toBeNull();
-    const parsed = JSON.parse(stored!);
-    expect(parsed).toEqual({ episode: 0, eoe: false, rebuild: false });
   });
 
   test("preset 'finished it' fills the slider to 26", async ({ page }) => {
@@ -47,24 +60,12 @@ test.describe("spoiler gate --- first visit", () => {
   });
 });
 
-test.describe("spoiler gate --- repeat visits with seeded progress", () => {
-  test("does NOT open the gate when localStorage already has progress", async ({
-    page,
-  }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
-    await page.goto("/");
-    await waitForGraphState(page);
-    const gate = page.getByTestId("ngg-spoiler-gate");
-    await expect(gate).toBeHidden();
-  });
-});
-
 test.describe("renderer applies the gate to nodes and edges", () => {
   test("at full progress, no nodes are masked", async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
+    await revealWithProgress(page, SPOILER_FULL);
 
     const masked = await page.evaluate(() => {
       type H = {
@@ -79,10 +80,10 @@ test.describe("renderer applies the gate to nodes and edges", () => {
   });
 
   test("at zero progress, late-show entities are masked", async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_NONE);
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
+    await revealWithProgress(page, SPOILER_NONE);
 
     const flags = await page.evaluate(() => {
       type H = { isNodeMasked: (id: string) => boolean };
@@ -97,7 +98,7 @@ test.describe("renderer applies the gate to nodes and edges", () => {
         sachiel: h.isNodeMasked("angel_03_sachiel"),
         shinji: h.isNodeMasked("char_shinji"),
         rei: h.isNodeMasked("char_rei"),
-        thirdImpact: h.isNodeMasked("event_third_impact"),
+        thirdImpact: h.isNodeMasked("concept_third_impact"),
       };
     });
     expect(flags).not.toBeNull();
@@ -116,10 +117,10 @@ test.describe("renderer applies the gate to nodes and edges", () => {
   test("changing the gate live re-applies the mask to the scene", async ({
     page,
   }) => {
-    await seedSpoilerProgress(page, SPOILER_NONE);
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
+    await revealWithProgress(page, SPOILER_NONE);
 
     // Open the gate, set ep 24, reveal.
     await page.getByTestId("ngg-spoiler-reopen").click();
@@ -133,7 +134,7 @@ test.describe("renderer applies the gate to nodes and edges", () => {
       return {
         kaworu: h.isNodeMasked("char_kaworu"),
         tabris: h.isNodeMasked("angel_17_tabris"),
-        thirdImpact: h.isNodeMasked("event_third_impact"),
+        thirdImpact: h.isNodeMasked("concept_third_impact"),
       };
     });
     expect(flags).not.toBeNull();
@@ -146,10 +147,10 @@ test.describe("renderer applies the gate to nodes and edges", () => {
   test("selecting a masked node renders a masked readout panel", async ({
     page,
   }) => {
-    await seedSpoilerProgress(page, SPOILER_NONE);
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
+    await revealWithProgress(page, SPOILER_NONE);
 
     await page.evaluate(() => {
       type H = { selectNodeById: (id: string) => void };
@@ -171,10 +172,10 @@ test.describe("renderer applies the gate to nodes and edges", () => {
   test("selecting an open node renders an unmasked readout panel", async ({
     page,
   }) => {
-    await seedSpoilerProgress(page, SPOILER_NONE);
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
+    await revealWithProgress(page, SPOILER_NONE);
 
     await page.evaluate(() => {
       type H = { selectNodeById: (id: string) => void };
@@ -196,10 +197,10 @@ test.describe("spoiler dataset attributes", () => {
   test("graph root mirrors the active progress in dataset", async ({
     page,
   }) => {
-    await seedSpoilerProgress(page, { episode: 18, eoe: false, rebuild: true });
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
+    await revealWithProgress(page, { episode: 18, eoe: false, rebuild: true });
 
     const root = page.getByTestId("ngg-graph-root");
     await expect(root).toHaveAttribute("data-spoiler-episode", "18");
@@ -249,20 +250,5 @@ test.describe("spoiler gate --- EoE requires Ep. 26", () => {
     await page.getByTestId("ngg-spoiler-preset-all").click();
     const eoe = page.getByTestId("ngg-spoiler-eoe");
     await expect(eoe).toBeEnabled();
-  });
-
-  test("a tampered localStorage payload (ep 7, eoe true) is normalized to ep 26", async ({
-    page,
-  }) => {
-    // Manually seed an impossible state. parseSpoilerProgress should rescue
-    // it on read and the renderer should treat the user as fully caught up.
-    await seedSpoilerProgress(page, { episode: 7, eoe: true, rebuild: false });
-    await page.goto("/");
-    const state = await waitForGraphState(page);
-    test.skip(state !== "ready", `graph state was ${state}`);
-
-    const root = page.getByTestId("ngg-graph-root");
-    await expect(root).toHaveAttribute("data-spoiler-episode", "26");
-    await expect(root).toHaveAttribute("data-spoiler-eoe", "true");
   });
 });

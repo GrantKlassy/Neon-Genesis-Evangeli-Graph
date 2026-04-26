@@ -5,7 +5,7 @@ import {
   EDGE_COLORS,
   EDGE_SPRING_LENGTH,
   EDGE_WEIGHT,
-  EVA_UNIFORM_COLOR,
+  FAMILY_UNIFORM_COLOR,
   LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
   ORGANIZATION_UNIFORM_COLOR,
@@ -17,6 +17,7 @@ import {
   isConcept,
   isEva,
   isEvent,
+  isFamily,
   isLocation,
   isMagi,
   isOrganization,
@@ -33,14 +34,17 @@ describe("evangelion graph", () => {
 
   it("has the expected canon node mix", () => {
     expect(evangelion.id).toBe("evangelion");
-    expect(evangelion.nodes.filter(isCharacter)).toHaveLength(10);
+    expect(evangelion.nodes.filter(isCharacter)).toHaveLength(11);
     expect(evangelion.nodes.filter(isAngel)).toHaveLength(18);
     expect(evangelion.nodes.filter(isMagi)).toHaveLength(3);
-    expect(evangelion.nodes.filter(isEvent).length).toBeGreaterThanOrEqual(1);
+    // Event kind is currently empty --- Third Impact moved into concepts to
+    // match the genesis registry. The kind itself stays for future use.
+    expect(evangelion.nodes.filter(isEvent).length).toBe(0);
     expect(evangelion.nodes.filter(isOrganization).length).toBeGreaterThanOrEqual(1);
     expect(evangelion.nodes.filter(isLocation).length).toBeGreaterThanOrEqual(1);
-    expect(evangelion.nodes.filter(isConcept).length).toBeGreaterThanOrEqual(1);
+    expect(evangelion.nodes.filter(isConcept).length).toBeGreaterThanOrEqual(3);
     expect(evangelion.nodes.filter(isEva).length).toBeGreaterThanOrEqual(4);
+    expect(evangelion.nodes.filter(isFamily)).toHaveLength(2);
     // Sum of all kinds covers every node in the graph (no leftover kinds).
     expect(evangelion.nodes).toHaveLength(
       evangelion.nodes.filter(isCharacter).length +
@@ -50,7 +54,8 @@ describe("evangelion graph", () => {
         evangelion.nodes.filter(isOrganization).length +
         evangelion.nodes.filter(isLocation).length +
         evangelion.nodes.filter(isConcept).length +
-        evangelion.nodes.filter(isEva).length,
+        evangelion.nodes.filter(isEva).length +
+        evangelion.nodes.filter(isFamily).length,
     );
   });
 
@@ -66,11 +71,24 @@ describe("evangelion graph", () => {
     expect(hq!.shortcodes).toContain("nervHq");
   });
 
-  it("concepts contain the placeholder TEST NODE seed", () => {
+  it("concepts include AT Field, LCL, and Third Impact as first-class nodes", () => {
     const concepts = evangelion.nodes.filter(isConcept);
-    const seed = concepts.find((c) => c.id === "concept_test_node");
-    expect(seed).toBeDefined();
-    expect(seed!.displayName).toBe("TEST NODE");
+    const ids = new Set(concepts.map((c) => c.id));
+    for (const expected of [
+      "concept_at_field",
+      "concept_lcl",
+      "concept_third_impact",
+    ]) {
+      expect(ids.has(expected), `missing concept ${expected}`).toBe(true);
+    }
+  });
+
+  it("Third Impact concept is gated to End of Evangelion", () => {
+    const ti = evangelion.nodes
+      .filter(isConcept)
+      .find((c) => c.id === "concept_third_impact");
+    expect(ti).toBeDefined();
+    expect(ti!.revealedAt).toEqual({ kind: "eoe" });
   });
 
   it("EVA units cover Unit-00 through Unit-04 plus Mass Production", () => {
@@ -135,7 +153,7 @@ describe("evangelion graph", () => {
     expect(byNumber.get(18)).toBe("Lilim");
   });
 
-  it("the ten expected characters are present by id", () => {
+  it("the eleven expected characters are present by id (10 main cast + Naoko Akagi)", () => {
     const ids = new Set(evangelion.nodes.filter(isCharacter).map((c) => c.id));
     expect(ids).toEqual(
       new Set([
@@ -149,6 +167,7 @@ describe("evangelion graph", () => {
         "char_mari",
         "char_toji",
         "char_yui",
+        "char_naoko",
       ]),
     );
   });
@@ -174,35 +193,38 @@ describe("evangelion graph", () => {
     }
   });
 
-  it("every node declares at least one shortcode that resolves in genesis", () => {
+  it("every node declares EXACTLY ONE shortcode that resolves in genesis", () => {
     for (const n of evangelion.nodes) {
-      expect(n.shortcodes.length, `${n.id} has no shortcodes`).toBeGreaterThan(
-        0,
+      expect(n.shortcodes.length, `${n.id} should have exactly one shortcode`).toBe(
+        1,
       );
-      for (const code of n.shortcodes) {
-        expect(
-          isShortcode(code),
-          `${n.id}: shortcode "${code}" not in genesis`,
-        ).toBe(true);
-      }
+      const code = n.shortcodes[0]!;
+      expect(
+        isShortcode(code),
+        `${n.id}: shortcode "${code}" not in genesis`,
+      ).toBe(true);
     }
   });
 
-  it("Shinji Ikari node is connected to BOTH 'shinji' and 'ikari' shortcodes", () => {
+  it("Shinji's node carries only the 'shinji' shortcode (Ikari is family, lives in registry only)", () => {
     const shinji = evangelion.nodes.find((n) => n.id === "char_shinji");
     expect(shinji).toBeDefined();
-    expect(shinji!.shortcodes).toContain("shinji");
-    expect(shinji!.shortcodes).toContain("ikari");
+    expect(shinji!.shortcodes).toEqual(["shinji"]);
   });
 
-  it("Gendo Ikari node ALSO references the 'ikari' family shortcode", () => {
+  it("Gendo's node carries only the 'gendo' shortcode", () => {
     const gendo = evangelion.nodes.find((n) => n.id === "char_gendo");
     expect(gendo).toBeDefined();
-    expect(gendo!.shortcodes).toContain("gendo");
-    expect(gendo!.shortcodes).toContain("ikari");
+    expect(gendo!.shortcodes).toEqual(["gendo"]);
   });
 
-  it("'shinji' and 'ikari' shortcodes are both kind CHARACTERS", () => {
+  it("Yui's node carries only the 'yui' shortcode", () => {
+    const yui = evangelion.nodes.find((n) => n.id === "char_yui");
+    expect(yui).toBeDefined();
+    expect(yui!.shortcodes).toEqual(["yui"]);
+  });
+
+  it("'shinji' and 'ikari' shortcodes are both kind CHARACTERS in the registry", () => {
     expect(genesis.shinji.kind).toBe("CHARACTERS");
     expect(genesis.ikari.kind).toBe("CHARACTERS");
   });
@@ -362,10 +384,78 @@ describe("evangelion graph", () => {
     }
   });
 
-  it("EVA units paint with the uniform EVA color", () => {
+  it("EVA units paint with their per-unit primary color from genesis", () => {
     for (const e of evangelion.nodes.filter(isEva)) {
-      expect(colorFor(e).toLowerCase()).toBe(EVA_UNIFORM_COLOR.toLowerCase());
+      const code = e.shortcodes[0]!;
+      const expected = genesis[code as keyof typeof genesis].primary;
+      expect(colorFor(e).toLowerCase()).toBe(expected.toLowerCase());
     }
+  });
+
+  it("EVA per-unit colors match the canon body palette (Unit-00 blue, -01 purple, -02 red)", () => {
+    const byId = new Map(
+      evangelion.nodes.filter(isEva).map((e) => [e.id, colorFor(e).toLowerCase()]),
+    );
+    expect(byId.get("eva_unit00")).toBe(genesis.unit00.primary.toLowerCase());
+    expect(byId.get("eva_unit01")).toBe(genesis.unit01.primary.toLowerCase());
+    expect(byId.get("eva_unit02")).toBe(genesis.unit02.primary.toLowerCase());
+    // Different units must read as different colors --- the homepage swatches
+    // are distinct, so the graph nodes must be too.
+    expect(byId.get("eva_unit00")).not.toBe(byId.get("eva_unit01"));
+    expect(byId.get("eva_unit01")).not.toBe(byId.get("eva_unit02"));
+  });
+
+  describe("families and member_of_family edges", () => {
+    it("seeds the Ikari and Akagi family nodes", () => {
+      const fams = evangelion.nodes.filter(isFamily);
+      const byId = new Map(fams.map((f) => [f.id, f]));
+      expect(byId.get("family_ikari")).toBeDefined();
+      expect(byId.get("family_akagi")).toBeDefined();
+      expect(byId.get("family_ikari")!.shortcodes).toEqual(["ikari"]);
+      expect(byId.get("family_akagi")!.shortcodes).toEqual(["akagi"]);
+    });
+
+    // Per the kind-uniform color invariant: every family node paints with
+    // FAMILY_UNIFORM_COLOR, regardless of which surname it represents.
+    // This test is part of the "5 kind-uniform / display-suffix invariants"
+    // contract and is also asserted in the dedicated describe block below.
+    it("paints every family with the uniform family color (no per-shortcode inheritance)", () => {
+      for (const f of evangelion.nodes.filter(isFamily)) {
+        expect(colorFor(f).toLowerCase()).toBe(
+          FAMILY_UNIFORM_COLOR.toLowerCase(),
+        );
+      }
+    });
+
+    const memberEdges = evangelion.edges.filter(
+      (e) => e.kind === "member_of_family",
+    );
+
+    it("encodes Shinji/Gendo/Yui -> Ikari and Ritsuko/Naoko -> Akagi", () => {
+      const has = (from: string, to: string) =>
+        memberEdges.find((e) => e.from === from && e.to === to);
+      expect(has("char_shinji", "family_ikari")).toBeDefined();
+      expect(has("char_gendo", "family_ikari")).toBeDefined();
+      expect(has("char_yui", "family_ikari")).toBeDefined();
+      expect(has("char_ritsuko", "family_akagi")).toBeDefined();
+      expect(has("char_naoko", "family_akagi")).toBeDefined();
+    });
+
+    it("each member_of_family edge resolves to a character on one side and a family on the other", () => {
+      const idx = nodeIndex(evangelion);
+      for (const e of memberEdges) {
+        const from = idx.get(e.from)!;
+        const to = idx.get(e.to)!;
+        expect(from.kind).toBe("character");
+        expect(to.kind).toBe("family");
+      }
+    });
+
+    it("every member_of_family edge stamps the canonical weight", () => {
+      for (const e of memberEdges) {
+        expect(e.weight).toBe(EDGE_WEIGHT.member_of_family);
+      }
+    });
   });
 
   describe("pilots edges (character -> EVA unit)", () => {
@@ -474,6 +564,19 @@ describe("validateGraph throws for invalid inputs", () => {
     ).toThrow(/at least one genesis shortcode/);
   });
 
+  it("rejects nodes with more than one shortcode (single-shortcode invariant)", () => {
+    const broken = {
+      ...evangelion.nodes[0]!,
+      shortcodes: ["shinji", "ikari"],
+    };
+    expect(() =>
+      validateGraph({
+        ...evangelion,
+        nodes: [broken, ...evangelion.nodes.slice(1)],
+      }),
+    ).toThrow(/exactly one genesis shortcode/);
+  });
+
   it("rejects nodes referencing unknown shortcodes", () => {
     const broken = {
       ...evangelion.nodes[0]!,
@@ -505,5 +608,243 @@ describe("validateGraph throws for invalid inputs", () => {
         ),
       }),
     ).toThrow(/contiguous 1\.\.N/);
+  });
+});
+
+/**
+ * The five kind-invariants the user spec'd directly:
+ *   1. Every FAMILY node paints with the same uniform family color.
+ *   2. Every FAMILY node has at least 2 member_of_family edges.
+ *   3. Every ANGEL node paints with the uniform AT-field color.
+ *   4. Every MAGI node paints with the uniform terminal-green.
+ *   5. Every LOCATION node paints with the uniform location color AND its
+ *      displayName contains the literal text "(Location)".
+ *
+ * Each "happy path" assertion is paired with a "test the test" negative
+ * case that hand-builds a graph violating the invariant and confirms
+ * validateGraph (or colorFor) catches it. Without the negative cases the
+ * positive assertions could quietly pass against a bug --- e.g. if every
+ * family had the same color because there was only one family, the
+ * uniform check would be vacuously true.
+ */
+describe("kind-uniform / display-suffix invariants (with negative tests)", () => {
+  // ---------- 1. Family color is uniform ----------
+  describe("1. every FAMILY node uses the same color", () => {
+    it("happy path: all family nodes paint with FAMILY_UNIFORM_COLOR", () => {
+      const fams = evangelion.nodes.filter(isFamily);
+      // Sanity: there is more than one family, so "uniform" is non-trivial.
+      expect(fams.length).toBeGreaterThanOrEqual(2);
+      for (const f of fams) {
+        expect(colorFor(f).toLowerCase()).toBe(
+          FAMILY_UNIFORM_COLOR.toLowerCase(),
+        );
+      }
+      // And: collapsing to a Set yields exactly one color.
+      const colors = new Set(fams.map((f) => colorFor(f).toLowerCase()));
+      expect(colors.size).toBe(1);
+    });
+
+    it("test-the-test: a synthetic family with a different color would be caught (colorFor is hard-coded)", () => {
+      // colorFor is a pure function of node.kind, NOT node.shortcodes ---
+      // changing the shortcode cannot drift the color away from uniform.
+      // Build a synthetic family node referencing a non-ikari shortcode
+      // (e.g. shinji's color is navy, very different from family lavender)
+      // and assert it STILL paints uniform family color.
+      const synthetic = {
+        id: "family_test",
+        kind: "family" as const,
+        name: "Test",
+        displayName: "Test (Family)",
+        shortcodes: ["shinji"], // navy in registry; family must ignore this.
+        notes: "Synthetic to prove uniform color does not leak shortcode.",
+      };
+      expect(colorFor(synthetic).toLowerCase()).toBe(
+        FAMILY_UNIFORM_COLOR.toLowerCase(),
+      );
+      expect(colorFor(synthetic).toLowerCase()).not.toBe(
+        genesis.shinji.primary.toLowerCase(),
+      );
+    });
+  });
+
+  // ---------- 2. Family >= 2 edges ----------
+  describe("2. every FAMILY node has >= 2 member_of_family edges", () => {
+    it("happy path: every family rolls up at least 2 members", () => {
+      const fams = evangelion.nodes.filter(isFamily);
+      expect(fams.length).toBeGreaterThan(0);
+      const memberEdges = evangelion.edges.filter(
+        (e) => e.kind === "member_of_family",
+      );
+      for (const f of fams) {
+        const count = memberEdges.filter(
+          (e) => e.from === f.id || e.to === f.id,
+        ).length;
+        expect(count, `family ${f.id} has only ${count} member edges`).toBeGreaterThanOrEqual(
+          2,
+        );
+      }
+    });
+
+    it("test-the-test: validateGraph throws when a family has fewer than 2 members", () => {
+      // Pick the Ikari family and strip all but one of its member edges.
+      const ikariMembers = evangelion.edges.filter(
+        (e) =>
+          e.kind === "member_of_family" &&
+          (e.from === "family_ikari" || e.to === "family_ikari"),
+      );
+      expect(ikariMembers.length).toBeGreaterThanOrEqual(2);
+      // Drop every Ikari member edge except the first --- now Ikari has 1.
+      const keep = new Set([ikariMembers[0]]);
+      const broken = evangelion.edges.filter(
+        (e) =>
+          !(
+            e.kind === "member_of_family" &&
+            (e.from === "family_ikari" || e.to === "family_ikari")
+          ) || keep.has(e),
+      );
+      expect(() =>
+        validateGraph({ ...evangelion, edges: broken }),
+      ).toThrow(/at least 2 member_of_family edges/);
+    });
+
+    it("test-the-test: validateGraph throws when a family has zero members", () => {
+      // Strip ALL member edges that touch the Akagi family.
+      const broken = evangelion.edges.filter(
+        (e) =>
+          !(
+            e.kind === "member_of_family" &&
+            (e.from === "family_akagi" || e.to === "family_akagi")
+          ),
+      );
+      expect(() =>
+        validateGraph({ ...evangelion, edges: broken }),
+      ).toThrow(/family_akagi.*at least 2/);
+    });
+  });
+
+  // ---------- 3. Angel color is uniform ----------
+  describe("3. every ANGEL node uses the same color", () => {
+    it("happy path: all 18 angels paint with ANGEL_UNIFORM_COLOR", () => {
+      const angels = evangelion.nodes.filter(isAngel);
+      expect(angels).toHaveLength(18);
+      for (const a of angels) {
+        expect(colorFor(a).toLowerCase()).toBe(
+          ANGEL_UNIFORM_COLOR.toLowerCase(),
+        );
+      }
+      const colors = new Set(angels.map((a) => colorFor(a).toLowerCase()));
+      expect(colors.size).toBe(1);
+    });
+
+    it("test-the-test: shortcode does not leak into angel color (colorFor short-circuits on isAngel)", () => {
+      // Sachiel's registry primary is identical to ANGEL_UNIFORM_COLOR;
+      // pick an angel and prove that even if its registry primary diverged,
+      // colorFor would still return the uniform.
+      const sachiel = evangelion.nodes.find((n) => n.id === "angel_03_sachiel");
+      expect(sachiel).toBeDefined();
+      expect(colorFor(sachiel!).toLowerCase()).toBe(
+        ANGEL_UNIFORM_COLOR.toLowerCase(),
+      );
+      // Build a synthetic angel that points at a non-angel shortcode and
+      // confirm colorFor still hard-routes to ANGEL_UNIFORM_COLOR.
+      const synthetic = {
+        id: "angel_test",
+        kind: "angel" as const,
+        number: 99,
+        name: "Test",
+        displayName: "Test",
+        shortcodes: ["shinji"], // would be navy if leaked.
+        introducedEpisode: "Synthetic",
+        notes: "Synthetic to prove uniform color is by-kind, not by-shortcode.",
+      };
+      expect(colorFor(synthetic).toLowerCase()).toBe(
+        ANGEL_UNIFORM_COLOR.toLowerCase(),
+      );
+    });
+  });
+
+  // ---------- 4. Magi color is uniform ----------
+  describe("4. every MAGI node uses the same color", () => {
+    it("happy path: all 3 magi paint with MAGI_UNIFORM_COLOR", () => {
+      const magi = evangelion.nodes.filter(isMagi);
+      expect(magi).toHaveLength(3);
+      for (const m of magi) {
+        expect(colorFor(m).toLowerCase()).toBe(
+          MAGI_UNIFORM_COLOR.toLowerCase(),
+        );
+      }
+      const colors = new Set(magi.map((m) => colorFor(m).toLowerCase()));
+      expect(colors.size).toBe(1);
+    });
+
+    it("test-the-test: shortcode does not leak into magi color (colorFor short-circuits on isMagi)", () => {
+      const synthetic = {
+        id: "magi_test",
+        kind: "magi" as const,
+        name: "Test",
+        displayName: "Test",
+        personality: "Test",
+        shortcodes: ["shinji"], // navy if leaked.
+        notes: "Synthetic to prove uniform magi color is by-kind.",
+      };
+      expect(colorFor(synthetic).toLowerCase()).toBe(
+        MAGI_UNIFORM_COLOR.toLowerCase(),
+      );
+    });
+  });
+
+  // ---------- 5. Location color is uniform AND displayName contains "(Location)" ----------
+  describe("5. every LOCATION node uses the same color AND its displayName contains '(Location)'", () => {
+    it("happy path: every location paints uniform AND displayName contains '(Location)'", () => {
+      const locs = evangelion.nodes.filter(isLocation);
+      expect(locs.length).toBeGreaterThan(0);
+      for (const l of locs) {
+        expect(colorFor(l).toLowerCase()).toBe(
+          LOCATION_UNIFORM_COLOR.toLowerCase(),
+        );
+        expect(
+          l.displayName,
+          `location ${l.id} displayName is "${l.displayName}", missing "(Location)"`,
+        ).toMatch(/\(Location\)/);
+      }
+      const colors = new Set(locs.map((l) => colorFor(l).toLowerCase()));
+      expect(colors.size).toBe(1);
+    });
+
+    it("test-the-test: validateGraph throws when a location's displayName lacks '(Location)'", () => {
+      const idx = evangelion.nodes.findIndex(isLocation);
+      expect(idx).toBeGreaterThanOrEqual(0);
+      const target = evangelion.nodes[idx]!;
+      const broken = { ...target, displayName: "NERV HQ" }; // strip suffix.
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          nodes: [
+            ...evangelion.nodes.slice(0, idx),
+            broken,
+            ...evangelion.nodes.slice(idx + 1),
+          ],
+        }),
+      ).toThrow(/Location node.*\(Location\)/);
+    });
+
+    it("test-the-test: validateGraph throws when a family's displayName lacks '(Family)'", () => {
+      // Same shape as the location test, but for the family suffix
+      // invariant --- both share the (Suffix) convention so we test both.
+      const idx = evangelion.nodes.findIndex(isFamily);
+      expect(idx).toBeGreaterThanOrEqual(0);
+      const target = evangelion.nodes[idx]!;
+      const broken = { ...target, displayName: "Ikari" }; // strip suffix.
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          nodes: [
+            ...evangelion.nodes.slice(0, idx),
+            broken,
+            ...evangelion.nodes.slice(idx + 1),
+          ],
+        }),
+      ).toThrow(/Family node.*\(Family\)/);
+    });
   });
 });

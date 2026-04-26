@@ -21,7 +21,13 @@ export const genesis = {
     shortcode: "shinji",
     kind: "CHARACTERS",
     displayName: "Shinji Ikari",
-    aliases: ["Shinji", "Third Child", "Pilot of Unit-01"],
+    aliases: [
+      "Shinji",
+      "Shinji Ikari",
+      "Ikari Shinji",
+      "Third Child",
+      "Pilot of Unit-01",
+    ],
     primary: "#1f3a8a",
     secondary: ["#f5f5f0", "#7c98d6"],
     notes:
@@ -31,7 +37,13 @@ export const genesis = {
     shortcode: "asuka",
     kind: "CHARACTERS",
     displayName: "Asuka Langley Soryu",
-    aliases: ["Asuka", "Second Child", "Pilot of Unit-02"],
+    aliases: [
+      "Asuka",
+      "Asuka Langley Soryu",
+      "Asuka Langley",
+      "Second Child",
+      "Pilot of Unit-02",
+    ],
     primary: "#d6271e",
     secondary: ["#ff7e00", "#fcd35d"],
     notes:
@@ -41,7 +53,13 @@ export const genesis = {
     shortcode: "rei",
     kind: "CHARACTERS",
     displayName: "Rei Ayanami",
-    aliases: ["Rei", "First Child", "Pilot of Unit-00"],
+    aliases: [
+      "Rei",
+      "Rei Ayanami",
+      "Ayanami Rei",
+      "First Child",
+      "Pilot of Unit-00",
+    ],
     primary: "#a3d8f4",
     secondary: ["#ff003c", "#ffffff"],
     notes:
@@ -51,7 +69,12 @@ export const genesis = {
     shortcode: "misato",
     kind: "CHARACTERS",
     displayName: "Misato Katsuragi",
-    aliases: ["Misato", "Major Katsuragi"],
+    aliases: [
+      "Misato",
+      "Misato Katsuragi",
+      "Katsuragi Misato",
+      "Major Katsuragi",
+    ],
     primary: "#7a3aa5",
     secondary: ["#c8102e", "#1a1a1a"],
     notes:
@@ -61,7 +84,7 @@ export const genesis = {
     shortcode: "kaworu",
     kind: "CHARACTERS",
     displayName: "Kaworu Nagisa",
-    aliases: ["Kaworu", "Fifth Child"],
+    aliases: ["Kaworu", "Kaworu Nagisa", "Nagisa Kaworu", "Fifth Child"],
     primary: "#c4c4c8",
     secondary: ["#ff003c", "#1a1a1a"],
     notes:
@@ -71,7 +94,7 @@ export const genesis = {
     shortcode: "gendo",
     kind: "CHARACTERS",
     displayName: "Gendo Ikari",
-    aliases: ["Gendo", "Commander Ikari"],
+    aliases: ["Gendo", "Gendo Ikari", "Ikari Gendo", "Commander Ikari"],
     primary: "#2a2a2a",
     secondary: ["#ff6700", "#7a3719"],
     notes: "NERV commander. Dark suit, orange-tinted glasses, brown gloves.",
@@ -80,7 +103,7 @@ export const genesis = {
     shortcode: "ritsuko",
     kind: "CHARACTERS",
     displayName: "Ritsuko Akagi",
-    aliases: ["Ritsuko", "Dr. Akagi"],
+    aliases: ["Ritsuko", "Ritsuko Akagi", "Akagi Ritsuko", "Dr. Akagi"],
     primary: "#c2a878",
     secondary: ["#ffffff", "#4a3728"],
     notes: "NERV chief scientist. Blonde hair, lab coat, signature cigarette.",
@@ -89,7 +112,12 @@ export const genesis = {
     shortcode: "mari",
     kind: "CHARACTERS",
     displayName: "Mari Makinami Illustrious",
-    aliases: ["Mari"],
+    aliases: [
+      "Mari",
+      "Mari Makinami",
+      "Mari Makinami Illustrious",
+      "Makinami Mari",
+    ],
     primary: "#d51a73",
     secondary: ["#7a4a3a", "#4a1a3d"],
     notes:
@@ -99,7 +127,13 @@ export const genesis = {
     shortcode: "toji",
     kind: "CHARACTERS",
     displayName: "Toji Suzuhara",
-    aliases: ["Toji", "Suzuhara", "Fourth Child"],
+    aliases: [
+      "Toji",
+      "Toji Suzuhara",
+      "Suzuhara Toji",
+      "Suzuhara",
+      "Fourth Child",
+    ],
     primary: "#2dd4bf",
     secondary: ["#1a1a1a", "#a8131e"],
     notes:
@@ -109,11 +143,21 @@ export const genesis = {
     shortcode: "yui",
     kind: "CHARACTERS",
     displayName: "Yui Ikari",
-    aliases: ["Yui", "Yui Ikari"],
+    aliases: ["Yui", "Yui Ikari", "Ikari Yui"],
     primary: "#c4a5d4",
     secondary: ["#5a2782", "#1f3a8a"],
     notes:
       "Shinji's mother. Lost to a contact experiment with Unit-01. Late-show reveal grounds the Ikari arc.",
+  },
+  naoko: {
+    shortcode: "naoko",
+    kind: "CHARACTERS",
+    displayName: "Naoko Akagi",
+    aliases: ["Naoko", "Naoko Akagi", "Akagi Naoko", "Dr. Naoko Akagi"],
+    primary: "#a8845a",
+    secondary: ["#5cf5b6", "#1a1a1a"],
+    notes:
+      "Original Magi designer and Ritsuko's mother. Took her own life on the Magi launch day; her three personalities live on as Casper, Melchior, and Balthasar.",
   },
 
   // ---- CHARACTERS (family-name shortcodes) ----
@@ -128,7 +172,7 @@ export const genesis = {
     primary: "#5a2782",
     secondary: ["#1f3a8a", "#2a2a2a"],
     notes:
-      "The Ikari family --- shared between Shinji (Third Child) and Gendo (NERV Commander). Color borrows Unit-01 purple, the family's defining vehicle.",
+      "The Ikari family --- Shinji (Third Child), Gendo (NERV Commander), and Yui (lost to Unit-01). Color borrows Unit-01 purple, the family's defining vehicle.",
   },
   ayanami: {
     shortcode: "ayanami",

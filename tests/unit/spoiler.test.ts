@@ -5,7 +5,6 @@ import {
   evangelion,
   gateLabel,
   isEdgeMasked,
-  isEvent,
   isNodeMasked,
   isVisible,
   maskLabel,
@@ -265,11 +264,12 @@ describe("evangelion graph spoiler invariants", () => {
     expect(lilim.revealedAt).toEqual({ kind: "eoe" });
   });
 
-  it("Third Impact event exists and is gated to End of Evangelion", () => {
-    const events = evangelion.nodes.filter(isEvent);
-    expect(events.length).toBeGreaterThanOrEqual(1);
-    const ti = events.find((e) => e.id === "event_third_impact");
+  it("Third Impact concept exists and is gated to End of Evangelion", () => {
+    // Third Impact moved from the event kind into the concept kind to match
+    // its genesis-registry classification (CONCEPTS).
+    const ti = evangelion.nodes.find((n) => n.id === "concept_third_impact");
     expect(ti).toBeDefined();
+    expect(ti!.kind).toBe("concept");
     expect(ti!.revealedAt).toEqual({ kind: "eoe" });
   });
 

@@ -37,9 +37,14 @@ tasks:
         echo "OK: ./assets is $HUMAN (> 1 GiB)"
 
   test:
-    desc: Run the full test suite (unit + e2e)
+    desc: |
+      Run ALL tests AND ALL checks --- the green-bar gate before pushing.
+      Fans out to:
+        - task check       (parent's standard repo checks: author/readme/license/history/last-updated/env-hygiene/no-emdash; AND triggers local:check, which runs assets-size + astro check (typecheck) + vitest unit suite)
+        - pnpm run test:e2e (Playwright across every configured viewport)
     cmds:
-      - pnpm run test
+      - cmd: task check
+      - pnpm run test:e2e
 
   assets:bake:
     desc: Copy local-only audio into public/ so astro build emits it into dist/

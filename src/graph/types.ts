@@ -10,10 +10,14 @@
  *   - location: physical places (NERV HQ, Tokyo-3, ...).
  *   - concept: abstract / in-universe concepts (AT Field, LCL, ...).
  *   - eva: EVA units (Unit-00 through Mass Production).
+ *   - family: family/lineage roll-up nodes (Ikari, Akagi). Characters point
+ *     at their family via member_of_family edges.
  *
- * Genesis linkage: every node carries a non-empty `shortcodes` array of
- * keys into src/genesis. "Shinji Ikari" -> ["shinji", "ikari"]. The first
- * shortcode is treated as the node's primary identity for color / sort.
+ * Genesis linkage: every node carries a single-entry `shortcodes` array
+ * pointing to its canonical identity in src/genesis. "Shinji Ikari" /
+ * "Ikari Shinji" both reduce to ["shinji"]; the family-name registry entries
+ * (`ikari`, `ayanami`, ...) exist only so body-copy text gets the family
+ * color, no graph node references them.
  *
  * Spoiler gate: every node and every edge carries an OPTIONAL `revealedAt`
  * gate. Omit for entities visible from Episode 1. Otherwise pick exactly one
@@ -47,7 +51,8 @@ export type NodeKind =
   | "organization"
   | "location"
   | "concept"
-  | "eva";
+  | "eva"
+  | "family";
 
 export type RevealedAt =
   | { kind: "ep"; episode: number }
@@ -58,7 +63,8 @@ export type EdgeKind =
   | "magi_link"
   | "angel_sequence"
   | "identity_reveal"
-  | "pilots";
+  | "pilots"
+  | "member_of_family";
 
 interface NodeBase {
   id: string;
@@ -70,8 +76,9 @@ interface NodeBase {
    */
   displayName: string;
   /**
-   * Genesis shortcodes connected to this node, ordered most-canonical first.
-   * Must contain at least one entry that resolves in src/genesis.
+   * Single-entry genesis shortcode for this node's canonical identity.
+   * Always length 1; the array shape is kept so existing iterators (CSS
+   * vars, readout panel, tests) continue to work without per-call branches.
    */
   shortcodes: string[];
   /**
@@ -139,6 +146,12 @@ export interface EvaNode extends NodeBase {
   number: number;
 }
 
+export interface FamilyNode extends NodeBase {
+  kind: "family";
+  /** Canonical family/lineage name ("Ikari", "Akagi"). */
+  name: string;
+}
+
 export type GraphNode =
   | CharacterNode
   | AngelNode
@@ -147,7 +160,8 @@ export type GraphNode =
   | OrganizationNode
   | LocationNode
   | ConceptNode
-  | EvaNode;
+  | EvaNode
+  | FamilyNode;
 
 export interface Edge {
   from: string;

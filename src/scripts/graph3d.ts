@@ -6,6 +6,7 @@ import {
   EDGE_SPRING_LENGTH,
   EVA_UNIFORM_COLOR,
   EVENT_UNIFORM_COLOR,
+  FAMILY_UNIFORM_COLOR,
   LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
   MASK_FILL_COLOR,
@@ -14,7 +15,7 @@ import {
   ORGANIZATION_UNIFORM_COLOR,
   SPOILER_EVENT_NAME,
   SPOILER_PROGRESS_DEFAULT,
-  SPOILER_STORAGE_KEY,
+  SPOILER_PROGRESS_FULL,
   adjacency,
   colorFor,
   evangelion,
@@ -24,6 +25,7 @@ import {
   isEdgeMasked,
   isEva,
   isEvent,
+  isFamily,
   isLocation,
   isMagi,
   isNodeMasked,
@@ -31,7 +33,6 @@ import {
   maskLabel,
   nodeIndex,
   nodeRadius,
-  parseSpoilerProgress,
   validateGraph,
 } from "../graph";
 import { forceLayout3D } from "../lib/forceLayout";
@@ -172,15 +173,6 @@ function detectWebGL(): { ok: boolean; version: 1 | 2 | null } {
   return { ok: false, version: null };
 }
 
-function readStoredProgress(): SpoilerProgress {
-  try {
-    const raw = localStorage.getItem(SPOILER_STORAGE_KEY);
-    return parseSpoilerProgress(raw);
-  } catch {
-    return { ...SPOILER_PROGRESS_DEFAULT };
-  }
-}
-
 export interface InitOptions {
   /** Element receiving state via data-state, hosting the canvas. */
   root: HTMLElement;
@@ -272,16 +264,16 @@ export function initGraph3D(options: InitOptions): GraphHandle {
 
   // Layout the graph. Magi-link rest length is tiny so the triad clusters tight.
   //
-  // Spoiler-aware gravity: edges and nodes that are MASKED at the user's
-  // current progress contribute zero spring force. This keeps Rei from
-  // settling near Yui pre-Ep. 23 just because there's a (still-hidden)
-  // identity-reveal edge between them. The layout reflects the progress at
-  // page load --- changing the gate live re-paints visibility but does not
-  // re-run the layout (positions stay put).
-  const initialProgress = readStoredProgress();
+  // Layout is computed against SPOILER_PROGRESS_FULL --- every node and edge
+  // contributes to the force solver --- so positions are stable regardless of
+  // which spoiler tier the user picks. The actual mask state starts at
+  // SPOILER_PROGRESS_DEFAULT (everything hidden) and only un-masks when the
+  // gate fires its first event. This keeps the gate mandatory on every load
+  // without paying re-layout cost when the user reveals.
+  const layoutProgress = { ...SPOILER_PROGRESS_FULL };
   const initialNodesIndex = nodeIndex(evangelion);
   const layoutEdges = evangelion.edges.filter(
-    (e) => !isEdgeMasked(e, initialProgress, initialNodesIndex),
+    (e) => !isEdgeMasked(e, layoutProgress, initialNodesIndex),
   );
   const layout = forceLayout3D(evangelion.nodes, layoutEdges, {
     springLengthByKind: EDGE_SPRING_LENGTH,
@@ -791,9 +783,10 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   raf = requestAnimationFrame(tick);
 
   // Apply initial spoiler progress before flipping to ready, so the first
-  // frame the user sees is already gated correctly. Reuse the value we
-  // already read so the layout and the mask agree at startup.
-  applyProgress(initialProgress);
+  // frame the user sees is fully masked. The SpoilerGate overlay sits on
+  // top and the user must reveal before they see anything --- the gate's
+  // first broadcast then drops the mask to whatever they picked.
+  applyProgress({ ...SPOILER_PROGRESS_DEFAULT });
 
   // Listen for the gate's change event (fired by SpoilerGate.astro).
   const onSpoilerEvent = (e: Event) => {
@@ -843,6 +836,7 @@ export {
   EDGE_COLORS,
   EVA_UNIFORM_COLOR,
   EVENT_UNIFORM_COLOR,
+  FAMILY_UNIFORM_COLOR,
   LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
   ORGANIZATION_UNIFORM_COLOR,
@@ -852,6 +846,7 @@ export {
   isConcept,
   isEva,
   isEvent,
+  isFamily,
   isLocation,
   isMagi,
   isOrganization,

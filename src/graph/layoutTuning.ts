@@ -25,6 +25,10 @@ export const EDGE_SPRING_LENGTH: Record<EdgeKind, number> = {
   // Pilots sit close to their EVA --- short rest so Shinji equilibrates
   // visibly adjacent to Unit-01 once the user has unlocked the link.
   pilots: 2.8,
+  // Family members orbit their family node at moderate distance --- tight
+  // enough that Shinji/Gendo/Yui visibly cluster around Ikari, loose enough
+  // that they don't pile on top of each other.
+  member_of_family: 3.0,
 };
 
 export const EDGE_WEIGHT: Record<EdgeKind, number> = {
@@ -34,4 +38,8 @@ export const EDGE_WEIGHT: Record<EdgeKind, number> = {
   // Pilots edges pull tightly so the pilot/unit pair reads as a coupled
   // glyph in the layout once revealed.
   pilots: 2.5,
+  // Family edges pull moderately --- members cluster around the family
+  // anchor without overpowering the pilots / identity-reveal pulls that
+  // dominate each character's layout neighborhood.
+  member_of_family: 2.0,
 };

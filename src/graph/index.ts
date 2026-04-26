@@ -7,6 +7,7 @@ import type {
   EvaNode,
   EvangelionGraph,
   EventNode,
+  FamilyNode,
   GraphNode,
   LocationNode,
   MagiNode,
@@ -35,6 +36,7 @@ export type {
   EvaNode,
   EvangelionGraph,
   EventNode,
+  FamilyNode,
   GraphNode,
   LocationNode,
   MagiNode,
@@ -79,6 +81,10 @@ export function isEva(node: GraphNode): node is EvaNode {
   return node.kind === "eva";
 }
 
+export function isFamily(node: GraphNode): node is FamilyNode {
+  return node.kind === "family";
+}
+
 export function nodeIndex(graph: EvangelionGraph): Map<string, GraphNode> {
   return new Map(graph.nodes.map((n) => [n.id, n]));
 }
@@ -112,7 +118,19 @@ export const LOCATION_UNIFORM_COLOR = "#62b8ff";
 /** Uniform color for every Concept node (abstract pink). */
 export const CONCEPT_UNIFORM_COLOR = "#ff6b8b";
 
-/** Uniform color for every EVA Unit (eva-orange). */
+/**
+ * Uniform color for every Family node. Hard-coded --- families do NOT
+ * inherit their color from a per-shortcode genesis primary. The visual
+ * punchline is "this is a family roll-up, not a person", so every family
+ * paints in the same lavender regardless of which surname it represents.
+ */
+export const FAMILY_UNIFORM_COLOR = "#c8a4ff";
+
+/**
+ * Edge / fallback color for EVA-related visuals (pilot springs, fallback if a
+ * unit has no genesis entry). Individual EVA NODES use their per-unit primary
+ * from the genesis registry so Unit-00 reads blue, Unit-01 purple, etc.
+ */
 export const EVA_UNIFORM_COLOR = "#ffae00";
 
 /** Per-edge-kind line colors. */
@@ -127,6 +145,9 @@ export const EDGE_COLORS: Record<EdgeKind, string> = {
   // Pilots edges share the EVA-orange so the pilot-to-unit pull reads as
   // one visual class regardless of which character is on which side.
   pilots: EVA_UNIFORM_COLOR,
+  // Structural-blue lineage line: family membership reads as a structural
+  // tie, not a dramatic reveal --- separate visual class from identity_reveal.
+  member_of_family: "#3a8fff",
 };
 
 export { EDGE_SPRING_LENGTH, EDGE_WEIGHT } from "./layoutTuning";
@@ -143,10 +164,7 @@ export const MASK_FILL_COLOR = "#000000";
 export const MASK_HALO_COLOR = "#1a1a1a";
 export const MASK_LABEL_COLOR = "#666666";
 
-/** localStorage key for the user's declared spoiler progress. */
-export const SPOILER_STORAGE_KEY = "ngg-spoiler-progress";
-
-/** CustomEvent name dispatched whenever the gate writes new progress. */
+/** CustomEvent name dispatched whenever the gate broadcasts new progress. */
 export const SPOILER_EVENT_NAME = "ngg-spoiler-progress-changed";
 
 /**
@@ -337,9 +355,28 @@ export function validateGraph(graph: EvangelionGraph): void {
       throw new Error(`Node ${node.id} must declare a non-empty displayName`);
     }
 
+    // Family nodes always render as "Surname (Family)" so the label /
+    // readout never reads as a person. Locations always render as
+    // "Place (Location)" for the same reason.
+    if (isFamily(node) && !/\(Family\)\s*$/.test(node.displayName)) {
+      throw new Error(
+        `Family node ${node.id} displayName must end with "(Family)" --- got "${node.displayName}"`,
+      );
+    }
+    if (isLocation(node) && !/\(Location\)/.test(node.displayName)) {
+      throw new Error(
+        `Location node ${node.id} displayName must contain "(Location)" --- got "${node.displayName}"`,
+      );
+    }
+
     if (!Array.isArray(node.shortcodes) || node.shortcodes.length === 0) {
       throw new Error(
         `Node ${node.id} must declare at least one genesis shortcode`,
+      );
+    }
+    if (node.shortcodes.length !== 1) {
+      throw new Error(
+        `Node ${node.id} must declare exactly one genesis shortcode (got ${node.shortcodes.length}: ${node.shortcodes.join(", ")})`,
       );
     }
     for (const code of node.shortcodes) {
@@ -376,6 +413,30 @@ export function validateGraph(graph: EvangelionGraph): void {
       }
     }
     validateRevealedAt(`Edge ${edge.from} -> ${edge.to}`, edge.revealedAt);
+  }
+
+  // Family invariant: every family node must collect at least 2 members
+  // (otherwise it's not really a family --- it's a one-person lineage).
+  // Members are connected via member_of_family edges in either direction.
+  const familyMemberCount = new Map<string, number>();
+  for (const node of graph.nodes) {
+    if (isFamily(node)) familyMemberCount.set(node.id, 0);
+  }
+  for (const edge of graph.edges) {
+    if (edge.kind !== "member_of_family") continue;
+    if (familyMemberCount.has(edge.from)) {
+      familyMemberCount.set(edge.from, familyMemberCount.get(edge.from)! + 1);
+    }
+    if (familyMemberCount.has(edge.to)) {
+      familyMemberCount.set(edge.to, familyMemberCount.get(edge.to)! + 1);
+    }
+  }
+  for (const [familyId, count] of familyMemberCount) {
+    if (count < 2) {
+      throw new Error(
+        `Family node ${familyId} must have at least 2 member_of_family edges --- got ${count}`,
+      );
+    }
   }
 
   // Angels must have unique sequential numbers 1..N (canonical NGE order).
@@ -420,13 +481,18 @@ export function nodeRadius(node: GraphNode): number {
   if (isLocation(node)) return 0.55;
   if (isConcept(node)) return 0.5;
   if (isEva(node)) return 0.6; // EVA units sit beside their pilots
+  if (isFamily(node)) return 0.65; // families are roll-up anchors
   return 0.42; // magi
 }
 
 /**
- * Resolve a node's render color. Characters use their primary shortcode's
- * color from the genesis registry; everything else paints with a per-kind
- * uniform (the visual punchline of node type, e.g. all magi green).
+ * Resolve a node's render color. Characters and EVA units pull from their
+ * primary shortcode in the genesis registry (so each unit paints with its
+ * canon body color --- Unit-00 blue, Unit-01 purple, etc.). Every other
+ * kind --- including FAMILY --- paints with a per-kind uniform (the visual
+ * punchline of node type: all magi green, all angels NERV-red, all
+ * families lavender). Family color is intentionally NOT derived from the
+ * shortcode so Ikari/Akagi/etc. all read as the same "family" visual class.
  */
 export function colorFor(node: GraphNode): string {
   if (isMagi(node)) return MAGI_UNIFORM_COLOR;
@@ -435,9 +501,12 @@ export function colorFor(node: GraphNode): string {
   if (isOrganization(node)) return ORGANIZATION_UNIFORM_COLOR;
   if (isLocation(node)) return LOCATION_UNIFORM_COLOR;
   if (isConcept(node)) return CONCEPT_UNIFORM_COLOR;
-  if (isEva(node)) return EVA_UNIFORM_COLOR;
-  // character: look up genesis by primary shortcode (the first entry).
+  if (isFamily(node)) return FAMILY_UNIFORM_COLOR;
+  // character / eva: look up genesis by primary shortcode (the first entry).
   const primaryCode = node.shortcodes[0];
-  if (!primaryCode) return "#cccccc";
+  if (!primaryCode) {
+    if (isEva(node)) return EVA_UNIFORM_COLOR;
+    return "#cccccc";
+  }
   return colorOf(primaryCode);
 }

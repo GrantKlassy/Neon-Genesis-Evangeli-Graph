@@ -1,13 +1,12 @@
 ---
 /**
- * Spoiler gate overlay. On first visit (no localStorage entry) the user
- * is asked how far they've watched; their answer is persisted and
- * broadcast to the renderer via a CustomEvent on `window`.
+ * Spoiler gate overlay. The gate prompts on EVERY page load --- nothing is
+ * persisted. The user's choice is broadcast to the renderer via a
+ * CustomEvent on `window` and lives only for the current page session.
  *
- * The renderer (src/scripts/graph3d.ts) reads the same key on init and
- * subscribes to the event, so this component owns the gate state and the
- * scene reflects it. A small "spoilers" pill in the corner re-opens the
- * gate so the user can adjust at any time.
+ * The renderer (src/scripts/graph3d.ts) initializes with everything masked
+ * and only un-masks once the gate fires its first event. A small "spoilers"
+ * pill in the corner re-opens the gate so the user can adjust at any time.
  */
 ---
 
@@ -209,8 +208,6 @@
     SPOILER_EVENT_NAME,
     SPOILER_PROGRESS_DEFAULT,
     SPOILER_PROGRESS_FULL,
-    SPOILER_STORAGE_KEY,
-    parseSpoilerProgress,
   } from "../graph";
   import type { SpoilerProgress } from "../graph";
 
@@ -347,31 +344,14 @@
     );
   }
 
-  function persist(p: SpoilerProgress) {
-    try {
-      localStorage.setItem(SPOILER_STORAGE_KEY, JSON.stringify(p));
-    } catch {
-      // localStorage unavailable (private mode, quota): fall through.
-    }
-  }
-
   function bootstrap() {
     const els = getEls();
     if (!els) return;
 
-    let saved: string | null = null;
-    try {
-      saved = localStorage.getItem(SPOILER_STORAGE_KEY);
-    } catch {
-      saved = null;
-    }
-    const initialProgress: SpoilerProgress = parseSpoilerProgress(saved);
-    applyToControls(els, initialProgress);
-
-    // First visit: open the gate. Otherwise the user has already declared.
-    if (!saved) {
-      showGate(els);
-    }
+    // No persistence --- every page load starts at zero progress and the
+    // gate is shown. The user must reveal before the graph un-masks.
+    applyToControls(els, SPOILER_PROGRESS_DEFAULT);
+    showGate(els);
 
     els.slider.addEventListener("input", () => {
       els.epReadout.textContent = els.slider.value;
@@ -397,7 +377,6 @@
 
     els.revealBtn.addEventListener("click", () => {
       const p = readControls(els);
-      persist(p);
       broadcast(p);
       hideGate(els);
     });
@@ -405,11 +384,6 @@
     els.reopenBtn.addEventListener("click", () => {
       showGate(els);
     });
-
-    // The renderer will read the same localStorage key on init, so an
-    // initial broadcast isn't required --- but firing one keeps any
-    // already-mounted scene in sync if it loaded before this script.
-    broadcast(initialProgress);
   }
 
   if (

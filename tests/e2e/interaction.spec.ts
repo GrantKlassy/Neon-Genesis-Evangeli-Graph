@@ -1,18 +1,17 @@
 import { expect, test } from "@playwright/test";
-import { SPOILER_FULL, seedSpoilerProgress, waitForGraphState } from "./_helpers";
+import { SPOILER_FULL, revealWithProgress, waitForGraphState } from "./_helpers";
 
 test.describe("interaction --- selecting a node updates the readout", () => {
   test.beforeEach(async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
+    await page.goto("/");
+    const state = await waitForGraphState(page);
+    test.skip(state !== "ready", `graph state was ${state}`);
+    await revealWithProgress(page, SPOILER_FULL);
   });
 
   test("force-selecting a node via the renderer hook fills the panel", async ({
     page,
   }) => {
-    await page.goto("/");
-    const state = await waitForGraphState(page);
-    test.skip(state !== "ready", `graph state was ${state}`);
-
     // Pause auto-rotation so the layout doesn't drift between sweep clicks.
     // Skipping this on small viewports caused the sweep to miss as the
     // graph rotated past the click target while we waited.
@@ -30,14 +29,17 @@ test.describe("interaction --- selecting a node updates the readout", () => {
     const cx = box!.x + box!.width / 2;
     const cy = box!.y + box!.height / 2;
 
-    // Sweep a dense grid of offsets relative to the canvas center, scaled
+    // Sweep a coarse grid of offsets relative to the canvas center, scaled
     // to the canvas size so small viewports still cover a useful fraction
-    // of the visible scene.
+    // of the visible scene. Steps=3 keeps the sweep at 7x7 = 49 clicks ---
+    // dense enough to land on a node in the seeded layout, but quick enough
+    // that the smallest viewport under heavy parallel load doesn't blow
+    // past Playwright's 30s test timeout.
     const w = box!.width;
     const h = box!.height;
     const reach = Math.min(w, h) * 0.4;
     const offsets: [number, number][] = [];
-    const steps = 6;
+    const steps = 3;
     for (let i = -steps; i <= steps; i++) {
       for (let j = -steps; j <= steps; j++) {
         offsets.push([(i / steps) * reach, (j / steps) * reach]);

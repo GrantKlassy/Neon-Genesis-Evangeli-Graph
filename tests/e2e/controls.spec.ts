@@ -1,16 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { SPOILER_FULL, seedSpoilerProgress, waitForGraphState } from "./_helpers";
+import { SPOILER_FULL, revealWithProgress, waitForGraphState } from "./_helpers";
 
 test.describe("graph controls + programmatic API", () => {
   test.beforeEach(async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
-  });
-
-  test("pause/play toggle flips auto-rotate state", async ({ page }) => {
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
+    await revealWithProgress(page, SPOILER_FULL);
+  });
 
+  test("pause/play toggle flips auto-rotate state", async ({ page }) => {
     const button = page.getByTestId("ngg-toggle-rotate");
     await expect(button).toHaveAttribute("aria-pressed", "true");
     await expect(button).toContainText(/rotating/i);
@@ -31,10 +30,6 @@ test.describe("graph controls + programmatic API", () => {
   });
 
   test("clear button resets selection", async ({ page }) => {
-    await page.goto("/");
-    const state = await waitForGraphState(page);
-    test.skip(state !== "ready", `graph state was ${state}`);
-
     // Programmatically pick the first node so we don't depend on raycaster geometry.
     await page.evaluate(() => {
       const h = (
@@ -57,10 +52,6 @@ test.describe("graph controls + programmatic API", () => {
   test("selectNodeById exposes a programmatic selection hook", async ({
     page,
   }) => {
-    await page.goto("/");
-    const state = await waitForGraphState(page);
-    test.skip(state !== "ready", `graph state was ${state}`);
-
     const ids = await page.evaluate(
       () =>
         (window as { __nggGraph?: { nodeIds: string[] } }).__nggGraph?.nodeIds,
@@ -87,10 +78,6 @@ test.describe("graph controls + programmatic API", () => {
   });
 
   test("highlight state updates dataset on selection", async ({ page }) => {
-    await page.goto("/");
-    const state = await waitForGraphState(page);
-    test.skip(state !== "ready", `graph state was ${state}`);
-
     const root = page.getByTestId("ngg-graph-root");
     await page.evaluate(() => {
       const h = (

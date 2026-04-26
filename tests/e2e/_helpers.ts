@@ -24,17 +24,31 @@ export const SPOILER_NONE: TestSpoilerProgress = {
 };
 
 /**
- * Pre-seed the localStorage spoiler-progress key BEFORE any page script
- * runs. Use this in a test's setup so the gate stays dismissed and the
- * scene initializes at the requested gate level.
+ * Drive the spoiler gate to the requested progress and reveal. The gate is
+ * shown on every page load (no persistence), so tests that want a specific
+ * mask state walk through the same UI a real user would: set the slider,
+ * tick the EoE / Rebuild boxes if needed, click reveal.
  */
-export async function seedSpoilerProgress(
+export async function revealWithProgress(
   page: Page,
   progress: TestSpoilerProgress,
 ) {
-  await page.addInitScript((p: TestSpoilerProgress) => {
-    localStorage.setItem("ngg-spoiler-progress", JSON.stringify(p));
-  }, progress);
+  const gate = page.getByTestId("ngg-spoiler-gate");
+  await gate.waitFor({ state: "visible" });
+  await page
+    .getByTestId("ngg-spoiler-ep-slider")
+    .fill(String(progress.episode));
+  if (progress.eoe) {
+    const eoe = page.getByTestId("ngg-spoiler-eoe");
+    if (await eoe.isEnabled()) {
+      await eoe.check();
+    }
+  }
+  if (progress.rebuild) {
+    await page.getByTestId("ngg-spoiler-rebuild").check();
+  }
+  await page.getByTestId("ngg-spoiler-reveal").click();
+  await gate.waitFor({ state: "hidden" });
 }
 
 /**

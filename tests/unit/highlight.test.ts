@@ -21,12 +21,20 @@ describe("highlightSegments", () => {
     expect(joined).toBe("Hello Shinji.");
   });
 
-  it("tags 'Shinji' and 'Ikari' in 'Shinji Ikari' as separate shortcodes", () => {
+  it("tags the full 'Shinji Ikari' phrase as a single shinji shortcode (longest-match wins)", () => {
     const out = highlightSegments("Shinji Ikari is a pilot.");
     const tagged = out.filter((s) => s.shortcode);
+    expect(tagged).toHaveLength(1);
+    expect(tagged[0]?.shortcode).toBe("shinji");
+    expect(tagged[0]?.text).toBe("Shinji Ikari");
+  });
+
+  it("still tags a standalone 'Ikari' as the family shortcode (so body copy reads in family color)", () => {
+    const out = highlightSegments("The Ikari family is fractured.");
+    const tagged = out.filter((s) => s.shortcode);
     const codes = tagged.map((s) => s.shortcode);
-    expect(codes).toContain("shinji");
     expect(codes).toContain("ikari");
+    expect(codes).not.toContain("shinji");
   });
 
   it("preserves the original text byte-for-byte under reassembly", () => {

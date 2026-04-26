@@ -5,7 +5,7 @@ import type {
   Edge,
   EvaNode,
   EvangelionGraph,
-  EventNode,
+  FamilyNode,
   LocationNode,
   MagiNode,
   OrganizationNode,
@@ -13,17 +13,20 @@ import type {
 import { EDGE_WEIGHT } from "./layoutTuning";
 
 /**
- * Initial seed for the Neon Genesis Evangeli-Graph.
+ * Seed for the Neon Genesis Evangeli-Graph. Top-level kinds:
+ *   - characters (Shinji, Asuka, ..., plus Naoko Akagi for the Magi line).
+ *   - angels: 18 canonical NGE TV-series order (Adam = 1, Lilim = 18).
+ *   - magi: 3 nodes in a tight triangle (the "3-in-1" joke).
+ *   - families: lineage roll-ups (Ikari, Akagi). Characters point at their
+ *     family via member_of_family edges.
+ *   - concepts: AT Field, LCL, Third Impact (the last gated to End of
+ *     Evangelion / TV ep 25+).
+ *   - organizations / locations / EVAs: as before.
  *
- * Four top-level concepts:
- *   - 10 main-cast characters (matches src/genesis character entries).
- *   - 18 angels in canonical NGE TV-series order (Adam = 1, Lilim = 18).
- *   - 3 Magi nodes connected as a tight triangle (the "3-in-1" joke).
- *   - 1 event (Third Impact) gated to End-of-Evangelion / TV ep 25+.
- *
- * Each node lists the genesis shortcodes it links to. Shinji Ikari maps to
- * BOTH `shinji` (given name) and `ikari` (family) so the family shortcode is
- * shared between Shinji, Gendo, and Yui.
+ * Each node carries EXACTLY ONE genesis shortcode --- the canonical identity
+ * of the entity. The family-name registry entries (`ikari`, `akagi`, ...)
+ * also serve as the shortcode for the corresponding family graph node, so
+ * "Ikari" in body copy AND the Ikari family node read the same purple.
  *
  * Spoiler gate: every node and every edge carries an OPTIONAL revealedAt
  * threshold (see src/graph/types.ts). Nodes are gated by their first on-screen
@@ -37,7 +40,7 @@ const characters: CharacterNode[] = [
     id: "char_shinji",
     kind: "character",
     displayName: "Shinji Ikari",
-    shortcodes: ["shinji", "ikari"],
+    shortcodes: ["shinji"],
     role: "Third Child / Pilot of Unit-01",
     notes: "The protagonist. Reluctant pilot of Evangelion Unit-01.",
   },
@@ -45,7 +48,7 @@ const characters: CharacterNode[] = [
     id: "char_asuka",
     kind: "character",
     displayName: "Asuka Langley Soryu",
-    shortcodes: ["asuka", "langley"],
+    shortcodes: ["asuka"],
     role: "Second Child / Pilot of Unit-02",
     revealedAt: { kind: "ep", episode: 8 },
     notes: "Hot-headed German-American pilot of Evangelion Unit-02.",
@@ -54,7 +57,7 @@ const characters: CharacterNode[] = [
     id: "char_rei",
     kind: "character",
     displayName: "Rei Ayanami",
-    shortcodes: ["rei", "ayanami"],
+    shortcodes: ["rei"],
     role: "First Child / Pilot of Unit-00",
     notes:
       "Quiet pilot of Unit-00. Lives alone, speaks rarely, follows orders precisely.",
@@ -63,7 +66,7 @@ const characters: CharacterNode[] = [
     id: "char_misato",
     kind: "character",
     displayName: "Misato Katsuragi",
-    shortcodes: ["misato", "katsuragi"],
+    shortcodes: ["misato"],
     role: "NERV Operations Director",
     notes: "Tactical commander during angel attacks. Shinji's guardian.",
   },
@@ -71,7 +74,7 @@ const characters: CharacterNode[] = [
     id: "char_kaworu",
     kind: "character",
     displayName: "Kaworu Nagisa",
-    shortcodes: ["kaworu", "nagisa"],
+    shortcodes: ["kaworu"],
     role: "Fifth Child",
     revealedAt: { kind: "ep", episode: 24 },
     notes:
@@ -81,7 +84,7 @@ const characters: CharacterNode[] = [
     id: "char_gendo",
     kind: "character",
     displayName: "Gendo Ikari",
-    shortcodes: ["gendo", "ikari"],
+    shortcodes: ["gendo"],
     role: "NERV Commander",
     notes: "Shinji's estranged father. Runs NERV with his own agenda.",
   },
@@ -89,7 +92,7 @@ const characters: CharacterNode[] = [
     id: "char_ritsuko",
     kind: "character",
     displayName: "Ritsuko Akagi",
-    shortcodes: ["ritsuko", "akagi"],
+    shortcodes: ["ritsuko"],
     role: "NERV Chief Scientist",
     notes:
       "Lead engineer on the Evangelions and the Magi. Daughter of Naoko Akagi.",
@@ -98,7 +101,7 @@ const characters: CharacterNode[] = [
     id: "char_mari",
     kind: "character",
     displayName: "Mari Makinami Illustrious",
-    shortcodes: ["mari", "makinami"],
+    shortcodes: ["mari"],
     role: "Pilot (Rebuild)",
     revealedAt: { kind: "rebuild" },
     notes: "Rebuild-only pilot. Excitable, opportunistic, sings in combat.",
@@ -117,11 +120,21 @@ const characters: CharacterNode[] = [
     id: "char_yui",
     kind: "character",
     displayName: "Yui Ikari",
-    shortcodes: ["yui", "ikari"],
+    shortcodes: ["yui"],
     role: "Lost researcher (Unit-01 contact experiment)",
     revealedAt: { kind: "ep", episode: 20 },
     notes:
       "Shinji's mother. Lost during a contact experiment with Unit-01.",
+  },
+  {
+    id: "char_naoko",
+    kind: "character",
+    displayName: "Naoko Akagi",
+    shortcodes: ["naoko"],
+    role: "Magi designer (lost)",
+    revealedAt: { kind: "ep", episode: 21 },
+    notes:
+      "Original architect of the Magi system. Ritsuko's mother. Took her own life on the Magi launch day; her three personalities became Casper, Melchior, and Balthasar.",
   },
 ];
 
@@ -366,19 +379,6 @@ const magi: MagiNode[] = [
   },
 ];
 
-const events: EventNode[] = [
-  {
-    id: "event_third_impact",
-    kind: "event",
-    name: "Third Impact",
-    displayName: "Third Impact",
-    shortcodes: ["thirdImpact"],
-    revealedAt: { kind: "eoe" },
-    notes:
-      "Instrumentality. Unfolds across End of Evangelion (and abstractly in TV ep 25-26).",
-  },
-];
-
 const organizations: OrganizationNode[] = [
   {
     id: "org_nerv",
@@ -396,7 +396,10 @@ const locations: LocationNode[] = [
     id: "loc_nerv_hq",
     kind: "location",
     name: "NERV HQ",
-    displayName: "NERV HQ",
+    // Location nodes always render their displayName as "Place (Location)"
+    // so the 3D label disambiguates them from organization or character
+    // nodes. validateGraph enforces this suffix.
+    displayName: "NERV HQ (Location)",
     shortcodes: ["nervHq"],
     notes:
       "NERV's underground headquarters beneath Tokyo-3, set inside the Geofront cavity.",
@@ -404,17 +407,57 @@ const locations: LocationNode[] = [
 ];
 
 const concepts: ConceptNode[] = [
-  // Placeholder seed concept node. The real concept catalog (AT Field, LCL,
-  // Anti-AT Field, etc.) lands as the investigation grows --- this single
-  // node exists to (a) prove out the concept kind end-to-end and (b) give
-  // the renderer a node to paint in the new concept color.
   {
-    id: "concept_test_node",
+    id: "concept_at_field",
     kind: "concept",
-    name: "TEST NODE",
-    displayName: "TEST NODE",
+    name: "AT Field",
+    displayName: "AT Field",
     shortcodes: ["atField"],
-    notes: "Placeholder concept node. Real concept entries land later.",
+    notes:
+      "Absolute Terror Field. Hexagonal red barrier projected by every soul. Every angel has one; pilots punch through with their EVA's.",
+  },
+  {
+    id: "concept_lcl",
+    kind: "concept",
+    name: "LCL",
+    displayName: "LCL",
+    shortcodes: ["lcl"],
+    notes:
+      "Link Connect Liquid. Orange amniotic fluid filling the entry plug; the medium pilots breathe and through which neural sync happens.",
+  },
+  {
+    id: "concept_third_impact",
+    kind: "concept",
+    name: "Third Impact",
+    displayName: "Third Impact",
+    shortcodes: ["thirdImpact"],
+    revealedAt: { kind: "eoe" },
+    notes:
+      "Instrumentality. The pink-orange tang of dissolved humanity. Unfolds across End of Evangelion (and abstractly in TV ep 25-26).",
+  },
+];
+
+const families: FamilyNode[] = [
+  {
+    id: "family_ikari",
+    kind: "family",
+    name: "Ikari",
+    // Family nodes always render their displayName as "Surname (Family)" so
+    // the 3D label and readout card can never be mistaken for a character.
+    // validateGraph enforces this suffix.
+    displayName: "Ikari (Family)",
+    shortcodes: ["ikari"],
+    notes:
+      "The Ikari family --- Shinji (Third Child), Gendo (NERV Commander), and Yui (lost to Unit-01).",
+  },
+  {
+    id: "family_akagi",
+    kind: "family",
+    name: "Akagi",
+    displayName: "Akagi (Family)",
+    shortcodes: ["akagi"],
+    notes:
+      "The Akagi family --- Ritsuko (NERV chief scientist) and her late mother Naoko (original Magi designer).",
   },
 ];
 
@@ -492,7 +535,7 @@ const evas: EvaNode[] = [
 ];
 
 /**
- * Edges. Four kinds in the seed:
+ * Edges. Five kinds in the seed:
  *   - magi_link: tight triangle between the three Magi (3-in-1 joke).
  *   - angel_sequence: chain angel(N) -> angel(N+1) for N = 1..17, mirroring
  *     the canonical TV-series numbering.
@@ -503,6 +546,9 @@ const evas: EvaNode[] = [
  *       Kaworu <-> Tabris (Ep. 24)
  *   - pilots: character -> EVA unit. Shinji-Unit01 from Ep. 1; Toji-Unit03
  *     gated to the Fourth Child reveal (Ep. 17).
+ *   - member_of_family: character -> family. Shinji/Gendo/Yui -> Ikari,
+ *     Ritsuko/Naoko -> Akagi. Endpoint masking handles the gates: Yui's
+ *     edge stays hidden until Ep. 20 because the Yui node itself is gated.
  *
  * Each edge is stamped with its kind's spring weight (EDGE_WEIGHT) so the
  * force layout equilibrates at a predictable distance.
@@ -618,6 +664,56 @@ function buildEdges(): Edge[] {
     notes: "Toji is the Fourth Child / Unit-03 pilot (Ep. 17).",
   });
 
+  // Family memberships --- characters orbit their family roll-up node.
+  const familyWeight = EDGE_WEIGHT.member_of_family;
+  const familyEdges: Array<{
+    from: string;
+    to: string;
+    shortcodes: [string, string];
+    notes: string;
+  }> = [
+    {
+      from: "char_shinji",
+      to: "family_ikari",
+      shortcodes: ["shinji", "ikari"],
+      notes: "Shinji Ikari --- Third Child, Gendo and Yui's son.",
+    },
+    {
+      from: "char_gendo",
+      to: "family_ikari",
+      shortcodes: ["gendo", "ikari"],
+      notes: "Gendo Ikari --- NERV commander, Shinji's father.",
+    },
+    {
+      from: "char_yui",
+      to: "family_ikari",
+      shortcodes: ["yui", "ikari"],
+      notes: "Yui Ikari --- Shinji's mother, lost to Unit-01.",
+    },
+    {
+      from: "char_ritsuko",
+      to: "family_akagi",
+      shortcodes: ["ritsuko", "akagi"],
+      notes: "Ritsuko Akagi --- NERV chief scientist, Naoko's daughter.",
+    },
+    {
+      from: "char_naoko",
+      to: "family_akagi",
+      shortcodes: ["naoko", "akagi"],
+      notes: "Naoko Akagi --- original Magi designer, Ritsuko's mother.",
+    },
+  ];
+  for (const e of familyEdges) {
+    out.push({
+      from: e.from,
+      to: e.to,
+      kind: "member_of_family",
+      weight: familyWeight,
+      shortcodes: e.shortcodes,
+      notes: e.notes,
+    });
+  }
+
   return out;
 }
 
@@ -629,10 +725,10 @@ export const evangelion: EvangelionGraph = {
     ...characters,
     ...angels,
     ...magi,
-    ...events,
     ...organizations,
     ...locations,
     ...concepts,
+    ...families,
     ...evas,
   ],
   edges: buildEdges(),

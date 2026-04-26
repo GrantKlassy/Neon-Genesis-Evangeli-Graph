@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { SPOILER_FULL, seedSpoilerProgress, waitForGraphState } from "./_helpers";
+import { waitForGraphState } from "./_helpers";
 
 test.describe("graph structure visible in the DOM", () => {
-  test.beforeEach(async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
-  });
+  // The structure tests assert DOM presence and counts, both of which render
+  // beneath the spoiler-gate overlay. No need to dismiss the gate.
 
   test("legend shows node kinds and edge kinds", async ({ page }) => {
     await page.goto("/");
@@ -14,8 +13,10 @@ test.describe("graph structure visible in the DOM", () => {
     await expect(legend).toContainText(/Characters/i);
     await expect(legend).toContainText(/Angels/i);
     await expect(legend).toContainText(/Magi/i);
+    await expect(legend).toContainText(/Families/i);
     await expect(legend).toContainText(/Magi link/i);
     await expect(legend).toContainText(/Angel sequence/i);
+    await expect(legend).toContainText(/Member of family/i);
   });
 
   test("readout has the three top-level sections", async ({ page }) => {
@@ -72,6 +73,18 @@ test.describe("graph structure visible in the DOM", () => {
     await expect(section).toContainText(/Casper/);
     await expect(section).toContainText(/Melchior/);
     await expect(section).toContainText(/Balthasar/);
+  });
+
+  test("families section lists Ikari and Akagi", async ({ page }) => {
+    await page.goto("/");
+    const section = page.locator('[data-testid="ngg-section-families"]');
+    await expect(section).toBeVisible();
+    await expect(
+      section.locator('[data-testid="family-family_ikari"]'),
+    ).toBeVisible();
+    await expect(
+      section.locator('[data-testid="family-family_akagi"]'),
+    ).toBeVisible();
   });
 
   test("source attribution names the show", async ({ page }) => {

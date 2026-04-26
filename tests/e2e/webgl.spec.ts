@@ -1,17 +1,15 @@
 import { expect, test } from "@playwright/test";
 import {
-  SPOILER_FULL,
   canvasHasNonBlackPixels,
   getGraphHandle,
   rootEl,
-  seedSpoilerProgress,
   waitForGraphState,
 } from "./_helpers";
 
 test.describe("WebGL launches", () => {
-  test.beforeEach(async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
-  });
+  // The WebGL tests inspect the canvas + handle directly --- both work behind
+  // the gate overlay, so no need to dismiss it. Node count / pixel checks
+  // assert renderer-level facts that don't depend on user spoiler choice.
 
   test("canvas exists with non-zero dimensions", async ({ page }) => {
     await page.goto("/");
@@ -50,12 +48,12 @@ test.describe("WebGL launches", () => {
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
     const handle = await getGraphHandle(page);
-    // 10 characters + 18 angels + 3 magi + 1 event = 32
-    expect(handle!.nodeCount).toBe(32);
-    // 3 magi triangle + 17 angel sequence + 3 identity reveals = 23
-    expect(handle!.edgeCount).toBe(23);
+    // 11 chars + 18 angels + 3 magi + 1 org + 1 loc + 3 concepts + 2 families + 6 evas = 45
+    expect(handle!.nodeCount).toBe(45);
+    // 3 magi + 17 angel-sequence + 3 identity-reveal + 4 pilots + 5 member_of_family = 32
+    expect(handle!.edgeCount).toBe(32);
     const root = rootEl(page);
-    await expect(root).toHaveAttribute("data-node-count", "32");
+    await expect(root).toHaveAttribute("data-node-count", "45");
   });
 
   test("canvas shows non-background pixels (something is drawn)", async ({

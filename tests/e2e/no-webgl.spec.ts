@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { SPOILER_FULL, seedSpoilerProgress } from "./_helpers";
 
 /**
  * When WebGL is unavailable, the graph host must surface a clear fallback so
@@ -9,10 +8,6 @@ import { SPOILER_FULL, seedSpoilerProgress } from "./_helpers";
  * before the inline script bootstraps. Other 2D usage stays unaffected.
  */
 test.describe("WebGL unavailable", () => {
-  test.beforeEach(async ({ page }) => {
-    await seedSpoilerProgress(page, SPOILER_FULL);
-  });
-
   test("falls back to readable mode when no WebGL context", async ({
     page,
   }) => {
