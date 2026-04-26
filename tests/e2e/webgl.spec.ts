@@ -1,12 +1,18 @@
 import { expect, test } from "@playwright/test";
 import {
+  SPOILER_FULL,
   canvasHasNonBlackPixels,
   getGraphHandle,
   rootEl,
+  seedSpoilerProgress,
   waitForGraphState,
 } from "./_helpers";
 
 test.describe("WebGL launches", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedSpoilerProgress(page, SPOILER_FULL);
+  });
+
   test("canvas exists with non-zero dimensions", async ({ page }) => {
     await page.goto("/");
     await waitForGraphState(page);
@@ -44,12 +50,12 @@ test.describe("WebGL launches", () => {
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
     const handle = await getGraphHandle(page);
-    // 8 characters + 18 angels + 3 magi = 29
-    expect(handle!.nodeCount).toBe(29);
-    // 3 magi triangle + 17 angel sequence = 20
-    expect(handle!.edgeCount).toBe(20);
+    // 10 characters + 18 angels + 3 magi + 1 event = 32
+    expect(handle!.nodeCount).toBe(32);
+    // 3 magi triangle + 17 angel sequence + 3 identity reveals = 23
+    expect(handle!.edgeCount).toBe(23);
     const root = rootEl(page);
-    await expect(root).toHaveAttribute("data-node-count", "29");
+    await expect(root).toHaveAttribute("data-node-count", "32");
   });
 
   test("canvas shows non-background pixels (something is drawn)", async ({

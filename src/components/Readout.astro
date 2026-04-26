@@ -110,12 +110,12 @@ const magi = evangelion.nodes.filter(isMagi);
           <li
             class:list={[
               "flex items-baseline gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-2 py-1.5",
-              a.spoilerLevel === "spoiler"
+              a.revealedAt
                 ? "border-l-2 border-l-[color:var(--color-nerv-red)]/70"
                 : "",
             ]}
             data-testid={`angel-${a.number}`}
-            data-spoiler={a.spoilerLevel}
+            data-revealed-at={a.revealedAt ? a.revealedAt.kind : "open"}
             data-shortcodes={a.shortcodes.join(",")}
           >
             <span

@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { waitForGraphState } from "./_helpers";
+import { SPOILER_FULL, seedSpoilerProgress, waitForGraphState } from "./_helpers";
 
 test.describe("smoke", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedSpoilerProgress(page, SPOILER_FULL);
+  });
+
   test("homepage renders with header, graph section, and readout", async ({
     page,
   }) => {
@@ -22,17 +26,17 @@ test.describe("smoke", () => {
     await expect(readout).toBeVisible();
   });
 
-  test("stat counters reflect the canon seed (8 chars / 18 angels / 3 magi)", async ({
+  test("stat counters reflect the canon seed (10 chars / 18 angels / 3 magi)", async ({
     page,
   }) => {
     await page.goto("/");
-    await expect(page.getByTestId("stat-characters")).toHaveText("8");
+    await expect(page.getByTestId("stat-characters")).toHaveText("10");
     await expect(page.getByTestId("stat-angels")).toHaveText("18");
     await expect(page.getByTestId("stat-magi")).toHaveText("3");
     const edgesText = await page.getByTestId("stat-edges").innerText();
     const edges = Number(edgesText);
-    // 3 magi triangle + 17 angel sequence = 20 edges in the basic seed.
-    expect(edges).toBeGreaterThanOrEqual(20);
+    // 3 magi triangle + 17 angel sequence + 3 identity reveals = 23 edges.
+    expect(edges).toBeGreaterThanOrEqual(23);
   });
 
   test("graph host element reaches a terminal state", async ({ page }) => {

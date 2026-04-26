@@ -3,6 +3,7 @@ import type {
   CharacterNode,
   Edge,
   EvangelionGraph,
+  EventNode,
   MagiNode,
 } from "./types";
 import { EDGE_WEIGHT } from "./layoutTuning";
@@ -10,18 +11,21 @@ import { EDGE_WEIGHT } from "./layoutTuning";
 /**
  * Initial seed for the Neon Genesis Evangeli-Graph.
  *
- * Three top-level concepts:
- *   - 8 main-cast characters (matches src/genesis character entries).
+ * Four top-level concepts:
+ *   - 10 main-cast characters (matches src/genesis character entries).
  *   - 18 angels in canonical NGE TV-series order (Adam = 1, Lilim = 18).
  *   - 3 Magi nodes connected as a tight triangle (the "3-in-1" joke).
+ *   - 1 event (Third Impact) gated to End-of-Evangelion / TV ep 25+.
  *
  * Each node lists the genesis shortcodes it links to. Shinji Ikari maps to
  * BOTH `shinji` (given name) and `ikari` (family) so the family shortcode is
- * shared between Shinji and Gendo's nodes.
+ * shared between Shinji, Gendo, and Yui.
  *
- * No character <-> angel edges yet: that is where spoiler gating belongs
- * (e.g. Kaworu <-> Tabris would reveal the 17th-Angel twist), so those
- * connections are intentionally left out of the bare seed.
+ * Spoiler gate: every node and every edge carries an OPTIONAL revealedAt
+ * threshold (see src/graph/types.ts). Nodes are gated by their first on-screen
+ * appearance. Edges are gated independently --- Rei and Yui both render as
+ * separate nodes at their respective intro episodes, but the edge between
+ * them (the genetic-origin reveal) is locked to a much later episode.
  */
 
 const characters: CharacterNode[] = [
@@ -31,7 +35,6 @@ const characters: CharacterNode[] = [
     displayName: "Shinji Ikari",
     shortcodes: ["shinji", "ikari"],
     role: "Third Child / Pilot of Unit-01",
-    spoilerLevel: "open",
     notes: "The protagonist. Reluctant pilot of Evangelion Unit-01.",
   },
   {
@@ -40,7 +43,7 @@ const characters: CharacterNode[] = [
     displayName: "Asuka Langley Soryu",
     shortcodes: ["asuka", "langley"],
     role: "Second Child / Pilot of Unit-02",
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 8 },
     notes: "Hot-headed German-American pilot of Evangelion Unit-02.",
   },
   {
@@ -49,8 +52,8 @@ const characters: CharacterNode[] = [
     displayName: "Rei Ayanami",
     shortcodes: ["rei", "ayanami"],
     role: "First Child / Pilot of Unit-00",
-    spoilerLevel: "spoiler",
-    notes: "Quiet pilot of Unit-00. Origins are a late-series reveal.",
+    notes:
+      "Quiet pilot of Unit-00. The character is open from Ep 1 --- her connection to Yui is what's gated.",
   },
   {
     id: "char_misato",
@@ -58,7 +61,6 @@ const characters: CharacterNode[] = [
     displayName: "Misato Katsuragi",
     shortcodes: ["misato", "katsuragi"],
     role: "NERV Operations Director",
-    spoilerLevel: "open",
     notes: "Tactical commander during angel attacks. Shinji's guardian.",
   },
   {
@@ -67,9 +69,9 @@ const characters: CharacterNode[] = [
     displayName: "Kaworu Nagisa",
     shortcodes: ["kaworu", "nagisa"],
     role: "Fifth Child",
-    spoilerLevel: "spoiler",
+    revealedAt: { kind: "ep", episode: 24 },
     notes:
-      "The Fifth Child, introduced in Ep. 24. Connection to Tabris (17th Angel) is gated.",
+      "The Fifth Child, introduced in Ep. 24. The Tabris identity edge is gated independently.",
   },
   {
     id: "char_gendo",
@@ -77,7 +79,6 @@ const characters: CharacterNode[] = [
     displayName: "Gendo Ikari",
     shortcodes: ["gendo", "ikari"],
     role: "NERV Commander",
-    spoilerLevel: "open",
     notes: "Shinji's estranged father. Runs NERV with his own agenda.",
   },
   {
@@ -86,7 +87,6 @@ const characters: CharacterNode[] = [
     displayName: "Ritsuko Akagi",
     shortcodes: ["ritsuko", "akagi"],
     role: "NERV Chief Scientist",
-    spoilerLevel: "open",
     notes:
       "Lead engineer on the Evangelions and the Magi. Daughter of Naoko Akagi.",
   },
@@ -96,8 +96,28 @@ const characters: CharacterNode[] = [
     displayName: "Mari Makinami Illustrious",
     shortcodes: ["mari", "makinami"],
     role: "Pilot (Rebuild)",
-    spoilerLevel: "open",
+    revealedAt: { kind: "rebuild" },
     notes: "Rebuild-only pilot. Excitable, opportunistic, sings in combat.",
+  },
+  {
+    id: "char_toji",
+    kind: "character",
+    displayName: "Toji Suzuhara",
+    shortcodes: ["toji"],
+    role: "Classmate / Fourth Child",
+    revealedAt: { kind: "ep", episode: 3 },
+    notes:
+      "Shinji's classmate. Open as a character from Ep. 3; the Bardiel identity edge is gated to Ep. 18.",
+  },
+  {
+    id: "char_yui",
+    kind: "character",
+    displayName: "Yui Ikari",
+    shortcodes: ["yui", "ikari"],
+    role: "Lost researcher (Unit-01 contact experiment)",
+    revealedAt: { kind: "ep", episode: 20 },
+    notes:
+      "Shinji's mother. Identity / fate is a late-show flashback reveal. Edge to Rei is gated separately.",
   },
 ];
 
@@ -109,10 +129,10 @@ const angels: AngelNode[] = [
     name: "Adam",
     displayName: "Adam",
     shortcodes: ["adam"],
-    spoilerLevel: "spoiler",
-    introducedEpisode: "Backstory",
+    revealedAt: { kind: "ep", episode: 21 },
+    introducedEpisode: "Backstory / Ep. 21",
     notes:
-      "First Angel. Source of the Second Impact. Existence and role are major reveals.",
+      "First Angel. Source of the Second Impact. The embryo reveal is in the late teens.",
   },
   {
     id: "angel_02_lilith",
@@ -121,8 +141,8 @@ const angels: AngelNode[] = [
     name: "Lilith",
     displayName: "Lilith",
     shortcodes: ["lilith"],
-    spoilerLevel: "spoiler",
-    introducedEpisode: "Backstory",
+    revealedAt: { kind: "ep", episode: 23 },
+    introducedEpisode: "Backstory / Ep. 23",
     notes:
       "Second Angel. Crucified at the bottom of NERV in Terminal Dogma. Late-series reveal.",
   },
@@ -133,7 +153,6 @@ const angels: AngelNode[] = [
     name: "Sachiel",
     displayName: "Sachiel",
     shortcodes: ["sachiel"],
-    spoilerLevel: "open",
     introducedEpisode: "Ep. 1",
     notes: "First Angel encountered on screen. Defeated in Tokyo-3 by Unit-01.",
   },
@@ -144,7 +163,7 @@ const angels: AngelNode[] = [
     name: "Shamshel",
     displayName: "Shamshel",
     shortcodes: ["shamshel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 3 },
     introducedEpisode: "Ep. 3",
     notes: "Tendril-whip angel. Defeated by Unit-01 in close combat.",
   },
@@ -155,7 +174,7 @@ const angels: AngelNode[] = [
     name: "Ramiel",
     displayName: "Ramiel",
     shortcodes: ["ramiel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 5 },
     introducedEpisode: "Ep. 5",
     notes:
       "Giant blue octahedron with a positron beam. The Operation Yashima sniper episode.",
@@ -167,7 +186,7 @@ const angels: AngelNode[] = [
     name: "Gaghiel",
     displayName: "Gaghiel",
     shortcodes: ["gaghiel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 8 },
     introducedEpisode: "Ep. 8",
     notes: "Underwater angel. The Pacific fleet engagement with Unit-02.",
   },
@@ -178,7 +197,7 @@ const angels: AngelNode[] = [
     name: "Israfel",
     displayName: "Israfel",
     shortcodes: ["israfel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 9 },
     introducedEpisode: "Ep. 9",
     notes:
       "Splits into two. Defeated by Shinji and Asuka in the choreographed dance.",
@@ -190,7 +209,7 @@ const angels: AngelNode[] = [
     name: "Sandalphon",
     displayName: "Sandalphon",
     shortcodes: ["sandalphon"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 10 },
     introducedEpisode: "Ep. 10",
     notes: "Embryonic angel pulled out of Mt. Asama by Unit-02.",
   },
@@ -201,7 +220,7 @@ const angels: AngelNode[] = [
     name: "Matarael",
     displayName: "Matarael",
     shortcodes: ["matarael"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 11 },
     introducedEpisode: "Ep. 11",
     notes: "Spider-shaped acid-rain angel. Defeated during the blackout.",
   },
@@ -212,7 +231,7 @@ const angels: AngelNode[] = [
     name: "Sahaquiel",
     displayName: "Sahaquiel",
     shortcodes: ["sahaquiel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 12 },
     introducedEpisode: "Ep. 12",
     notes: "Orbital angel that body-checks Tokyo-3. Caught by all three EVAs.",
   },
@@ -223,7 +242,7 @@ const angels: AngelNode[] = [
     name: "Iruel",
     displayName: "Iruel",
     shortcodes: ["iruel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 13 },
     introducedEpisode: "Ep. 13",
     notes:
       "Nano-machine angel that infiltrates the Magi system. Defeated by Ritsuko.",
@@ -235,7 +254,7 @@ const angels: AngelNode[] = [
     name: "Leliel",
     displayName: "Leliel",
     shortcodes: ["leliel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 16 },
     introducedEpisode: "Ep. 16",
     notes:
       "Shadow / Dirac sea angel. Swallows Unit-01. The introspective bottle episode.",
@@ -247,7 +266,7 @@ const angels: AngelNode[] = [
     name: "Bardiel",
     displayName: "Bardiel",
     shortcodes: ["bardiel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 18 },
     introducedEpisode: "Ep. 18",
     notes:
       "Possesses Unit-03 with Toji aboard. Forces Unit-01 into a brutal fight.",
@@ -259,7 +278,7 @@ const angels: AngelNode[] = [
     name: "Zeruel",
     displayName: "Zeruel",
     shortcodes: ["zeruel"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 19 },
     introducedEpisode: "Ep. 19",
     notes:
       "Paper-ribbon angel. Tears through Tokyo-3. Triggers Unit-01's berserk feeding.",
@@ -271,7 +290,7 @@ const angels: AngelNode[] = [
     name: "Arael",
     displayName: "Arael",
     shortcodes: ["arael"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 22 },
     introducedEpisode: "Ep. 22",
     notes:
       "Bird-of-light angel. Mind-attacks Asuka. Defeated by the Lance of Longinus.",
@@ -283,7 +302,7 @@ const angels: AngelNode[] = [
     name: "Armisael",
     displayName: "Armisael",
     shortcodes: ["armisael"],
-    spoilerLevel: "open",
+    revealedAt: { kind: "ep", episode: 23 },
     introducedEpisode: "Ep. 23",
     notes: "Helix angel that fuses with Unit-00. Forces Rei to self-destruct.",
   },
@@ -294,10 +313,9 @@ const angels: AngelNode[] = [
     name: "Tabris",
     displayName: "Tabris",
     shortcodes: ["tabris"],
-    spoilerLevel: "spoiler",
+    revealedAt: { kind: "ep", episode: 24 },
     introducedEpisode: "Ep. 24",
-    notes:
-      "Final visible angel. Identity reveal is a major spoiler --- gated until unlocked.",
+    notes: "Final visible angel. Identity edge to Kaworu is gated.",
   },
   {
     id: "angel_18_lilim",
@@ -306,7 +324,7 @@ const angels: AngelNode[] = [
     name: "Lilim",
     displayName: "Lilim",
     shortcodes: ["lilim"],
-    spoilerLevel: "spoiler",
+    revealedAt: { kind: "eoe" },
     introducedEpisode: "End of Evangelion",
     notes:
       "Humanity itself, the Eighteenth Angel. Revealed as the Instrumentality conclusion.",
@@ -321,7 +339,6 @@ const magi: MagiNode[] = [
     displayName: "Casper-3",
     personality: "Woman",
     shortcodes: ["casper"],
-    spoilerLevel: "open",
     notes:
       "Naoko Akagi's woman fragment. The terminal-green default Magi node.",
   },
@@ -332,7 +349,6 @@ const magi: MagiNode[] = [
     displayName: "Melchior-1",
     personality: "Scientist",
     shortcodes: ["melchior"],
-    spoilerLevel: "open",
     notes: "Naoko Akagi's scientist fragment. Lead vote on cold logic.",
   },
   {
@@ -342,23 +358,36 @@ const magi: MagiNode[] = [
     displayName: "Balthasar-2",
     personality: "Mother",
     shortcodes: ["balthasar"],
-    spoilerLevel: "open",
     notes: "Naoko Akagi's mother fragment. Tiebreaker on protective calls.",
   },
 ];
 
+const events: EventNode[] = [
+  {
+    id: "event_third_impact",
+    kind: "event",
+    name: "Third Impact",
+    displayName: "Third Impact",
+    shortcodes: ["thirdImpact"],
+    revealedAt: { kind: "eoe" },
+    notes:
+      "Instrumentality. Unfolds across End of Evangelion (and abstractly in TV ep 25-26).",
+  },
+];
+
 /**
- * Edges. Two kinds in the basic seed:
+ * Edges. Three kinds in the seed:
  *   - magi_link: tight triangle between the three Magi (3-in-1 joke).
  *   - angel_sequence: chain angel(N) -> angel(N+1) for N = 1..17, mirroring
  *     the canonical TV-series numbering.
+ *   - identity_reveal: late-show "X is really Y" edges. Each gated to its
+ *     reveal episode independently of either endpoint:
+ *       Toji <-> Bardiel  (Ep. 18)
+ *       Rei <-> Yui       (Ep. 23)
+ *       Kaworu <-> Tabris (Ep. 24)
  *
  * Each edge is stamped with its kind's spring weight (EDGE_WEIGHT) so the
- * force layout equilibrates at a predictable distance: magi cling tight,
- * angels stay grouped along the canon order without overlapping.
- *
- * Characters do not yet have edges to anything; that is reserved for future
- * relationship layers (pilot <-> EVA, guardian <-> ward, ...).
+ * force layout equilibrates at a predictable distance.
  */
 function buildEdges(): Edge[] {
   const out: Edge[] = [];
@@ -403,6 +432,36 @@ function buildEdges(): Edge[] {
     });
   }
 
+  // Identity reveals --- the spoiler-gated relationships.
+  const idWeight = EDGE_WEIGHT.identity_reveal;
+  out.push({
+    from: "char_toji",
+    to: "angel_13_bardiel",
+    kind: "identity_reveal",
+    weight: idWeight,
+    revealedAt: { kind: "ep", episode: 18 },
+    shortcodes: ["toji", "bardiel"],
+    notes: "Toji is the Unit-03 pilot; Bardiel possesses Unit-03 (Ep. 18).",
+  });
+  out.push({
+    from: "char_rei",
+    to: "char_yui",
+    kind: "identity_reveal",
+    weight: idWeight,
+    revealedAt: { kind: "ep", episode: 23 },
+    shortcodes: ["rei", "yui"],
+    notes: "Rei's origin traces back to Yui's salvaged genetic material.",
+  });
+  out.push({
+    from: "char_kaworu",
+    to: "angel_17_tabris",
+    kind: "identity_reveal",
+    weight: idWeight,
+    revealedAt: { kind: "ep", episode: 24 },
+    shortcodes: ["kaworu", "tabris"],
+    notes: "Kaworu IS the Seventeenth Angel, Tabris (Ep. 24).",
+  });
+
   return out;
 }
 
@@ -410,6 +469,6 @@ export const evangelion: EvangelionGraph = {
   id: "evangelion",
   title: "Neon Genesis Evangelion --- canon seed",
   source: "Neon Genesis Evangelion (TV) + End of Evangelion",
-  nodes: [...characters, ...angels, ...magi],
+  nodes: [...characters, ...angels, ...magi, ...events],
   edges: buildEdges(),
 };

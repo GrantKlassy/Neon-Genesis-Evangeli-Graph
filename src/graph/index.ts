@@ -4,10 +4,16 @@ import type {
   Edge,
   EdgeKind,
   EvangelionGraph,
+  EventNode,
   GraphNode,
   MagiNode,
   NodeKind,
-  SpoilerLevel,
+  RevealedAt,
+  SpoilerProgress,
+} from "./types";
+import {
+  SPOILER_PROGRESS_DEFAULT,
+  SPOILER_PROGRESS_FULL,
 } from "./types";
 import {
   assertGenesisValid,
@@ -22,11 +28,14 @@ export type {
   Edge,
   EdgeKind,
   EvangelionGraph,
+  EventNode,
   GraphNode,
   MagiNode,
   NodeKind,
-  SpoilerLevel,
+  RevealedAt,
+  SpoilerProgress,
 };
+export { SPOILER_PROGRESS_DEFAULT, SPOILER_PROGRESS_FULL };
 
 export { evangelion } from "./evangelion";
 
@@ -40,6 +49,10 @@ export function isAngel(node: GraphNode): node is AngelNode {
 
 export function isMagi(node: GraphNode): node is MagiNode {
   return node.kind === "magi";
+}
+
+export function isEvent(node: GraphNode): node is EventNode {
+  return node.kind === "event";
 }
 
 export function nodeIndex(graph: EvangelionGraph): Map<string, GraphNode> {
@@ -59,15 +72,144 @@ export const MAGI_UNIFORM_COLOR = "#5cf5b6";
  */
 export const ANGEL_UNIFORM_COLOR = "#ff003c";
 
+/**
+ * Uniform color for every Event node. SEELE purple --- events tend to be
+ * late-canon flashpoints (Third Impact, Instrumentality) that the show
+ * frames through SEELE's scheming.
+ */
+export const EVENT_UNIFORM_COLOR = "#8a2be2";
+
 /** Per-edge-kind line colors. */
 export const EDGE_COLORS: Record<EdgeKind, string> = {
   // Magi triangle inherits the same green as the magi nodes themselves --- the
   // edge is a continuation of the "3-in-1" body, not a separate visual class.
   magi_link: MAGI_UNIFORM_COLOR,
   angel_sequence: "#ff6c2a", // warm orange chain
+  // SEELE purple for the late-show "X is really Y" identity reveals
+  // (Toji <-> Bardiel, Kaworu <-> Tabris, Rei <-> Yui).
+  identity_reveal: "#8a2be2",
 };
 
 export { EDGE_SPRING_LENGTH, EDGE_WEIGHT } from "./layoutTuning";
+
+// ---------------------------------------------------------------------------
+// Spoiler gate
+// ---------------------------------------------------------------------------
+
+/**
+ * Mask palette. Black sphere, dim halo, dim label --- enough silhouette to
+ * tell the user something is hidden there without revealing what.
+ */
+export const MASK_FILL_COLOR = "#000000";
+export const MASK_HALO_COLOR = "#1a1a1a";
+export const MASK_LABEL_COLOR = "#666666";
+
+/** localStorage key for the user's declared spoiler progress. */
+export const SPOILER_STORAGE_KEY = "ngg-spoiler-progress";
+
+/** CustomEvent name dispatched whenever the gate writes new progress. */
+export const SPOILER_EVENT_NAME = "ngg-spoiler-progress-changed";
+
+/**
+ * Resolve a single revealedAt gate against the user's progress. An undefined
+ * gate (the common case) is open-from-ep-1.
+ *
+ * EoE-gated entities ALSO unlock once the user has watched TV episode 25 or
+ * later: the original TV finale (eps 25-26) covers the same Instrumentality
+ * material that EoE re-renders, so anyone past ep 24 has already been spoiled
+ * for the third-impact reveal.
+ */
+export function isVisible(
+  gate: RevealedAt | undefined,
+  progress: SpoilerProgress,
+): boolean {
+  if (!gate) return true;
+  switch (gate.kind) {
+    case "ep":
+      return progress.episode >= gate.episode;
+    case "eoe":
+      return progress.eoe || progress.episode >= 25;
+    case "rebuild":
+      return progress.rebuild;
+  }
+}
+
+export function isNodeMasked(
+  node: GraphNode,
+  progress: SpoilerProgress,
+): boolean {
+  return !isVisible(node.revealedAt, progress);
+}
+
+/**
+ * An edge is masked when (a) its own gate fails OR (b) either endpoint is
+ * masked. A half-revealed line --- visible endpoint to hidden endpoint ---
+ * leaks information about the hidden node, so the renderer treats it the
+ * same as a fully masked relationship.
+ */
+export function isEdgeMasked(
+  edge: Edge,
+  progress: SpoilerProgress,
+  nodes: Map<string, GraphNode>,
+): boolean {
+  if (!isVisible(edge.revealedAt, progress)) return true;
+  const from = nodes.get(edge.from);
+  const to = nodes.get(edge.to);
+  if (!from || !to) return true;
+  return isNodeMasked(from, progress) || isNodeMasked(to, progress);
+}
+
+/**
+ * Replace every non-whitespace character with U+2588 FULL BLOCK so the mask
+ * preserves word boundaries and length without revealing letters. Spaces
+ * and punctuation pass through.
+ */
+export function maskLabel(text: string): string {
+  return text
+    .split("")
+    .map((c) => (/\s/.test(c) ? c : "█"))
+    .join("");
+}
+
+/**
+ * Human-readable description of a gate. Used in tooltips, readout panels,
+ * and tests. An undefined gate is "open" (visible from Ep 1).
+ */
+export function gateLabel(gate: RevealedAt | undefined): string {
+  if (!gate) return "open";
+  switch (gate.kind) {
+    case "ep":
+      return `Ep. ${gate.episode}+`;
+    case "eoe":
+      return "End of Evangelion";
+    case "rebuild":
+      return "Rebuild films";
+  }
+}
+
+/**
+ * Parse a SpoilerProgress out of a JSON string, returning the default if the
+ * string is missing or malformed. Used by the gate's localStorage read path
+ * so a corrupt cookie doesn't blow up the renderer.
+ */
+export function parseSpoilerProgress(raw: string | null): SpoilerProgress {
+  if (!raw) return { ...SPOILER_PROGRESS_DEFAULT };
+  try {
+    const obj = JSON.parse(raw) as unknown;
+    if (!obj || typeof obj !== "object") return { ...SPOILER_PROGRESS_DEFAULT };
+    const o = obj as Record<string, unknown>;
+    const ep = typeof o.episode === "number" ? o.episode : 0;
+    const eoe = o.eoe === true;
+    const rebuild = o.rebuild === true;
+    return {
+      episode: Math.max(0, Math.min(26, Math.floor(ep))),
+      eoe,
+      rebuild,
+    };
+  } catch {
+    return { ...SPOILER_PROGRESS_DEFAULT };
+  }
+}
 
 /** Build adjacency: nodeId -> edges that touch it (either direction). */
 export function adjacency(graph: EvangelionGraph): Map<string, Edge[]> {
@@ -84,6 +226,32 @@ export function adjacency(graph: EvangelionGraph): Map<string, Edge[]> {
   return adj;
 }
 
+function validateRevealedAt(loc: string, gate: RevealedAt | undefined): void {
+  if (!gate) return;
+  switch (gate.kind) {
+    case "ep":
+      if (
+        typeof gate.episode !== "number" ||
+        !Number.isFinite(gate.episode) ||
+        gate.episode < 1
+      ) {
+        throw new Error(
+          `${loc}: revealedAt.episode must be a positive number, got ${gate.episode}`,
+        );
+      }
+      break;
+    case "eoe":
+    case "rebuild":
+      break;
+    default: {
+      const _exhaustive: never = gate;
+      throw new Error(
+        `${loc}: revealedAt has unknown kind ${JSON.stringify(_exhaustive)}`,
+      );
+    }
+  }
+}
+
 /**
  * Validate graph integrity. Throws on first failure with a descriptive message.
  *
@@ -92,10 +260,10 @@ export function adjacency(graph: EvangelionGraph): Map<string, Edge[]> {
  *   - Every shortcode referenced by a node resolves in the genesis registry.
  *   - The genesis registry itself passes its own invariants
  *     (validateGenesis()).
+ *   - Every revealedAt gate has a recognized kind and a positive episode (ep gates).
  *
- * Note: orphan-node check is intentionally NOT enforced. Characters do not
- * yet carry edges in the basic seed, and that is deliberate --- relationship
- * layers (pilot/EVA, spoiler-gated angel/character mappings, ...) come later.
+ * Note: orphan-node check is intentionally NOT enforced. Some nodes (events
+ * like Third Impact) are deliberately disconnected.
  */
 export function validateGraph(graph: EvangelionGraph): void {
   if (!graph.id || !graph.title) {
@@ -128,6 +296,7 @@ export function validateGraph(graph: EvangelionGraph): void {
         );
       }
     }
+    validateRevealedAt(`Node ${node.id}`, node.revealedAt);
   }
 
   for (const edge of graph.edges) {
@@ -153,6 +322,7 @@ export function validateGraph(graph: EvangelionGraph): void {
         }
       }
     }
+    validateRevealedAt(`Edge ${edge.from} -> ${edge.to}`, edge.revealedAt);
   }
 
   // Angels must have unique sequential numbers 1..N (canonical NGE order).
@@ -192,17 +362,19 @@ export function validateAll(graph: EvangelionGraph): {
 export function nodeRadius(node: GraphNode): number {
   if (isCharacter(node)) return 0.6;
   if (isAngel(node)) return 0.55;
+  if (isEvent(node)) return 0.65; // events read as the heaviest singletons
   return 0.42; // magi
 }
 
 /**
  * Resolve a node's render color. Characters use their primary shortcode's
  * color from the genesis registry; angels share the AT-field uniform; magi
- * share the green uniform (3-in-1 joke).
+ * share the green uniform (3-in-1 joke); events share SEELE purple.
  */
 export function colorFor(node: GraphNode): string {
   if (isMagi(node)) return MAGI_UNIFORM_COLOR;
   if (isAngel(node)) return ANGEL_UNIFORM_COLOR;
+  if (isEvent(node)) return EVENT_UNIFORM_COLOR;
   // character: look up genesis by primary shortcode (the first entry).
   const primaryCode = node.shortcodes[0];
   if (!primaryCode) return "#cccccc";

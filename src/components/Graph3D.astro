@@ -210,7 +210,16 @@ const edgeLegend = [
 
 <script>
   import { initGraph3D } from "../scripts/graph3d";
-  import { evangelion, isAngel, isCharacter, isMagi } from "../graph";
+  import {
+    evangelion,
+    gateLabel,
+    isAngel,
+    isCharacter,
+    isEvent,
+    isMagi,
+    maskLabel,
+  } from "../graph";
+  import type { GraphHandle } from "../scripts/graph3d";
   import type { GraphNode } from "../graph/types";
 
   function bootstrap() {
@@ -231,45 +240,66 @@ const edgeLegend = [
     const metaEl = panel.querySelector('[data-testid="ngg-selected-meta"]');
     const notesEl = panel.querySelector('[data-testid="ngg-selected-notes"]');
 
+    let activeHandle: GraphHandle | null = null;
+    let lastSelected: GraphNode | null = null;
+
     function renderSelected(node: GraphNode | null) {
+      lastSelected = node;
       if (!node) {
         panel.classList.add("hidden");
         panel.dataset.empty = "true";
+        panel.dataset.masked = "false";
         return;
       }
       panel.classList.remove("hidden");
       panel.dataset.empty = "false";
+
+      const masked = activeHandle?.isNodeMasked(node.id) ?? false;
+      panel.dataset.masked = masked ? "true" : "false";
+      const mask = (s: string) => (masked ? maskLabel(s) : s);
+
       if (kindEl) {
-        if (isCharacter(node)) {
+        if (masked) {
+          kindEl.textContent = `${node.kind} ███`;
+        } else if (isCharacter(node)) {
           kindEl.textContent = `character ${node.id}`;
         } else if (isAngel(node)) {
-          kindEl.textContent = `angel #${node.number} ${node.spoilerLevel === "spoiler" ? "(spoiler)" : ""}`.trim();
+          kindEl.textContent = `angel #${node.number}`;
         } else if (isMagi(node)) {
           kindEl.textContent = `magi ${node.id}`;
+        } else if (isEvent(node)) {
+          kindEl.textContent = `event ${node.id}`;
         }
       }
       if (titleEl) {
-        if (isCharacter(node)) titleEl.textContent = node.displayName;
+        if (isCharacter(node)) titleEl.textContent = mask(node.displayName);
         else if (isAngel(node))
-          titleEl.textContent = `#${node.number} --- ${node.name}`;
-        else if (isMagi(node)) titleEl.textContent = node.name;
+          titleEl.textContent = masked
+            ? `#?? --- ${maskLabel(node.name)}`
+            : `#${node.number} --- ${node.name}`;
+        else if (isMagi(node)) titleEl.textContent = mask(node.name);
+        else if (isEvent(node)) titleEl.textContent = mask(node.name);
       }
       if (metaEl) {
         metaEl.innerHTML = "";
         const rows: [string, string][] = [];
-        const codes = node.shortcodes.join(" / ");
+        const codes = mask(node.shortcodes.join(" / "));
         if (isCharacter(node)) {
-          rows.push(["role", node.role]);
+          rows.push(["role", mask(node.role)]);
           rows.push(["shortcodes", codes]);
-          rows.push(["spoiler", node.spoilerLevel]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
         } else if (isAngel(node)) {
-          rows.push(["number", String(node.number)]);
-          rows.push(["intro", node.introducedEpisode]);
+          rows.push(["number", masked ? "███" : String(node.number)]);
+          rows.push(["intro", mask(node.introducedEpisode)]);
           rows.push(["shortcodes", codes]);
-          rows.push(["spoiler", node.spoilerLevel]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
         } else if (isMagi(node)) {
-          rows.push(["personality", node.personality]);
+          rows.push(["personality", mask(node.personality)]);
           rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isEvent(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
         }
         for (const [k, v] of rows) {
           const dt = document.createElement("dt");
@@ -282,14 +312,20 @@ const edgeLegend = [
           metaEl.appendChild(dd);
         }
       }
-      if (notesEl) notesEl.textContent = node.notes;
+      if (notesEl) notesEl.textContent = mask(node.notes);
     }
 
     const handle = initGraph3D({
       root,
       canvas,
       onSelect: renderSelected,
+      // Re-render the current selection whenever the gate state changes,
+      // so the readout panel re-masks (or unmasks) live.
+      onProgress: () => {
+        if (lastSelected) renderSelected(lastSelected);
+      },
     });
+    activeHandle = handle;
 
     // Sanity: surface counts for tests via dataset.
     root.dataset.expectedNodes = String(evangelion.nodes.length);

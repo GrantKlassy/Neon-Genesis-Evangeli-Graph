@@ -14,14 +14,18 @@ import type { EdgeKind } from "./types";
  * harder, beating the all-pairs repulsion that would otherwise dominate.
  * The 3-in-1 magi cluster carries the highest weight; angel-sequence is
  * moderate so the canon chain stays grouped without pinning each node to
- * its neighbor.
+ * its neighbor; identity_reveal is moderate too --- the late-show "X is
+ * really Y" reveals should pull characters toward their identities without
+ * collapsing the layout.
  */
 export const EDGE_SPRING_LENGTH: Record<EdgeKind, number> = {
   magi_link: 2.5,
   angel_sequence: 3.4,
+  identity_reveal: 4.0,
 };
 
 export const EDGE_WEIGHT: Record<EdgeKind, number> = {
   magi_link: 3,
   angel_sequence: 2,
+  identity_reveal: 2.2,
 };

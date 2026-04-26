@@ -1,6 +1,43 @@
 import type { Page, Locator } from "@playwright/test";
 
 /**
+ * Spoiler-progress shape used by both the renderer and tests. Mirrors
+ * src/graph/types.ts SpoilerProgress; duplicated here to avoid pulling
+ * the source-of-truth type through Playwright's transformer.
+ */
+export type TestSpoilerProgress = {
+  episode: number;
+  eoe: boolean;
+  rebuild: boolean;
+};
+
+export const SPOILER_FULL: TestSpoilerProgress = {
+  episode: 26,
+  eoe: true,
+  rebuild: true,
+};
+
+export const SPOILER_NONE: TestSpoilerProgress = {
+  episode: 0,
+  eoe: false,
+  rebuild: false,
+};
+
+/**
+ * Pre-seed the localStorage spoiler-progress key BEFORE any page script
+ * runs. Use this in a test's setup so the gate stays dismissed and the
+ * scene initializes at the requested gate level.
+ */
+export async function seedSpoilerProgress(
+  page: Page,
+  progress: TestSpoilerProgress,
+) {
+  await page.addInitScript((p: TestSpoilerProgress) => {
+    localStorage.setItem("ngg-spoiler-progress", JSON.stringify(p));
+  }, progress);
+}
+
+/**
  * Wait for the graph component to finish initializing.
  * Resolves once data-state on the root reaches "ready" (or "no-webgl" / "error").
  */

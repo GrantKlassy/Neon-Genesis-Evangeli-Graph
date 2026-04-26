@@ -25,6 +25,8 @@ pre-commit:
         - "tests/unit/genesis.test.ts"
         - "tests/unit/graph.test.ts"
         - "tests/unit/highlight.test.ts"
+    - name: assets-size
+      run: task local:check:assets-size
 
 commit-msg:
   jobs:

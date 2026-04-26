@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { waitForGraphState } from "./_helpers";
+import { SPOILER_FULL, seedSpoilerProgress, waitForGraphState } from "./_helpers";
 
 test.describe("graph structure visible in the DOM", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedSpoilerProgress(page, SPOILER_FULL);
+  });
+
   test("legend shows node kinds and edge kinds", async ({ page }) => {
     await page.goto("/");
     await waitForGraphState(page);

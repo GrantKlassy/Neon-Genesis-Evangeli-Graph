@@ -1,0 +1,126 @@
+---
+/**
+ * TV-size opening theme with the audiojungle overlay (audiojungle.opus
+ * pasted on top of theme.opus every 5s by scripts/extract-theme.sh).
+ *
+ * Playback NEVER starts automatically. There is no muted-autoplay, no
+ * resume-from-cookie, no "they granted permission last time" path. The
+ * first user gesture (pointerdown or keydown anywhere on the page, or a
+ * click on the toggle pill) is the only trigger that starts playback.
+ */
+---
+
+<audio
+  id="ngg-theme-audio"
+  data-testid="ngg-theme-audio"
+  preload="auto"
+  playsinline
+  aria-label="Neon Genesis Evangelion opening theme"
+>
+  <source src="/sound/theme_audio_jungle.opus" type="audio/ogg; codecs=opus" />
+</audio>
+
+<button
+  type="button"
+  id="ngg-theme-toggle"
+  data-testid="ngg-theme-toggle"
+  data-state="muted"
+  class="fixed bottom-3 left-3 z-40 border border-[color:var(--color-magi-green)]/40 bg-[color:var(--color-panel)]/90 px-3 py-1 font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase backdrop-blur-sm transition-colors hover:bg-[color:var(--color-panel-2)] sm:bottom-5 sm:left-5 sm:text-[0.65rem]"
+  aria-pressed="false"
+  aria-label="Toggle opening theme audio"
+>
+  <span data-theme-label-muted>♪ unmute theme</span>
+  <span data-theme-label-playing class="hidden">♪ mute theme</span>
+</button>
+
+<script>
+  const STORAGE_KEY = "ngg.theme.muted";
+
+  function bootstrap() {
+    const audio = document.getElementById(
+      "ngg-theme-audio",
+    ) as HTMLAudioElement | null;
+    const toggle = document.getElementById(
+      "ngg-theme-toggle",
+    ) as HTMLButtonElement | null;
+    if (!audio || !toggle) return;
+
+    const labelMuted = toggle.querySelector<HTMLElement>(
+      "[data-theme-label-muted]",
+    );
+    const labelPlaying = toggle.querySelector<HTMLElement>(
+      "[data-theme-label-playing]",
+    );
+    if (!labelMuted || !labelPlaying) return;
+
+    let savedMuted: string | null = null;
+    try {
+      savedMuted = localStorage.getItem(STORAGE_KEY);
+    } catch {
+      savedMuted = null;
+    }
+    // Saved preference only sets the *initial* mute state on first play.
+    // It does not authorize autoplay -- the audio is silent and stopped
+    // until the user's first gesture.
+    const startMuted = savedMuted === "true";
+
+    function paint(muted: boolean) {
+      toggle!.dataset.state = muted ? "muted" : "playing";
+      toggle!.setAttribute("aria-pressed", muted ? "false" : "true");
+      labelMuted!.classList.toggle("hidden", !muted);
+      labelPlaying!.classList.toggle("hidden", muted);
+    }
+
+    function persist(muted: boolean) {
+      try {
+        localStorage.setItem(STORAGE_KEY, String(muted));
+      } catch {
+        /* localStorage unavailable; non-fatal. */
+      }
+    }
+
+    audio.muted = startMuted;
+    paint(startMuted);
+    // Intentionally no audio.play() here. Autoplay is forbidden in this
+    // component, even muted-autoplay that browsers would otherwise allow.
+
+    let started = false;
+    function startPlayback() {
+      if (started) return;
+      started = true;
+      audio!.play().catch(() => {
+        // Playback rejected (rare once a gesture has landed); the user
+        // can retry by clicking the toggle pill, which calls this again.
+        started = false;
+      });
+    }
+
+    const gestureEvents = ["pointerdown", "keydown"] as const;
+    const onFirstGesture = () => {
+      startPlayback();
+      for (const ev of gestureEvents) {
+        document.removeEventListener(ev, onFirstGesture);
+      }
+    };
+    for (const ev of gestureEvents) {
+      document.addEventListener(ev, onFirstGesture);
+    }
+
+    toggle.addEventListener("click", () => {
+      const next = !audio.muted;
+      audio.muted = next;
+      paint(next);
+      persist(next);
+      startPlayback();
+    });
+  }
+
+  if (
+    document.readyState === "complete" ||
+    document.readyState === "interactive"
+  ) {
+    bootstrap();
+  } else {
+    document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
+  }
+</script>

@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { waitForGraphState } from "./_helpers";
+import { SPOILER_FULL, seedSpoilerProgress, waitForGraphState } from "./_helpers";
 
 test.describe("graph controls + programmatic API", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedSpoilerProgress(page, SPOILER_FULL);
+  });
+
   test("pause/play toggle flips auto-rotate state", async ({ page }) => {
     await page.goto("/");
     const state = await waitForGraphState(page);

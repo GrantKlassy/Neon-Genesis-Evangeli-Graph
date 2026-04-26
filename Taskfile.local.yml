@@ -7,8 +7,9 @@ tasks:
       - pnpm run dev
 
   check:
-    desc: Repo-local checks --- TS + unit tests
+    desc: Repo-local checks --- TS + unit tests + ffmpeg source-asset guard
     cmds:
+      - task: check:assets-size
       - pnpm run check
       - pnpm run test:unit
 
@@ -17,14 +18,46 @@ tasks:
     cmds:
       - pnpm run test:invariants
 
+  check:assets-size:
+    desc: Verify ./assets exists and is > 1 GiB (ffmpeg pipeline needs the source video in place)
+    cmds:
+      - |
+        if [ ! -d assets ]; then
+          echo "ERROR: ./assets is missing --- ffmpeg pipeline needs source video here"
+          exit 1
+        fi
+        BYTES=$(du -sb assets | awk '{print $1}')
+        MIN=1073741824
+        if [ "$BYTES" -lt "$MIN" ]; then
+          HUMAN=$(du -sh assets | awk '{print $1}')
+          echo "ERROR: ./assets is $HUMAN ($BYTES bytes) --- expected > 1 GiB ($MIN bytes)"
+          exit 1
+        fi
+        HUMAN=$(du -sh assets | awk '{print $1}')
+        echo "OK: ./assets is $HUMAN (> 1 GiB)"
+
   test:
     desc: Run the full test suite (unit + e2e)
     cmds:
       - pnpm run test
 
+  assets:bake:
+    desc: Copy local-only audio into public/ so astro build emits it into dist/
+    cmds:
+      - |
+        if [ ! -f ./assets/sound/theme_audio_jungle.opus ]; then
+          echo "ERROR: ./assets/sound/theme_audio_jungle.opus missing --- run 'task local:extract:theme' first"
+          exit 1
+        fi
+        rm -rf ./public/sound
+        mkdir -p ./public/sound
+        cp -f ./assets/sound/theme_audio_jungle.opus ./public/sound/theme_audio_jungle.opus
+        echo "OK: baked theme_audio_jungle.opus into public/sound/"
+
   build:
     desc: Static build to dist/
     cmds:
+      - task: assets:bake
       - pnpm run build
 
   deploy:
@@ -32,3 +65,9 @@ tasks:
     cmds:
       - task: build
       - pnpm dlx wrangler@3 pages deploy dist --project-name=neongenesisevangeligraph --branch=main
+
+  extract:theme:
+    desc: Lossless stream-copy of the Japanese audio (0:00-1:30) from S01E01 to ./assets/sound/
+    cmds:
+      - rm -f ./assets/sound/theme.flac ./assets/sound/theme.opus ./assets/sound/theme_audio_jungle.opus
+      - bash scripts/extract-theme.sh

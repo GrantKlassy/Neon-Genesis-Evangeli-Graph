@@ -20,3 +20,8 @@ coverage/
 
 # Lighthouse CI output
 .lighthouseci/
+
+assets/tv/
+assets/sound/*
+!assets/sound/AUDIO_JUNGLE.md
+public/sound/

@@ -1,0 +1,356 @@
+---
+/**
+ * Spoiler gate overlay. On first visit (no localStorage entry) the user
+ * is asked how far they've watched; their answer is persisted and
+ * broadcast to the renderer via a CustomEvent on `window`.
+ *
+ * The renderer (src/scripts/graph3d.ts) reads the same key on init and
+ * subscribes to the event, so this component owns the gate state and the
+ * scene reflects it. A small "spoilers" pill in the corner re-opens the
+ * gate so the user can adjust at any time.
+ */
+---
+
+<div
+  id="ngg-spoiler-gate"
+  class="ngg-spoiler-gate-overlay fixed inset-0 z-50 hidden items-center justify-center bg-[color:var(--color-bg)]/92 px-4 backdrop-blur-md"
+  data-testid="ngg-spoiler-gate"
+  data-state="hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="ngg-spoiler-gate-title"
+>
+  <div
+    class="relative w-full max-w-md border border-[color:var(--color-nerv-red)]/50 bg-[color:var(--color-panel)] p-5 shadow-[0_0_60px_rgba(255,42,60,0.15)] sm:p-6"
+  >
+    <p
+      class="ngg-bracket-red font-mono text-[0.6rem] tracking-[0.3em] text-[color:var(--color-nerv-red)] uppercase"
+    >
+      synchro check
+    </p>
+    <h2
+      id="ngg-spoiler-gate-title"
+      class="mt-1 font-mono text-base font-bold tracking-[0.2em] text-[color:var(--color-text)] uppercase sm:text-lg"
+    >
+      Spoiler gate
+    </h2>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      Tell us where you are in the show. Anything past your point will render
+      as <span class="font-mono text-[color:var(--color-nerv-red)]">███████</span> until you advance.
+    </p>
+
+    <fieldset class="mt-5 border border-[color:var(--color-text-dim)]/15 p-3">
+      <legend
+        class="px-2 font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase"
+      >
+        TV (1 -- 26)
+      </legend>
+      <div class="flex items-baseline justify-between">
+        <p class="text-sm text-[color:var(--color-text)]">
+          Last episode finished: <span
+            data-testid="ngg-spoiler-ep-readout"
+            data-spoiler-ep-readout
+            class="font-mono font-bold text-[color:var(--color-magi-green)]"
+            >0</span
+          ><span class="font-mono text-[color:var(--color-text-dim)]"> / 26</span>
+        </p>
+        <button
+          type="button"
+          data-spoiler-preset="all"
+          data-testid="ngg-spoiler-preset-all"
+          class="font-mono text-[0.6rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase underline-offset-2 hover:text-[color:var(--color-text)] hover:underline"
+        >
+          finished it
+        </button>
+      </div>
+      <input
+        type="range"
+        id="ngg-spoiler-ep-slider"
+        data-testid="ngg-spoiler-ep-slider"
+        min="0"
+        max="26"
+        step="1"
+        value="0"
+        class="ngg-spoiler-slider mt-3 w-full"
+        aria-label="Last NGE episode finished"
+      />
+    </fieldset>
+
+    <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <label
+        class="flex cursor-pointer items-center gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-3 py-2 hover:border-[color:var(--color-magi-green)]/40"
+      >
+        <input
+          type="checkbox"
+          id="ngg-spoiler-eoe"
+          data-testid="ngg-spoiler-eoe"
+          class="h-3.5 w-3.5 accent-[color:var(--color-nerv-red)]"
+        />
+        <span class="font-mono text-[0.7rem] tracking-[0.15em] text-[color:var(--color-text)] uppercase"
+          >End of Evangelion</span
+        >
+      </label>
+      <label
+        class="flex cursor-pointer items-center gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-3 py-2 hover:border-[color:var(--color-magi-green)]/40"
+      >
+        <input
+          type="checkbox"
+          id="ngg-spoiler-rebuild"
+          data-testid="ngg-spoiler-rebuild"
+          class="h-3.5 w-3.5 accent-[color:var(--color-nerv-red)]"
+        />
+        <span class="font-mono text-[0.7rem] tracking-[0.15em] text-[color:var(--color-text)] uppercase"
+          >Rebuild films</span
+        >
+      </label>
+    </div>
+
+    <div class="mt-5 flex items-center justify-between gap-2">
+      <button
+        type="button"
+        id="ngg-spoiler-reset"
+        data-testid="ngg-spoiler-reset"
+        class="font-mono text-[0.65rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase underline-offset-2 hover:text-[color:var(--color-text)] hover:underline"
+      >
+        haven't started
+      </button>
+      <button
+        type="button"
+        id="ngg-spoiler-reveal"
+        data-testid="ngg-spoiler-reveal"
+        class="border border-[color:var(--color-nerv-red)]/70 bg-[color:var(--color-nerv-red)]/15 px-4 py-1.5 font-mono text-xs tracking-[0.25em] text-[color:var(--color-text)] uppercase transition-colors hover:bg-[color:var(--color-nerv-red)]/30"
+      >
+        Reveal graph
+      </button>
+    </div>
+  </div>
+</div>
+
+<button
+  type="button"
+  id="ngg-spoiler-reopen"
+  data-testid="ngg-spoiler-reopen"
+  class="fixed right-3 bottom-3 z-40 border border-[color:var(--color-nerv-red)]/40 bg-[color:var(--color-panel)]/90 px-3 py-1 font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-nerv-red)] uppercase backdrop-blur-sm transition-colors hover:bg-[color:var(--color-panel-2)] sm:right-5 sm:bottom-5 sm:text-[0.65rem]"
+  aria-label="Reopen spoiler gate"
+>
+  spoilers
+</button>
+
+<style>
+  /*
+   * Slider track + thumb in NERV red. Range inputs need browser-prefixed
+   * pseudo-elements to style the thumb consistently.
+   */
+  .ngg-spoiler-slider {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    height: 1.5rem;
+  }
+  .ngg-spoiler-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    background: rgba(255, 42, 60, 0.25);
+    border: 1px solid rgba(255, 42, 60, 0.45);
+  }
+  .ngg-spoiler-slider::-moz-range-track {
+    height: 4px;
+    background: rgba(255, 42, 60, 0.25);
+    border: 1px solid rgba(255, 42, 60, 0.45);
+  }
+  .ngg-spoiler-slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -6px;
+    background: var(--color-nerv-red);
+    border: 1px solid #fff;
+    border-radius: 1px;
+    cursor: grab;
+  }
+  .ngg-spoiler-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--color-nerv-red);
+    border: 1px solid #fff;
+    border-radius: 1px;
+    cursor: grab;
+  }
+
+  .ngg-spoiler-gate-overlay[data-state="visible"] {
+    display: flex;
+  }
+</style>
+
+<script>
+  import {
+    SPOILER_EVENT_NAME,
+    SPOILER_PROGRESS_DEFAULT,
+    SPOILER_PROGRESS_FULL,
+    SPOILER_STORAGE_KEY,
+    parseSpoilerProgress,
+  } from "../graph";
+  import type { SpoilerProgress } from "../graph";
+
+  type GateEls = {
+    overlay: HTMLElement;
+    slider: HTMLInputElement;
+    epReadout: HTMLElement;
+    eoeChk: HTMLInputElement;
+    rebuildChk: HTMLInputElement;
+    revealBtn: HTMLButtonElement;
+    resetBtn: HTMLButtonElement;
+    presetAllBtn: HTMLButtonElement;
+    reopenBtn: HTMLButtonElement;
+  };
+
+  function getEls(): GateEls | null {
+    const overlay = document.getElementById("ngg-spoiler-gate");
+    const slider = document.getElementById(
+      "ngg-spoiler-ep-slider",
+    ) as HTMLInputElement | null;
+    const epReadout = document.querySelector(
+      "[data-spoiler-ep-readout]",
+    ) as HTMLElement | null;
+    const eoeChk = document.getElementById(
+      "ngg-spoiler-eoe",
+    ) as HTMLInputElement | null;
+    const rebuildChk = document.getElementById(
+      "ngg-spoiler-rebuild",
+    ) as HTMLInputElement | null;
+    const revealBtn = document.getElementById(
+      "ngg-spoiler-reveal",
+    ) as HTMLButtonElement | null;
+    const resetBtn = document.getElementById(
+      "ngg-spoiler-reset",
+    ) as HTMLButtonElement | null;
+    const presetAllBtn = document.querySelector(
+      '[data-spoiler-preset="all"]',
+    ) as HTMLButtonElement | null;
+    const reopenBtn = document.getElementById(
+      "ngg-spoiler-reopen",
+    ) as HTMLButtonElement | null;
+    if (
+      !overlay ||
+      !slider ||
+      !epReadout ||
+      !eoeChk ||
+      !rebuildChk ||
+      !revealBtn ||
+      !resetBtn ||
+      !presetAllBtn ||
+      !reopenBtn
+    ) {
+      return null;
+    }
+    return {
+      overlay,
+      slider,
+      epReadout,
+      eoeChk,
+      rebuildChk,
+      revealBtn,
+      resetBtn,
+      presetAllBtn,
+      reopenBtn,
+    };
+  }
+
+  function applyToControls(els: GateEls, p: SpoilerProgress) {
+    els.slider.value = String(p.episode);
+    els.epReadout.textContent = String(p.episode);
+    els.eoeChk.checked = p.eoe;
+    els.rebuildChk.checked = p.rebuild;
+  }
+
+  function readControls(els: GateEls): SpoilerProgress {
+    const ep = Number(els.slider.value);
+    return {
+      episode: Math.max(0, Math.min(26, Number.isFinite(ep) ? ep : 0)),
+      eoe: els.eoeChk.checked,
+      rebuild: els.rebuildChk.checked,
+    };
+  }
+
+  function showGate(els: GateEls) {
+    els.overlay.dataset.state = "visible";
+    els.overlay.classList.remove("hidden");
+    els.overlay.classList.add("flex");
+    setTimeout(() => els.revealBtn.focus(), 0);
+  }
+
+  function hideGate(els: GateEls) {
+    els.overlay.dataset.state = "hidden";
+    els.overlay.classList.add("hidden");
+    els.overlay.classList.remove("flex");
+  }
+
+  function broadcast(p: SpoilerProgress) {
+    window.dispatchEvent(
+      new CustomEvent<SpoilerProgress>(SPOILER_EVENT_NAME, { detail: p }),
+    );
+  }
+
+  function persist(p: SpoilerProgress) {
+    try {
+      localStorage.setItem(SPOILER_STORAGE_KEY, JSON.stringify(p));
+    } catch {
+      // localStorage unavailable (private mode, quota): fall through.
+    }
+  }
+
+  function bootstrap() {
+    const els = getEls();
+    if (!els) return;
+
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(SPOILER_STORAGE_KEY);
+    } catch {
+      saved = null;
+    }
+    const initialProgress: SpoilerProgress = parseSpoilerProgress(saved);
+    applyToControls(els, initialProgress);
+
+    // First visit: open the gate. Otherwise the user has already declared.
+    if (!saved) {
+      showGate(els);
+    }
+
+    els.slider.addEventListener("input", () => {
+      els.epReadout.textContent = els.slider.value;
+    });
+
+    els.presetAllBtn.addEventListener("click", () => {
+      applyToControls(els, SPOILER_PROGRESS_FULL);
+    });
+    els.resetBtn.addEventListener("click", () => {
+      applyToControls(els, SPOILER_PROGRESS_DEFAULT);
+    });
+
+    els.revealBtn.addEventListener("click", () => {
+      const p = readControls(els);
+      persist(p);
+      broadcast(p);
+      hideGate(els);
+    });
+
+    els.reopenBtn.addEventListener("click", () => {
+      showGate(els);
+    });
+
+    // The renderer will read the same localStorage key on init, so an
+    // initial broadcast isn't required --- but firing one keeps any
+    // already-mounted scene in sync if it loaded before this script.
+    broadcast(initialProgress);
+  }
+
+  if (
+    document.readyState === "complete" ||
+    document.readyState === "interactive"
+  ) {
+    bootstrap();
+  } else {
+    document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
+  }
+</script>

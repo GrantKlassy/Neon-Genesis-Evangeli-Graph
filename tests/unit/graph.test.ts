@@ -10,6 +10,7 @@ import {
   evangelion,
   isAngel,
   isCharacter,
+  isEvent,
   isMagi,
   nodeIndex,
   nodeRadius,
@@ -24,10 +25,16 @@ describe("evangelion graph", () => {
 
   it("has the expected canon node mix", () => {
     expect(evangelion.id).toBe("evangelion");
-    expect(evangelion.nodes.filter(isCharacter)).toHaveLength(8);
+    expect(evangelion.nodes.filter(isCharacter)).toHaveLength(10);
     expect(evangelion.nodes.filter(isAngel)).toHaveLength(18);
     expect(evangelion.nodes.filter(isMagi)).toHaveLength(3);
-    expect(evangelion.nodes).toHaveLength(8 + 18 + 3);
+    expect(evangelion.nodes.filter(isEvent).length).toBeGreaterThanOrEqual(1);
+    expect(evangelion.nodes).toHaveLength(
+      evangelion.nodes.filter(isCharacter).length +
+        evangelion.nodes.filter(isAngel).length +
+        evangelion.nodes.filter(isMagi).length +
+        evangelion.nodes.filter(isEvent).length,
+    );
   });
 
   it("uses unique node ids", () => {
@@ -71,7 +78,7 @@ describe("evangelion graph", () => {
     expect(byNumber.get(18)).toBe("Lilim");
   });
 
-  it("the eight expected characters are present by id", () => {
+  it("the ten expected characters are present by id", () => {
     const ids = new Set(evangelion.nodes.filter(isCharacter).map((c) => c.id));
     expect(ids).toEqual(
       new Set([
@@ -83,6 +90,8 @@ describe("evangelion graph", () => {
         "char_gendo",
         "char_ritsuko",
         "char_mari",
+        "char_toji",
+        "char_yui",
       ]),
     );
   });
@@ -208,12 +217,13 @@ describe("evangelion graph", () => {
     }
   });
 
-  it("Tabris (#17) is spoiler-gated and Kaworu has no edge to it (basic seed)", () => {
+  it("Tabris (#17) is gated to Ep 24 and the Kaworu->Tabris edge is encoded but gated", () => {
     const tabris = evangelion.nodes.filter(isAngel).find((a) => a.number === 17);
     expect(tabris).toBeDefined();
-    expect(tabris!.spoilerLevel).toBe("spoiler");
+    expect(tabris!.revealedAt).toEqual({ kind: "ep", episode: 24 });
 
-    // Verify the Kaworu/Tabris reveal is not encoded in the basic seed.
+    // The reveal IS encoded now --- the renderer masks it until the user
+    // declares ep 24+ progress. Edge has its own gate independent of endpoints.
     const kaworuId = "char_kaworu";
     const tabrisId = tabris!.id;
     const reveal = evangelion.edges.find(
@@ -221,7 +231,9 @@ describe("evangelion graph", () => {
         (e.from === kaworuId && e.to === tabrisId) ||
         (e.from === tabrisId && e.to === kaworuId),
     );
-    expect(reveal).toBeUndefined();
+    expect(reveal).toBeDefined();
+    expect(reveal!.kind).toBe("identity_reveal");
+    expect(reveal!.revealedAt).toEqual({ kind: "ep", episode: 24 });
   });
 
   it("clusters resolve to a defined render color for every node", () => {

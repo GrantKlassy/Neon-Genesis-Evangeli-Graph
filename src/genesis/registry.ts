@@ -95,6 +95,26 @@ export const genesis = {
     notes:
       "Rebuild-only pilot. Magenta plug suit, twin braids, round glasses.",
   },
+  toji: {
+    shortcode: "toji",
+    kind: "CHARACTERS",
+    displayName: "Toji Suzuhara",
+    aliases: ["Toji", "Suzuhara", "Fourth Child"],
+    primary: "#2dd4bf",
+    secondary: ["#1a1a1a", "#a8131e"],
+    notes:
+      "Shinji's classmate and the Fourth Child. Athletic, gruff, becomes the Unit-03 pilot.",
+  },
+  yui: {
+    shortcode: "yui",
+    kind: "CHARACTERS",
+    displayName: "Yui Ikari",
+    aliases: ["Yui", "Yui Ikari"],
+    primary: "#c4a5d4",
+    secondary: ["#5a2782", "#1f3a8a"],
+    notes:
+      "Shinji's mother. Lost to a contact experiment with Unit-01. Late-show reveal grounds the Ikari arc.",
+  },
 
   // ---- CHARACTERS (family-name shortcodes) ----
   // Surnames get their own shortcode so a node like "Shinji Ikari" can

@@ -4,6 +4,8 @@ import Header from "../components/Header.astro";
 import Graph3D from "../components/Graph3D.astro";
 import Readout from "../components/Readout.astro";
 import GenesisShowcase from "../components/GenesisShowcase.astro";
+import SpoilerGate from "../components/SpoilerGate.astro";
+import ThemeAudio from "../components/ThemeAudio.astro";
 import { evangelion, isAngel, isCharacter, isMagi } from "../graph";
 
 const characterCount = evangelion.nodes.filter(isCharacter).length;
@@ -13,6 +15,7 @@ const edgeCount = evangelion.edges.length;
 ---
 
 <Base title="Neon Genesis Evangeli-Graph">
+  <SpoilerGate />
   <Header
     graphId={evangelion.id}
     characterCount={characterCount}
@@ -23,4 +26,5 @@ const edgeCount = evangelion.edges.length;
   <Graph3D />
   <Readout />
   <GenesisShowcase />
+  <ThemeAudio />
 </Base>

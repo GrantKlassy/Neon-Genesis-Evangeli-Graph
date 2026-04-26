@@ -1,28 +1,43 @@
 /**
  * Graph schema. Source of truth for types used across data, rendering, and tests.
  *
- * Three top-level node kinds:
+ * Four top-level node kinds:
  *   - character: cast members (Shinji, Asuka, Rei, Misato, ...).
  *   - angel: the 18 canonical angels of NGE, numbered 1-18.
  *   - magi: the three Magi system nodes (Casper-3, Melchior-1, Balthasar-2).
+ *   - event: in-universe events (Third Impact, ...). Often disconnected.
  *
  * Genesis linkage: every node carries a non-empty `shortcodes` array of
  * keys into src/genesis. "Shinji Ikari" -> ["shinji", "ikari"]. The first
  * shortcode is treated as the node's primary identity for color / sort.
  *
- * Spoiler gate: some entities (and edges between them) reveal late-show
- * plot points. Anything tagged `spoilerLevel: "spoiler"` (or, in the
- * future, edges of that level) should be hidden by default once a
- * "no-spoilers" mode is wired up. The first basic seed simply omits the
- * spoiler-revealing edges (e.g. char_kaworu <-> angel_17_tabris) entirely
- * so the bare graph cannot give that away.
+ * Spoiler gate: every node and every edge carries an OPTIONAL `revealedAt`
+ * gate. Omit for entities visible from Episode 1. Otherwise pick exactly one
+ * threshold:
+ *   - { kind: "ep"; episode: N }     visible iff user has seen >= ep N.
+ *   - { kind: "eoe" }                visible iff user has seen End of Evangelion
+ *                                    OR has watched TV ep 25+ (the original
+ *                                    finale covers the same Instrumentality
+ *                                    territory abstractly).
+ *   - { kind: "rebuild" }            visible iff user has seen the Rebuild films.
+ *
+ * Node and edge gates are independent: Rei is open from ep 1, but the
+ * Rei <-> Yui edge is gated to a late-show episode --- the character renders
+ * either way, the relationship line does not.
+ *
+ * A masked entity STILL participates in the graph (layout, counts) but the
+ * renderer paints its color black and replaces its label with full-block
+ * mask characters --- the user can see something is there, just not what.
  */
 
-export type NodeKind = "character" | "angel" | "magi";
+export type NodeKind = "character" | "angel" | "magi" | "event";
 
-export type SpoilerLevel = "open" | "spoiler";
+export type RevealedAt =
+  | { kind: "ep"; episode: number }
+  | { kind: "eoe" }
+  | { kind: "rebuild" };
 
-export type EdgeKind = "magi_link" | "angel_sequence";
+export type EdgeKind = "magi_link" | "angel_sequence" | "identity_reveal";
 
 interface NodeBase {
   id: string;
@@ -38,7 +53,10 @@ interface NodeBase {
    * Must contain at least one entry that resolves in src/genesis.
    */
   shortcodes: string[];
-  spoilerLevel: SpoilerLevel;
+  /**
+   * Spoiler gate. Omit for entities visible from Episode 1.
+   */
+  revealedAt?: RevealedAt;
   notes: string;
 }
 
@@ -65,7 +83,13 @@ export interface MagiNode extends NodeBase {
   personality: string;
 }
 
-export type GraphNode = CharacterNode | AngelNode | MagiNode;
+export interface EventNode extends NodeBase {
+  kind: "event";
+  /** Canonical event name ("Third Impact", "Second Impact"). */
+  name: string;
+}
+
+export type GraphNode = CharacterNode | AngelNode | MagiNode | EventNode;
 
 export interface Edge {
   from: string;
@@ -84,6 +108,12 @@ export interface Edge {
    * three magi sit as a tight cluster even after the post-layout squish.
    */
   weight?: number;
+  /**
+   * Spoiler gate for the relationship itself, independent of either endpoint.
+   * Omit for edges visible from Ep 1. The renderer also masks an edge whose
+   * either endpoint is masked (a half-revealed line still leaks information).
+   */
+  revealedAt?: RevealedAt;
   notes: string;
 }
 
@@ -94,3 +124,29 @@ export interface EvangelionGraph {
   nodes: GraphNode[];
   edges: Edge[];
 }
+
+/**
+ * The user-declared progress that gates entity visibility. Default state
+ * for a brand-new visitor is { episode: 0, eoe: false, rebuild: false }
+ * --- nothing reveals until the user steps through the spoiler prompt.
+ */
+export interface SpoilerProgress {
+  /** TV episode last finished, 0..26. 0 = haven't started. */
+  episode: number;
+  /** Has seen End of Evangelion. */
+  eoe: boolean;
+  /** Has seen the Rebuild films. */
+  rebuild: boolean;
+}
+
+export const SPOILER_PROGRESS_DEFAULT: SpoilerProgress = {
+  episode: 0,
+  eoe: false,
+  rebuild: false,
+};
+
+export const SPOILER_PROGRESS_FULL: SpoilerProgress = {
+  episode: 26,
+  eoe: true,
+  rebuild: true,
+};

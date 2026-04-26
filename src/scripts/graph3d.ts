@@ -3,18 +3,31 @@ import {
   ANGEL_UNIFORM_COLOR,
   EDGE_COLORS,
   EDGE_SPRING_LENGTH,
+  EVENT_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
+  MASK_FILL_COLOR,
+  MASK_HALO_COLOR,
+  MASK_LABEL_COLOR,
+  SPOILER_EVENT_NAME,
+  SPOILER_PROGRESS_DEFAULT,
+  SPOILER_STORAGE_KEY,
   adjacency,
   colorFor,
   evangelion,
   isAngel,
   isCharacter,
+  isEdgeMasked,
+  isEvent,
   isMagi,
+  isNodeMasked,
+  maskLabel,
+  nodeIndex,
   nodeRadius,
+  parseSpoilerProgress,
   validateGraph,
 } from "../graph";
 import { forceLayout3D } from "../lib/forceLayout";
-import type { GraphNode } from "../graph/types";
+import type { Edge, GraphNode, SpoilerProgress } from "../graph/types";
 
 export type RendererState = "init" | "ready" | "no-webgl" | "error";
 
@@ -35,6 +48,16 @@ export interface GraphHandle {
   hoverNodeById: (id: string | null) => void;
   /** Toggle auto-rotation. */
   setAutoRotate: (on: boolean) => void;
+  /**
+   * Apply a new spoiler-progress level to the scene. Repaints node fills,
+   * halos, and labels; toggles edge visibility. Idempotent --- safe to call
+   * with the current progress.
+   */
+  applyProgress: (progress: SpoilerProgress) => void;
+  /** Whether a node is currently masked under the active progress. */
+  isNodeMasked: (id: string) => boolean;
+  /** The currently-applied progress (initialized from localStorage). */
+  progress: SpoilerProgress;
   /** Dispose all resources (called on hot-reload / teardown). */
   dispose: () => void;
 }
@@ -48,14 +71,27 @@ declare global {
 interface NodeMeshData {
   node: GraphNode;
   mesh: THREE.Mesh;
+  meshMaterial: THREE.MeshBasicMaterial;
+  haloMesh: THREE.Mesh;
+  haloMaterial: THREE.MeshBasicMaterial;
+  labelSprite: THREE.Sprite;
+  labelMaterial: THREE.SpriteMaterial;
+  clearLabelTex: THREE.CanvasTexture;
+  maskedLabelTex: THREE.CanvasTexture;
+  baseColor: THREE.Color;
+  baseHaloColor: THREE.Color;
+  baseHaloOpacity: number;
   baseScale: number;
+  masked: boolean;
 }
 
 interface EdgeLineData {
+  edge: Edge;
   fromId: string;
   toId: string;
   material: THREE.LineBasicMaterial;
   baseOpacity: number;
+  masked: boolean;
 }
 
 const BG_COLOR = new THREE.Color("#050507");
@@ -73,7 +109,10 @@ const BG_COLOR = new THREE.Color("#050507");
 const LABEL_CANVAS_W = 1024;
 const LABEL_CANVAS_H = 256;
 
-function makeLabelTexture(text: string): THREE.CanvasTexture {
+function makeLabelTexture(
+  text: string,
+  fillColor: string = "#ffffff",
+): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = LABEL_CANVAS_W;
   canvas.height = LABEL_CANVAS_H;
@@ -101,7 +140,7 @@ function makeLabelTexture(text: string): THREE.CanvasTexture {
   ctx.strokeStyle = "rgba(5, 5, 7, 0.92)";
   ctx.strokeText(text, LABEL_CANVAS_W / 2, LABEL_CANVAS_H / 2);
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = fillColor;
   ctx.fillText(text, LABEL_CANVAS_W / 2, LABEL_CANVAS_H / 2);
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -125,6 +164,15 @@ function detectWebGL(): { ok: boolean; version: 1 | 2 | null } {
   return { ok: false, version: null };
 }
 
+function readStoredProgress(): SpoilerProgress {
+  try {
+    const raw = localStorage.getItem(SPOILER_STORAGE_KEY);
+    return parseSpoilerProgress(raw);
+  } catch {
+    return { ...SPOILER_PROGRESS_DEFAULT };
+  }
+}
+
 export interface InitOptions {
   /** Element receiving state via data-state, hosting the canvas. */
   root: HTMLElement;
@@ -134,10 +182,12 @@ export interface InitOptions {
   onSelect?: (node: GraphNode | null) => void;
   /** Optional callback when a node is hovered (null on hover-out). */
   onHover?: (node: GraphNode | null) => void;
+  /** Optional callback when the rendered mask state changes. */
+  onProgress?: (progress: SpoilerProgress) => void;
 }
 
 export function initGraph3D(options: InitOptions): GraphHandle {
-  const { root, canvas, onSelect, onHover } = options;
+  const { root, canvas, onSelect, onHover, onProgress } = options;
   const handle: GraphHandle = {
     state: "init",
     nodeCount: 0,
@@ -151,6 +201,9 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     selectNodeById: () => {},
     hoverNodeById: () => {},
     setAutoRotate: () => {},
+    applyProgress: () => {},
+    isNodeMasked: () => false,
+    progress: { ...SPOILER_PROGRESS_DEFAULT },
     dispose: () => {},
   };
   window.__nggGraph = handle;
@@ -265,9 +318,8 @@ export function initGraph3D(options: InitOptions): GraphHandle {
       geometries.push(geo);
     }
     const colorHex = colorFor(node);
-    const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(colorHex),
-    });
+    const baseColor = new THREE.Color(colorHex);
+    const mat = new THREE.MeshBasicMaterial({ color: baseColor.clone() });
     materials.push(mat);
     const mesh = new THREE.Mesh(geo, mat);
     const p = layout.positions.get(node.id);
@@ -277,10 +329,12 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     sceneGroup.add(mesh);
 
     // Faint outer halo --- second sphere, slightly larger, additive transparent.
+    const baseHaloColor = baseColor.clone();
+    const baseHaloOpacity = 0.18;
     const haloMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(colorHex),
+      color: baseHaloColor.clone(),
       transparent: true,
-      opacity: 0.18,
+      opacity: baseHaloOpacity,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
@@ -296,10 +350,15 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     // is disabled and renderOrder is high so the label always paints on top
     // of the sphere (and any overlapping geometry) regardless of viewing
     // angle. Fog is disabled so labels stay readable on far nodes.
-    const labelTex = makeLabelTexture(node.displayName);
-    textures.push(labelTex);
+    const clearLabelTex = makeLabelTexture(node.displayName);
+    const maskedLabelTex = makeLabelTexture(
+      maskLabel(node.displayName),
+      MASK_LABEL_COLOR,
+    );
+    textures.push(clearLabelTex);
+    textures.push(maskedLabelTex);
     const labelMat = new THREE.SpriteMaterial({
-      map: labelTex,
+      map: clearLabelTex,
       transparent: true,
       depthTest: false,
       depthWrite: false,
@@ -313,7 +372,22 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     labelSprite.userData = { label: true, nodeId: node.id };
     sceneGroup.add(labelSprite);
 
-    const data: NodeMeshData = { node, mesh, baseScale: 1 };
+    const data: NodeMeshData = {
+      node,
+      mesh,
+      meshMaterial: mat,
+      haloMesh: halo,
+      haloMaterial: haloMat,
+      labelSprite,
+      labelMaterial: labelMat,
+      clearLabelTex,
+      maskedLabelTex,
+      baseColor,
+      baseHaloColor,
+      baseHaloOpacity,
+      baseScale: 1,
+      masked: false,
+    };
     nodeMeshes.push(data);
     nodeMeshById.set(node.id, data);
   }
@@ -342,10 +416,12 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     line.userData = { edge };
     sceneGroup.add(line);
     const data: EdgeLineData = {
+      edge,
       fromId: edge.from,
       toId: edge.to,
       material: mat,
       baseOpacity: opacity,
+      masked: false,
     };
     edgeLines.push(data);
     for (const id of [edge.from, edge.to]) {
@@ -374,19 +450,83 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   handle.edgeCount = evangelion.edges.length;
   handle.nodeIds = nodeMeshes.map((m) => m.node.id);
 
+  // ---- Spoiler gate: mask state ----
+  const nodes = nodeIndex(evangelion);
+  const maskedColor = new THREE.Color(MASK_FILL_COLOR);
+  const maskedHaloColor = new THREE.Color(MASK_HALO_COLOR);
+
+  function applyNodeMask(data: NodeMeshData, masked: boolean) {
+    data.masked = masked;
+    if (masked) {
+      data.meshMaterial.color.copy(maskedColor);
+      data.haloMaterial.color.copy(maskedHaloColor);
+      data.haloMaterial.opacity = data.baseHaloOpacity;
+      data.labelMaterial.map = data.maskedLabelTex;
+    } else {
+      data.meshMaterial.color.copy(data.baseColor);
+      data.haloMaterial.color.copy(data.baseHaloColor);
+      data.haloMaterial.opacity = data.baseHaloOpacity;
+      data.labelMaterial.map = data.clearLabelTex;
+    }
+    data.labelMaterial.needsUpdate = true;
+  }
+
+  function applyEdgeMask(data: EdgeLineData, masked: boolean) {
+    data.masked = masked;
+    data.material.opacity = masked ? 0 : data.baseOpacity;
+  }
+
+  function applyProgress(progress: SpoilerProgress) {
+    handle.progress = { ...progress };
+    let visibleNodes = 0;
+    let visibleEdges = 0;
+    for (const data of nodeMeshes) {
+      const masked = isNodeMasked(data.node, progress);
+      applyNodeMask(data, masked);
+      if (!masked) visibleNodes++;
+    }
+    for (const data of edgeLines) {
+      const masked = isEdgeMasked(data.edge, progress, nodes);
+      applyEdgeMask(data, masked);
+      if (!masked) visibleEdges++;
+    }
+    root.dataset.visibleNodes = String(visibleNodes);
+    root.dataset.visibleEdges = String(visibleEdges);
+    root.dataset.spoilerEpisode = String(progress.episode);
+    root.dataset.spoilerEoe = progress.eoe ? "true" : "false";
+    root.dataset.spoilerRebuild = progress.rebuild ? "true" : "false";
+    onProgress?.(progress);
+  }
+
+  handle.applyProgress = applyProgress;
+  handle.isNodeMasked = (id: string) => {
+    return nodeMeshById.get(id)?.masked ?? false;
+  };
+
   /**
    * Apply edge highlighting based on selection (priority) or hover.
    * Connected edges become brighter; others fade. Null clears.
+   * Masked edges always stay at opacity 0 regardless of highlight.
    */
   function applyHighlight(highlightId: string | null) {
     if (!highlightId) {
-      for (const e of edgeLines) e.material.opacity = e.baseOpacity;
+      for (const e of edgeLines) {
+        if (e.masked) {
+          e.material.opacity = 0;
+        } else {
+          e.material.opacity = e.baseOpacity;
+        }
+      }
       root.dataset.highlightedNode = "";
       return;
     }
     const touched = edgesByNode.get(highlightId);
     const touchedSet = new Set(touched);
     for (const e of edgeLines) {
+      if (e.masked) {
+        e.material.opacity = 0;
+        continue;
+      }
       if (touchedSet.has(e)) {
         e.material.opacity = Math.min(1, e.baseOpacity * 2.5 + 0.05);
       } else {
@@ -630,6 +770,18 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   };
   raf = requestAnimationFrame(tick);
 
+  // Apply initial spoiler progress before flipping to ready, so the first
+  // frame the user sees is already gated correctly.
+  applyProgress(readStoredProgress());
+
+  // Listen for the gate's change event (fired by SpoilerGate.astro).
+  const onSpoilerEvent = (e: Event) => {
+    const ce = e as CustomEvent<SpoilerProgress>;
+    if (!ce.detail || typeof ce.detail !== "object") return;
+    applyProgress(ce.detail);
+  };
+  window.addEventListener(SPOILER_EVENT_NAME, onSpoilerEvent);
+
   handle.state = "ready";
   root.dataset.state = "ready";
   root.dataset.nodeCount = String(handle.nodeCount);
@@ -647,6 +799,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     canvas.removeEventListener("contextmenu", onContextMenu);
     root.removeEventListener("pointerenter", onRootEnter);
     root.removeEventListener("pointerleave", onRootLeave);
+    window.removeEventListener(SPOILER_EVENT_NAME, onSpoilerEvent);
     for (const g of geometries) g.dispose();
     for (const m of materials) m.dispose();
     for (const t of textures) t.dispose();
@@ -666,9 +819,11 @@ export function neighborCount(nodeId: string): number {
 export {
   ANGEL_UNIFORM_COLOR,
   EDGE_COLORS,
+  EVENT_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
   evangelion,
   isAngel,
   isCharacter,
+  isEvent,
   isMagi,
 };

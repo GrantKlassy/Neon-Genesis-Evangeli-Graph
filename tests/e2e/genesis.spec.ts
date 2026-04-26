@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { SPOILER_FULL, seedSpoilerProgress } from "./_helpers";
 
 test.describe("genesis registry CSS variables propagate to the page", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedSpoilerProgress(page, SPOILER_FULL);
+  });
+
   test("iconic entity variables resolve at :root with valid hex values (genesis-prefixed)", async ({
     page,
   }) => {
@@ -108,6 +113,10 @@ test.describe("genesis registry CSS variables propagate to the page", () => {
 });
 
 test.describe("genesis text highlighter wraps aliases inline", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedSpoilerProgress(page, SPOILER_FULL);
+  });
+
   test("Header blurb tints 'Shinji Ikari' across two shortcode spans", async ({
     page,
   }) => {
