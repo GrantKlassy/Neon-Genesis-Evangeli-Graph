@@ -1,11 +1,15 @@
 /**
  * Graph schema. Source of truth for types used across data, rendering, and tests.
  *
- * Four top-level node kinds:
+ * Top-level node kinds:
  *   - character: cast members (Shinji, Asuka, Rei, Misato, ...).
  *   - angel: the 18 canonical angels of NGE, numbered 1-18.
  *   - magi: the three Magi system nodes (Casper-3, Melchior-1, Balthasar-2).
  *   - event: in-universe events (Third Impact, ...). Often disconnected.
+ *   - organization: in-universe orgs (NERV, SEELE, WILLE).
+ *   - location: physical places (NERV HQ, Tokyo-3, ...).
+ *   - concept: abstract / in-universe concepts (AT Field, LCL, ...).
+ *   - eva: EVA units (Unit-00 through Mass Production).
  *
  * Genesis linkage: every node carries a non-empty `shortcodes` array of
  * keys into src/genesis. "Shinji Ikari" -> ["shinji", "ikari"]. The first
@@ -28,16 +32,33 @@
  * A masked entity STILL participates in the graph (layout, counts) but the
  * renderer paints its color black and replaces its label with full-block
  * mask characters --- the user can see something is there, just not what.
+ *
+ * Spoiler-aware gravity: the renderer filters masked edges out of the force
+ * layout so a hidden relationship contributes zero pull. Rei does not settle
+ * next to Yui pre-Ep. 23 just because there's a (still-hidden) edge between
+ * them. See src/scripts/graph3d.ts for the entry point.
  */
 
-export type NodeKind = "character" | "angel" | "magi" | "event";
+export type NodeKind =
+  | "character"
+  | "angel"
+  | "magi"
+  | "event"
+  | "organization"
+  | "location"
+  | "concept"
+  | "eva";
 
 export type RevealedAt =
   | { kind: "ep"; episode: number }
   | { kind: "eoe" }
   | { kind: "rebuild" };
 
-export type EdgeKind = "magi_link" | "angel_sequence" | "identity_reveal";
+export type EdgeKind =
+  | "magi_link"
+  | "angel_sequence"
+  | "identity_reveal"
+  | "pilots";
 
 interface NodeBase {
   id: string;
@@ -89,7 +110,44 @@ export interface EventNode extends NodeBase {
   name: string;
 }
 
-export type GraphNode = CharacterNode | AngelNode | MagiNode | EventNode;
+export interface OrganizationNode extends NodeBase {
+  kind: "organization";
+  /** Canonical org name ("NERV", "SEELE", "WILLE"). */
+  name: string;
+}
+
+export interface LocationNode extends NodeBase {
+  kind: "location";
+  /** Canonical place name ("NERV HQ", "Tokyo-3", "Geofront"). */
+  name: string;
+}
+
+export interface ConceptNode extends NodeBase {
+  kind: "concept";
+  /** Canonical concept label ("AT Field", "LCL", "Instrumentality"). */
+  name: string;
+}
+
+export interface EvaNode extends NodeBase {
+  kind: "eva";
+  /** Canonical unit name ("Unit-00", "Unit-01", "Mass Production"). */
+  name: string;
+  /**
+   * Numeric designation for sorting / canonical ordering. Mass Production
+   * is conventionally numbered last; pick a sentinel above 04.
+   */
+  number: number;
+}
+
+export type GraphNode =
+  | CharacterNode
+  | AngelNode
+  | MagiNode
+  | EventNode
+  | OrganizationNode
+  | LocationNode
+  | ConceptNode
+  | EvaNode;
 
 export interface Edge {
   from: string;

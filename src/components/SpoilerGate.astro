@@ -78,7 +78,9 @@
 
     <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
       <label
-        class="flex cursor-pointer items-center gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-3 py-2 hover:border-[color:var(--color-magi-green)]/40"
+        id="ngg-spoiler-eoe-label"
+        data-testid="ngg-spoiler-eoe-label"
+        class="ngg-spoiler-eoe-label flex cursor-pointer items-center gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-3 py-2 hover:border-[color:var(--color-magi-green)]/40"
       >
         <input
           type="checkbox"
@@ -104,6 +106,13 @@
         >
       </label>
     </div>
+    <p
+      id="ngg-spoiler-eoe-hint"
+      data-testid="ngg-spoiler-eoe-hint"
+      class="mt-2 hidden font-mono text-[0.65rem] leading-snug tracking-[0.1em] text-[color:var(--color-nerv-red)]/85 uppercase"
+    >
+      End of Evangelion picks up after Ep. 26. Finish the TV run first.
+    </p>
 
     <div class="mt-5 flex items-center justify-between gap-2">
       <button
@@ -180,6 +189,19 @@
   .ngg-spoiler-gate-overlay[data-state="visible"] {
     display: flex;
   }
+
+  /*
+   * The EoE checkbox is only valid once the user has finished Ep. 26 ---
+   * EoE picks up after the original TV finale. While disabled, dim the row
+   * and show a not-allowed cursor so the gating reads as intentional.
+   */
+  .ngg-spoiler-eoe-label[data-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .ngg-spoiler-eoe-label[data-disabled="true"] input {
+    cursor: not-allowed;
+  }
 </style>
 
 <script>
@@ -197,6 +219,8 @@
     slider: HTMLInputElement;
     epReadout: HTMLElement;
     eoeChk: HTMLInputElement;
+    eoeLabel: HTMLElement;
+    eoeHint: HTMLElement;
     rebuildChk: HTMLInputElement;
     revealBtn: HTMLButtonElement;
     resetBtn: HTMLButtonElement;
@@ -215,6 +239,12 @@
     const eoeChk = document.getElementById(
       "ngg-spoiler-eoe",
     ) as HTMLInputElement | null;
+    const eoeLabel = document.getElementById(
+      "ngg-spoiler-eoe-label",
+    ) as HTMLElement | null;
+    const eoeHint = document.getElementById(
+      "ngg-spoiler-eoe-hint",
+    ) as HTMLElement | null;
     const rebuildChk = document.getElementById(
       "ngg-spoiler-rebuild",
     ) as HTMLInputElement | null;
@@ -235,6 +265,8 @@
       !slider ||
       !epReadout ||
       !eoeChk ||
+      !eoeLabel ||
+      !eoeHint ||
       !rebuildChk ||
       !revealBtn ||
       !resetBtn ||
@@ -248,6 +280,8 @@
       slider,
       epReadout,
       eoeChk,
+      eoeLabel,
+      eoeHint,
       rebuildChk,
       revealBtn,
       resetBtn,
@@ -261,15 +295,37 @@
     els.epReadout.textContent = String(p.episode);
     els.eoeChk.checked = p.eoe;
     els.rebuildChk.checked = p.rebuild;
+    syncEoeAvailability(els);
   }
 
   function readControls(els: GateEls): SpoilerProgress {
     const ep = Number(els.slider.value);
+    const episode = Math.max(0, Math.min(26, Number.isFinite(ep) ? ep : 0));
+    // EoE only counts if the user finished the TV run --- the gate UI
+    // disables the checkbox below 26, but read() defends in depth.
+    const eoe = els.eoeChk.checked && episode >= 26;
     return {
-      episode: Math.max(0, Math.min(26, Number.isFinite(ep) ? ep : 0)),
-      eoe: els.eoeChk.checked,
+      episode,
+      eoe,
       rebuild: els.rebuildChk.checked,
     };
+  }
+
+  /**
+   * The EoE checkbox is only available once the slider hits 26. EoE picks
+   * up after Ep. 26, so claiming "watched EoE" with episode < 26 is an
+   * impossible state. Below 26 we disable the checkbox, force-uncheck it,
+   * and surface a hint explaining why.
+   */
+  function syncEoeAvailability(els: GateEls) {
+    const ep = Number(els.slider.value);
+    const ready = Number.isFinite(ep) && ep >= 26;
+    els.eoeChk.disabled = !ready;
+    els.eoeLabel.dataset.disabled = ready ? "false" : "true";
+    if (!ready && els.eoeChk.checked) {
+      els.eoeChk.checked = false;
+    }
+    els.eoeHint.classList.toggle("hidden", ready);
   }
 
   function showGate(els: GateEls) {
@@ -319,6 +375,17 @@
 
     els.slider.addEventListener("input", () => {
       els.epReadout.textContent = els.slider.value;
+      syncEoeAvailability(els);
+    });
+
+    // Defense in depth: if the checkbox somehow gets toggled while disabled,
+    // force it back off. Browsers normally suppress click events on disabled
+    // inputs, but the underlying label can still flip the input in edge cases.
+    els.eoeChk.addEventListener("change", () => {
+      const ep = Number(els.slider.value);
+      if (els.eoeChk.checked && (!Number.isFinite(ep) || ep < 26)) {
+        els.eoeChk.checked = false;
+      }
     });
 
     els.presetAllBtn.addEventListener("click", () => {

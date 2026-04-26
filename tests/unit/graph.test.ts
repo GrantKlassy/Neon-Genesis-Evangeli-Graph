@@ -1,17 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
   ANGEL_UNIFORM_COLOR,
+  CONCEPT_UNIFORM_COLOR,
   EDGE_COLORS,
   EDGE_SPRING_LENGTH,
   EDGE_WEIGHT,
+  EVA_UNIFORM_COLOR,
+  LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
+  ORGANIZATION_UNIFORM_COLOR,
   adjacency,
   colorFor,
   evangelion,
   isAngel,
   isCharacter,
+  isConcept,
+  isEva,
   isEvent,
+  isLocation,
   isMagi,
+  isOrganization,
   nodeIndex,
   nodeRadius,
   validateGraph,
@@ -29,12 +37,61 @@ describe("evangelion graph", () => {
     expect(evangelion.nodes.filter(isAngel)).toHaveLength(18);
     expect(evangelion.nodes.filter(isMagi)).toHaveLength(3);
     expect(evangelion.nodes.filter(isEvent).length).toBeGreaterThanOrEqual(1);
+    expect(evangelion.nodes.filter(isOrganization).length).toBeGreaterThanOrEqual(1);
+    expect(evangelion.nodes.filter(isLocation).length).toBeGreaterThanOrEqual(1);
+    expect(evangelion.nodes.filter(isConcept).length).toBeGreaterThanOrEqual(1);
+    expect(evangelion.nodes.filter(isEva).length).toBeGreaterThanOrEqual(4);
+    // Sum of all kinds covers every node in the graph (no leftover kinds).
     expect(evangelion.nodes).toHaveLength(
       evangelion.nodes.filter(isCharacter).length +
         evangelion.nodes.filter(isAngel).length +
         evangelion.nodes.filter(isMagi).length +
-        evangelion.nodes.filter(isEvent).length,
+        evangelion.nodes.filter(isEvent).length +
+        evangelion.nodes.filter(isOrganization).length +
+        evangelion.nodes.filter(isLocation).length +
+        evangelion.nodes.filter(isConcept).length +
+        evangelion.nodes.filter(isEva).length,
     );
+  });
+
+  it("organizations include NERV", () => {
+    const orgs = evangelion.nodes.filter(isOrganization);
+    expect(orgs.find((o) => o.id === "org_nerv")).toBeDefined();
+  });
+
+  it("locations include NERV HQ as the genesis location", () => {
+    const locs = evangelion.nodes.filter(isLocation);
+    const hq = locs.find((l) => l.id === "loc_nerv_hq");
+    expect(hq).toBeDefined();
+    expect(hq!.shortcodes).toContain("nervHq");
+  });
+
+  it("concepts contain the placeholder TEST NODE seed", () => {
+    const concepts = evangelion.nodes.filter(isConcept);
+    const seed = concepts.find((c) => c.id === "concept_test_node");
+    expect(seed).toBeDefined();
+    expect(seed!.displayName).toBe("TEST NODE");
+  });
+
+  it("EVA units cover Unit-00 through Unit-04 plus Mass Production", () => {
+    const evas = evangelion.nodes.filter(isEva);
+    const ids = new Set(evas.map((e) => e.id));
+    for (const expected of [
+      "eva_unit00",
+      "eva_unit01",
+      "eva_unit02",
+      "eva_unit03",
+      "eva_unit04",
+      "eva_mass_production",
+    ]) {
+      expect(ids.has(expected), `missing ${expected}`).toBe(true);
+    }
+  });
+
+  it("Mass Production EVA is gated to End of Evangelion", () => {
+    const mp = evangelion.nodes.filter(isEva).find((e) => e.id === "eva_mass_production");
+    expect(mp).toBeDefined();
+    expect(mp!.revealedAt).toEqual({ kind: "eoe" });
   });
 
   it("uses unique node ids", () => {
@@ -279,6 +336,71 @@ describe("evangelion graph", () => {
     for (const m of evangelion.nodes.filter(isMagi)) {
       expect(adj.get(m.id)?.length ?? 0).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it("organizations paint with the uniform organization color", () => {
+    for (const o of evangelion.nodes.filter(isOrganization)) {
+      expect(colorFor(o).toLowerCase()).toBe(
+        ORGANIZATION_UNIFORM_COLOR.toLowerCase(),
+      );
+    }
+  });
+
+  it("locations paint with the uniform location color", () => {
+    for (const l of evangelion.nodes.filter(isLocation)) {
+      expect(colorFor(l).toLowerCase()).toBe(
+        LOCATION_UNIFORM_COLOR.toLowerCase(),
+      );
+    }
+  });
+
+  it("concepts paint with the uniform concept color", () => {
+    for (const c of evangelion.nodes.filter(isConcept)) {
+      expect(colorFor(c).toLowerCase()).toBe(
+        CONCEPT_UNIFORM_COLOR.toLowerCase(),
+      );
+    }
+  });
+
+  it("EVA units paint with the uniform EVA color", () => {
+    for (const e of evangelion.nodes.filter(isEva)) {
+      expect(colorFor(e).toLowerCase()).toBe(EVA_UNIFORM_COLOR.toLowerCase());
+    }
+  });
+
+  describe("pilots edges (character -> EVA unit)", () => {
+    const pilots = evangelion.edges.filter((e) => e.kind === "pilots");
+
+    it("at least four pilot pairings are encoded", () => {
+      expect(pilots.length).toBeGreaterThanOrEqual(4);
+    });
+
+    it("Shinji pilots Unit-01, Rei pilots Unit-00, Asuka pilots Unit-02, Toji pilots Unit-03", () => {
+      const has = (from: string, to: string) =>
+        pilots.find((e) => e.from === from && e.to === to);
+      expect(has("char_shinji", "eva_unit01")).toBeDefined();
+      expect(has("char_rei", "eva_unit00")).toBeDefined();
+      expect(has("char_asuka", "eva_unit02")).toBeDefined();
+      expect(has("char_toji", "eva_unit03")).toBeDefined();
+    });
+
+    it("the Toji <-> Unit-03 edge is gated to the Fourth Child reveal (Ep. 17)", () => {
+      const e = pilots.find(
+        (e) => e.from === "char_toji" && e.to === "eva_unit03",
+      );
+      expect(e).toBeDefined();
+      expect(e!.revealedAt).toEqual({ kind: "ep", episode: 17 });
+    });
+
+    it("each pilot edge resolves to a character on one side and an EVA on the other", () => {
+      const idx = nodeIndex(evangelion);
+      for (const e of pilots) {
+        const from = idx.get(e.from)!;
+        const to = idx.get(e.to)!;
+        expect(from.kind === "character" || to.kind === "character").toBe(true);
+        expect(from.kind === "eva" || to.kind === "eva").toBe(true);
+      }
+    });
   });
 });
 

@@ -1,10 +1,14 @@
 import type {
   AngelNode,
   CharacterNode,
+  ConceptNode,
   Edge,
+  EvaNode,
   EvangelionGraph,
   EventNode,
+  LocationNode,
   MagiNode,
+  OrganizationNode,
 } from "./types";
 import { EDGE_WEIGHT } from "./layoutTuning";
 
@@ -53,7 +57,7 @@ const characters: CharacterNode[] = [
     shortcodes: ["rei", "ayanami"],
     role: "First Child / Pilot of Unit-00",
     notes:
-      "Quiet pilot of Unit-00. The character is open from Ep 1 --- her connection to Yui is what's gated.",
+      "Quiet pilot of Unit-00. Lives alone, speaks rarely, follows orders precisely.",
   },
   {
     id: "char_misato",
@@ -71,7 +75,7 @@ const characters: CharacterNode[] = [
     role: "Fifth Child",
     revealedAt: { kind: "ep", episode: 24 },
     notes:
-      "The Fifth Child, introduced in Ep. 24. The Tabris identity edge is gated independently.",
+      "The Fifth Child. Walks into the show with quiet, cosmic significance.",
   },
   {
     id: "char_gendo",
@@ -104,10 +108,10 @@ const characters: CharacterNode[] = [
     kind: "character",
     displayName: "Toji Suzuhara",
     shortcodes: ["toji"],
-    role: "Classmate / Fourth Child",
+    role: "Classmate",
     revealedAt: { kind: "ep", episode: 3 },
     notes:
-      "Shinji's classmate. Open as a character from Ep. 3; the Bardiel identity edge is gated to Ep. 18.",
+      "Shinji's classmate. Athletic, gruff, fiercely loyal to those close to him.",
   },
   {
     id: "char_yui",
@@ -117,7 +121,7 @@ const characters: CharacterNode[] = [
     role: "Lost researcher (Unit-01 contact experiment)",
     revealedAt: { kind: "ep", episode: 20 },
     notes:
-      "Shinji's mother. Identity / fate is a late-show flashback reveal. Edge to Rei is gated separately.",
+      "Shinji's mother. Lost during a contact experiment with Unit-01.",
   },
 ];
 
@@ -315,7 +319,7 @@ const angels: AngelNode[] = [
     shortcodes: ["tabris"],
     revealedAt: { kind: "ep", episode: 24 },
     introducedEpisode: "Ep. 24",
-    notes: "Final visible angel. Identity edge to Kaworu is gated.",
+    notes: "Seventeenth Angel. The final visible angel of the canonical chain.",
   },
   {
     id: "angel_18_lilim",
@@ -375,8 +379,120 @@ const events: EventNode[] = [
   },
 ];
 
+const organizations: OrganizationNode[] = [
+  {
+    id: "org_nerv",
+    kind: "organization",
+    name: "NERV",
+    displayName: "NERV",
+    shortcodes: ["nerv"],
+    notes:
+      "UN special agency tasked with fighting the Angels and operating the Evangelions.",
+  },
+];
+
+const locations: LocationNode[] = [
+  {
+    id: "loc_nerv_hq",
+    kind: "location",
+    name: "NERV HQ",
+    displayName: "NERV HQ",
+    shortcodes: ["nervHq"],
+    notes:
+      "NERV's underground headquarters beneath Tokyo-3, set inside the Geofront cavity.",
+  },
+];
+
+const concepts: ConceptNode[] = [
+  // Placeholder seed concept node. The real concept catalog (AT Field, LCL,
+  // Anti-AT Field, etc.) lands as the investigation grows --- this single
+  // node exists to (a) prove out the concept kind end-to-end and (b) give
+  // the renderer a node to paint in the new concept color.
+  {
+    id: "concept_test_node",
+    kind: "concept",
+    name: "TEST NODE",
+    displayName: "TEST NODE",
+    shortcodes: ["atField"],
+    notes: "Placeholder concept node. Real concept entries land later.",
+  },
+];
+
 /**
- * Edges. Three kinds in the seed:
+ * EVA units. Visibility gates track first on-screen appearance, NOT pilot
+ * reveals: Unit-03 is visible from Ep. 17 because the unit itself shows up
+ * then; the Toji <-> Unit-03 pilots edge carries its own gate. Mass
+ * Production is EoE-only.
+ */
+const evas: EvaNode[] = [
+  {
+    id: "eva_unit00",
+    kind: "eva",
+    name: "Unit-00",
+    number: 0,
+    displayName: "Unit-00",
+    shortcodes: ["unit00"],
+    notes:
+      "Prototype EVA. Originally orange, repainted blue after the activation incident.",
+  },
+  {
+    id: "eva_unit01",
+    kind: "eva",
+    name: "Unit-01",
+    number: 1,
+    displayName: "Unit-01",
+    shortcodes: ["unit01"],
+    notes: "Test type. Iconic purple body with a green chest plate.",
+  },
+  {
+    id: "eva_unit02",
+    kind: "eva",
+    name: "Unit-02",
+    number: 2,
+    displayName: "Unit-02",
+    shortcodes: ["unit02"],
+    revealedAt: { kind: "ep", episode: 8 },
+    notes:
+      "Production type. Bright red body with orange shoulder pylons; arrives with the Pacific fleet.",
+  },
+  {
+    id: "eva_unit03",
+    kind: "eva",
+    name: "Unit-03",
+    number: 3,
+    displayName: "Unit-03",
+    shortcodes: ["unit03"],
+    revealedAt: { kind: "ep", episode: 17 },
+    notes:
+      "Black-bodied production EVA shipped from the US branch. Activated in Ep. 18.",
+  },
+  {
+    id: "eva_unit04",
+    kind: "eva",
+    name: "Unit-04",
+    number: 4,
+    displayName: "Unit-04",
+    shortcodes: ["unit04"],
+    revealedAt: { kind: "ep", episode: 18 },
+    notes:
+      "Silver prototype. Lost with the Nevada branch in the S2 engine experiment.",
+  },
+  {
+    id: "eva_mass_production",
+    kind: "eva",
+    name: "Mass Production",
+    // Sentinel above 04 so the canonical EVA sort places mass production last.
+    number: 99,
+    displayName: "Mass Production",
+    shortcodes: ["massProduction"],
+    revealedAt: { kind: "eoe" },
+    notes:
+      "End of Evangelion white-bodied series. Identical clones with rictus grins.",
+  },
+];
+
+/**
+ * Edges. Four kinds in the seed:
  *   - magi_link: tight triangle between the three Magi (3-in-1 joke).
  *   - angel_sequence: chain angel(N) -> angel(N+1) for N = 1..17, mirroring
  *     the canonical TV-series numbering.
@@ -385,6 +501,8 @@ const events: EventNode[] = [
  *       Toji <-> Bardiel  (Ep. 18)
  *       Rei <-> Yui       (Ep. 23)
  *       Kaworu <-> Tabris (Ep. 24)
+ *   - pilots: character -> EVA unit. Shinji-Unit01 from Ep. 1; Toji-Unit03
+ *     gated to the Fourth Child reveal (Ep. 17).
  *
  * Each edge is stamped with its kind's spring weight (EDGE_WEIGHT) so the
  * force layout equilibrates at a predictable distance.
@@ -462,6 +580,44 @@ function buildEdges(): Edge[] {
     notes: "Kaworu IS the Seventeenth Angel, Tabris (Ep. 24).",
   });
 
+  // Pilots --- character -> EVA unit. Each edge inherits the unit's gate
+  // unless the pilot reveal is itself a spoiler (Toji as the Fourth Child).
+  const pilotsWeight = EDGE_WEIGHT.pilots;
+  out.push({
+    from: "char_shinji",
+    to: "eva_unit01",
+    kind: "pilots",
+    weight: pilotsWeight,
+    shortcodes: ["shinji", "unit01"],
+    notes: "Shinji pilots Unit-01 (Ep. 1).",
+  });
+  out.push({
+    from: "char_rei",
+    to: "eva_unit00",
+    kind: "pilots",
+    weight: pilotsWeight,
+    shortcodes: ["rei", "unit00"],
+    notes: "Rei pilots Unit-00.",
+  });
+  out.push({
+    from: "char_asuka",
+    to: "eva_unit02",
+    kind: "pilots",
+    weight: pilotsWeight,
+    revealedAt: { kind: "ep", episode: 8 },
+    shortcodes: ["asuka", "unit02"],
+    notes: "Asuka pilots Unit-02 (arrives Ep. 8).",
+  });
+  out.push({
+    from: "char_toji",
+    to: "eva_unit03",
+    kind: "pilots",
+    weight: pilotsWeight,
+    revealedAt: { kind: "ep", episode: 17 },
+    shortcodes: ["toji", "unit03"],
+    notes: "Toji is the Fourth Child / Unit-03 pilot (Ep. 17).",
+  });
+
   return out;
 }
 
@@ -469,6 +625,15 @@ export const evangelion: EvangelionGraph = {
   id: "evangelion",
   title: "Neon Genesis Evangelion --- canon seed",
   source: "Neon Genesis Evangelion (TV) + End of Evangelion",
-  nodes: [...characters, ...angels, ...magi, ...events],
+  nodes: [
+    ...characters,
+    ...angels,
+    ...magi,
+    ...events,
+    ...organizations,
+    ...locations,
+    ...concepts,
+    ...evas,
+  ],
   edges: buildEdges(),
 };

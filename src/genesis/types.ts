@@ -16,6 +16,7 @@ export type GenesisKind =
   | "MAGI"
   | "EVA"
   | "ORGANIZATIONS"
+  | "LOCATIONS"
   | "CONCEPTS";
 
 export interface GenesisEntry {
@@ -57,5 +58,6 @@ export const GENESIS_KINDS: readonly GenesisKind[] = [
   "MAGI",
   "EVA",
   "ORGANIZATIONS",
+  "LOCATIONS",
   "CONCEPTS",
 ] as const;

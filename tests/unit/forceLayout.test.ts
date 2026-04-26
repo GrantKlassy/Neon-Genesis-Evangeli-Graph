@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { forceLayout3D } from "../../src/lib/forceLayout";
-import { EDGE_SPRING_LENGTH, evangelion } from "../../src/graph";
+import {
+  EDGE_SPRING_LENGTH,
+  SPOILER_PROGRESS_DEFAULT,
+  SPOILER_PROGRESS_FULL,
+  evangelion,
+  isEdgeMasked,
+  nodeIndex,
+} from "../../src/graph";
 import type { Edge, GraphNode } from "../../src/graph/types";
 
 describe("forceLayout3D", () => {
@@ -191,6 +198,90 @@ describe("forceLayout3D", () => {
     for (const p of positions.values()) {
       expect(Number.isFinite(p.x)).toBe(true);
     }
+  });
+
+  it("filtering masked edges keeps Rei away from Yui at zero progress", () => {
+    // Issue: at low progress the identity_reveal edge between Rei and Yui
+    // is masked, but the layout would still pull them together if the edge
+    // were passed through. The renderer filters masked edges before layout
+    // exactly so this can't happen --- assert that filtering achieves it.
+    const nodesIdx = nodeIndex(evangelion);
+    const visibleAtZero = evangelion.edges.filter(
+      (e) => !isEdgeMasked(e, SPOILER_PROGRESS_DEFAULT, nodesIdx),
+    );
+    const visibleAtFull = evangelion.edges.filter(
+      (e) => !isEdgeMasked(e, SPOILER_PROGRESS_FULL, nodesIdx),
+    );
+
+    const fullLayout = forceLayout3D(evangelion.nodes, visibleAtFull, {
+      iterations: 600,
+      springLengthByKind: EDGE_SPRING_LENGTH,
+      seed: 1234,
+    });
+    const zeroLayout = forceLayout3D(evangelion.nodes, visibleAtZero, {
+      iterations: 600,
+      springLengthByKind: EDGE_SPRING_LENGTH,
+      seed: 1234,
+    });
+
+    const dist = (
+      positions: Map<string, { x: number; y: number; z: number }>,
+      a: string,
+      b: string,
+    ) => {
+      const pa = positions.get(a)!;
+      const pb = positions.get(b)!;
+      return Math.sqrt(
+        (pa.x - pb.x) ** 2 + (pa.y - pb.y) ** 2 + (pa.z - pb.z) ** 2,
+      );
+    };
+
+    const fullReiYui = dist(fullLayout.positions, "char_rei", "char_yui");
+    const zeroReiYui = dist(zeroLayout.positions, "char_rei", "char_yui");
+
+    // With the identity edge active, Rei and Yui equilibrate near rest.
+    // With the edge filtered out (low-progress masking), they should sit
+    // noticeably farther apart.
+    expect(zeroReiYui).toBeGreaterThan(fullReiYui);
+  });
+
+  it("filtering masked edges removes the Toji-Bardiel pull pre-Ep. 18", () => {
+    // Same invariant as Rei-Yui, asserted on the other identity-reveal pair
+    // so a regression in either direction surfaces clearly.
+    const nodesIdx = nodeIndex(evangelion);
+    const preReveal = { episode: 17, eoe: false, rebuild: false };
+    const postReveal = { episode: 18, eoe: false, rebuild: false };
+    const visiblePre = evangelion.edges.filter(
+      (e) => !isEdgeMasked(e, preReveal, nodesIdx),
+    );
+    const visiblePost = evangelion.edges.filter(
+      (e) => !isEdgeMasked(e, postReveal, nodesIdx),
+    );
+
+    const pre = forceLayout3D(evangelion.nodes, visiblePre, {
+      iterations: 600,
+      springLengthByKind: EDGE_SPRING_LENGTH,
+      seed: 99,
+    });
+    const post = forceLayout3D(evangelion.nodes, visiblePost, {
+      iterations: 600,
+      springLengthByKind: EDGE_SPRING_LENGTH,
+      seed: 99,
+    });
+    const dist = (
+      positions: Map<string, { x: number; y: number; z: number }>,
+      a: string,
+      b: string,
+    ) => {
+      const pa = positions.get(a)!;
+      const pb = positions.get(b)!;
+      return Math.sqrt(
+        (pa.x - pb.x) ** 2 + (pa.y - pb.y) ** 2 + (pa.z - pb.z) ** 2,
+      );
+    };
+    expect(
+      dist(pre.positions, "char_toji", "angel_13_bardiel"),
+    ).toBeGreaterThan(dist(post.positions, "char_toji", "angel_13_bardiel"));
   });
 
   it("higher edge weight pulls endpoints closer to rest length", () => {

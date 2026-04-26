@@ -10,6 +10,7 @@ import {
   isVisible,
   maskLabel,
   nodeIndex,
+  normalizeSpoilerProgress,
   parseSpoilerProgress,
 } from "../../src/graph";
 import type { Edge, GraphNode, SpoilerProgress } from "../../src/graph/types";
@@ -111,9 +112,66 @@ describe("parseSpoilerProgress", () => {
   it("preserves a fully-formed payload", () => {
     expect(
       parseSpoilerProgress(
-        JSON.stringify({ episode: 18, eoe: true, rebuild: false }),
+        JSON.stringify({ episode: 26, eoe: true, rebuild: false }),
       ),
-    ).toEqual({ episode: 18, eoe: true, rebuild: false });
+    ).toEqual({ episode: 26, eoe: true, rebuild: false });
+  });
+
+  it("forces episode to 26 when EoE is set with a lower episode", () => {
+    // EoE picks up after the TV finale, so eoe=true with episode<26 is an
+    // impossible state. We force episode to 26 rather than dropping the EoE
+    // flag --- safer to assume the user really has been spoiled.
+    expect(
+      parseSpoilerProgress(
+        JSON.stringify({ episode: 7, eoe: true, rebuild: false }),
+      ),
+    ).toEqual({ episode: 26, eoe: true, rebuild: false });
+    expect(
+      parseSpoilerProgress(
+        JSON.stringify({ episode: 0, eoe: true, rebuild: true }),
+      ),
+    ).toEqual({ episode: 26, eoe: true, rebuild: true });
+  });
+});
+
+describe("normalizeSpoilerProgress (EoE invariant)", () => {
+  it("is a no-op for any valid state", () => {
+    expect(
+      normalizeSpoilerProgress({ episode: 0, eoe: false, rebuild: false }),
+    ).toEqual({ episode: 0, eoe: false, rebuild: false });
+    expect(
+      normalizeSpoilerProgress({ episode: 26, eoe: true, rebuild: true }),
+    ).toEqual({ episode: 26, eoe: true, rebuild: true });
+    expect(
+      normalizeSpoilerProgress({ episode: 13, eoe: false, rebuild: true }),
+    ).toEqual({ episode: 13, eoe: false, rebuild: true });
+  });
+
+  it("rejects the impossible EoE+ep<26 state by raising episode to 26", () => {
+    expect(
+      normalizeSpoilerProgress({ episode: 7, eoe: true, rebuild: false }),
+    ).toEqual({ episode: 26, eoe: true, rebuild: false });
+    expect(
+      normalizeSpoilerProgress({ episode: 25, eoe: true, rebuild: false }),
+    ).toEqual({ episode: 26, eoe: true, rebuild: false });
+  });
+
+  it("clamps episode into [0, 26] in addition to EoE check", () => {
+    expect(
+      normalizeSpoilerProgress({ episode: -3, eoe: false, rebuild: false }),
+    ).toEqual({ episode: 0, eoe: false, rebuild: false });
+    expect(
+      normalizeSpoilerProgress({ episode: 999, eoe: false, rebuild: false }),
+    ).toEqual({ episode: 26, eoe: false, rebuild: false });
+  });
+
+  it("the default and full preset states are both valid", () => {
+    expect(normalizeSpoilerProgress(SPOILER_PROGRESS_DEFAULT)).toEqual(
+      SPOILER_PROGRESS_DEFAULT,
+    );
+    expect(normalizeSpoilerProgress(SPOILER_PROGRESS_FULL)).toEqual(
+      SPOILER_PROGRESS_FULL,
+    );
   });
 });
 

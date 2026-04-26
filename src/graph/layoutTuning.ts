@@ -22,10 +22,16 @@ export const EDGE_SPRING_LENGTH: Record<EdgeKind, number> = {
   magi_link: 2.5,
   angel_sequence: 3.4,
   identity_reveal: 4.0,
+  // Pilots sit close to their EVA --- short rest so Shinji equilibrates
+  // visibly adjacent to Unit-01 once the user has unlocked the link.
+  pilots: 2.8,
 };
 
 export const EDGE_WEIGHT: Record<EdgeKind, number> = {
   magi_link: 3,
   angel_sequence: 2,
   identity_reveal: 2.2,
+  // Pilots edges pull tightly so the pilot/unit pair reads as a coupled
+  // glyph in the layout once revealed.
+  pilots: 2.5,
 };

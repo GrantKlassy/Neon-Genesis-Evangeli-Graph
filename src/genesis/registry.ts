@@ -486,6 +486,18 @@ export const genesis = {
       "Anti-NERV organization (Rebuild). Military teal aesthetic on the AAA Wunder.",
   },
 
+  // ---- LOCATIONS ----
+  nervHq: {
+    shortcode: "nervHq",
+    kind: "LOCATIONS",
+    displayName: "NERV HQ",
+    aliases: ["NERV HQ", "NERV Headquarters", "Geofront"],
+    primary: "#62b8ff",
+    secondary: ["#3a8fff", "#0c0c10"],
+    notes:
+      "NERV's underground headquarters beneath Tokyo-3, set inside the Geofront cavity.",
+  },
+
   // ---- CONCEPTS ----
   atField: {
     shortcode: "atField",

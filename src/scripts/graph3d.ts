@@ -1,13 +1,17 @@
 import * as THREE from "three";
 import {
   ANGEL_UNIFORM_COLOR,
+  CONCEPT_UNIFORM_COLOR,
   EDGE_COLORS,
   EDGE_SPRING_LENGTH,
+  EVA_UNIFORM_COLOR,
   EVENT_UNIFORM_COLOR,
+  LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
   MASK_FILL_COLOR,
   MASK_HALO_COLOR,
   MASK_LABEL_COLOR,
+  ORGANIZATION_UNIFORM_COLOR,
   SPOILER_EVENT_NAME,
   SPOILER_PROGRESS_DEFAULT,
   SPOILER_STORAGE_KEY,
@@ -16,10 +20,14 @@ import {
   evangelion,
   isAngel,
   isCharacter,
+  isConcept,
   isEdgeMasked,
+  isEva,
   isEvent,
+  isLocation,
   isMagi,
   isNodeMasked,
+  isOrganization,
   maskLabel,
   nodeIndex,
   nodeRadius,
@@ -263,7 +271,19 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   camera.lookAt(0, 0, 0);
 
   // Layout the graph. Magi-link rest length is tiny so the triad clusters tight.
-  const layout = forceLayout3D(evangelion.nodes, evangelion.edges, {
+  //
+  // Spoiler-aware gravity: edges and nodes that are MASKED at the user's
+  // current progress contribute zero spring force. This keeps Rei from
+  // settling near Yui pre-Ep. 23 just because there's a (still-hidden)
+  // identity-reveal edge between them. The layout reflects the progress at
+  // page load --- changing the gate live re-paints visibility but does not
+  // re-run the layout (positions stay put).
+  const initialProgress = readStoredProgress();
+  const initialNodesIndex = nodeIndex(evangelion);
+  const layoutEdges = evangelion.edges.filter(
+    (e) => !isEdgeMasked(e, initialProgress, initialNodesIndex),
+  );
+  const layout = forceLayout3D(evangelion.nodes, layoutEdges, {
     springLengthByKind: EDGE_SPRING_LENGTH,
   });
 
@@ -771,8 +791,9 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   raf = requestAnimationFrame(tick);
 
   // Apply initial spoiler progress before flipping to ready, so the first
-  // frame the user sees is already gated correctly.
-  applyProgress(readStoredProgress());
+  // frame the user sees is already gated correctly. Reuse the value we
+  // already read so the layout and the mask agree at startup.
+  applyProgress(initialProgress);
 
   // Listen for the gate's change event (fired by SpoilerGate.astro).
   const onSpoilerEvent = (e: Event) => {
@@ -818,12 +839,20 @@ export function neighborCount(nodeId: string): number {
 /** Re-export for the page UI. */
 export {
   ANGEL_UNIFORM_COLOR,
+  CONCEPT_UNIFORM_COLOR,
   EDGE_COLORS,
+  EVA_UNIFORM_COLOR,
   EVENT_UNIFORM_COLOR,
+  LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
+  ORGANIZATION_UNIFORM_COLOR,
   evangelion,
   isAngel,
   isCharacter,
+  isConcept,
+  isEva,
   isEvent,
+  isLocation,
   isMagi,
+  isOrganization,
 };

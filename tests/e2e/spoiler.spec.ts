@@ -207,3 +207,62 @@ test.describe("spoiler dataset attributes", () => {
     await expect(root).toHaveAttribute("data-spoiler-rebuild", "true");
   });
 });
+
+test.describe("spoiler gate --- EoE requires Ep. 26", () => {
+  test("EoE checkbox is disabled until the slider is at 26", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const eoe = page.getByTestId("ngg-spoiler-eoe");
+    const label = page.getByTestId("ngg-spoiler-eoe-label");
+    const hint = page.getByTestId("ngg-spoiler-eoe-hint");
+
+    await expect(eoe).toBeDisabled();
+    await expect(label).toHaveAttribute("data-disabled", "true");
+    await expect(hint).toBeVisible();
+
+    // Bump the slider to 26 --- EoE should now be available.
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("26");
+    await expect(eoe).toBeEnabled();
+    await expect(label).toHaveAttribute("data-disabled", "false");
+    await expect(hint).toBeHidden();
+  });
+
+  test("dropping the slider below 26 unchecks and disables EoE", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("26");
+    const eoe = page.getByTestId("ngg-spoiler-eoe");
+    await eoe.check();
+    await expect(eoe).toBeChecked();
+
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("7");
+    await expect(eoe).not.toBeChecked();
+    await expect(eoe).toBeDisabled();
+  });
+
+  test("the 'finished it' preset enables EoE in one click", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-preset-all").click();
+    const eoe = page.getByTestId("ngg-spoiler-eoe");
+    await expect(eoe).toBeEnabled();
+  });
+
+  test("a tampered localStorage payload (ep 7, eoe true) is normalized to ep 26", async ({
+    page,
+  }) => {
+    // Manually seed an impossible state. parseSpoilerProgress should rescue
+    // it on read and the renderer should treat the user as fully caught up.
+    await seedSpoilerProgress(page, { episode: 7, eoe: true, rebuild: false });
+    await page.goto("/");
+    const state = await waitForGraphState(page);
+    test.skip(state !== "ready", `graph state was ${state}`);
+
+    const root = page.getByTestId("ngg-graph-root");
+    await expect(root).toHaveAttribute("data-spoiler-episode", "26");
+    await expect(root).toHaveAttribute("data-spoiler-eoe", "true");
+  });
+});

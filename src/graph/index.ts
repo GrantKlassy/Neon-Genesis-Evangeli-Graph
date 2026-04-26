@@ -1,13 +1,17 @@
 import type {
   AngelNode,
   CharacterNode,
+  ConceptNode,
   Edge,
   EdgeKind,
+  EvaNode,
   EvangelionGraph,
   EventNode,
   GraphNode,
+  LocationNode,
   MagiNode,
   NodeKind,
+  OrganizationNode,
   RevealedAt,
   SpoilerProgress,
 } from "./types";
@@ -25,13 +29,17 @@ import {
 export type {
   AngelNode,
   CharacterNode,
+  ConceptNode,
   Edge,
   EdgeKind,
+  EvaNode,
   EvangelionGraph,
   EventNode,
   GraphNode,
+  LocationNode,
   MagiNode,
   NodeKind,
+  OrganizationNode,
   RevealedAt,
   SpoilerProgress,
 };
@@ -53,6 +61,22 @@ export function isMagi(node: GraphNode): node is MagiNode {
 
 export function isEvent(node: GraphNode): node is EventNode {
   return node.kind === "event";
+}
+
+export function isOrganization(node: GraphNode): node is OrganizationNode {
+  return node.kind === "organization";
+}
+
+export function isLocation(node: GraphNode): node is LocationNode {
+  return node.kind === "location";
+}
+
+export function isConcept(node: GraphNode): node is ConceptNode {
+  return node.kind === "concept";
+}
+
+export function isEva(node: GraphNode): node is EvaNode {
+  return node.kind === "eva";
 }
 
 export function nodeIndex(graph: EvangelionGraph): Map<string, GraphNode> {
@@ -79,6 +103,18 @@ export const ANGEL_UNIFORM_COLOR = "#ff003c";
  */
 export const EVENT_UNIFORM_COLOR = "#8a2be2";
 
+/** Uniform color for every Organization node (NERV / SEELE / WILLE chrome). */
+export const ORGANIZATION_UNIFORM_COLOR = "#c8102e";
+
+/** Uniform color for every Location node (geofront blue --- "physical world"). */
+export const LOCATION_UNIFORM_COLOR = "#62b8ff";
+
+/** Uniform color for every Concept node (abstract pink). */
+export const CONCEPT_UNIFORM_COLOR = "#ff6b8b";
+
+/** Uniform color for every EVA Unit (eva-orange). */
+export const EVA_UNIFORM_COLOR = "#ffae00";
+
 /** Per-edge-kind line colors. */
 export const EDGE_COLORS: Record<EdgeKind, string> = {
   // Magi triangle inherits the same green as the magi nodes themselves --- the
@@ -88,6 +124,9 @@ export const EDGE_COLORS: Record<EdgeKind, string> = {
   // SEELE purple for the late-show "X is really Y" identity reveals
   // (Toji <-> Bardiel, Kaworu <-> Tabris, Rei <-> Yui).
   identity_reveal: "#8a2be2",
+  // Pilots edges share the EVA-orange so the pilot-to-unit pull reads as
+  // one visual class regardless of which character is on which side.
+  pilots: EVA_UNIFORM_COLOR,
 };
 
 export { EDGE_SPRING_LENGTH, EDGE_WEIGHT } from "./layoutTuning";
@@ -191,7 +230,25 @@ export function gateLabel(gate: RevealedAt | undefined): string {
  * Parse a SpoilerProgress out of a JSON string, returning the default if the
  * string is missing or malformed. Used by the gate's localStorage read path
  * so a corrupt cookie doesn't blow up the renderer.
+ *
+ * Hard invariant: a stored EoE flag implies the user finished Episode 26.
+ * EoE picks up after the events of Ep 26 (the original TV finale covers the
+ * same Instrumentality territory abstractly), so claiming "watched EoE" with
+ * episode < 26 is an impossible state. We force episode to 26 in that case
+ * rather than dropping the EoE flag --- the safer assumption is that the user
+ * really has been spoiled, and we should not hide content from them.
  */
+export function normalizeSpoilerProgress(p: SpoilerProgress): SpoilerProgress {
+  const episode = Math.max(0, Math.min(26, Math.floor(p.episode)));
+  const eoe = p.eoe === true;
+  const rebuild = p.rebuild === true;
+  return {
+    episode: eoe && episode < 26 ? 26 : episode,
+    eoe,
+    rebuild,
+  };
+}
+
 export function parseSpoilerProgress(raw: string | null): SpoilerProgress {
   if (!raw) return { ...SPOILER_PROGRESS_DEFAULT };
   try {
@@ -201,11 +258,7 @@ export function parseSpoilerProgress(raw: string | null): SpoilerProgress {
     const ep = typeof o.episode === "number" ? o.episode : 0;
     const eoe = o.eoe === true;
     const rebuild = o.rebuild === true;
-    return {
-      episode: Math.max(0, Math.min(26, Math.floor(ep))),
-      eoe,
-      rebuild,
-    };
+    return normalizeSpoilerProgress({ episode: ep, eoe, rebuild });
   } catch {
     return { ...SPOILER_PROGRESS_DEFAULT };
   }
@@ -363,18 +416,26 @@ export function nodeRadius(node: GraphNode): number {
   if (isCharacter(node)) return 0.6;
   if (isAngel(node)) return 0.55;
   if (isEvent(node)) return 0.65; // events read as the heaviest singletons
+  if (isOrganization(node)) return 0.65; // structural anchors
+  if (isLocation(node)) return 0.55;
+  if (isConcept(node)) return 0.5;
+  if (isEva(node)) return 0.6; // EVA units sit beside their pilots
   return 0.42; // magi
 }
 
 /**
  * Resolve a node's render color. Characters use their primary shortcode's
- * color from the genesis registry; angels share the AT-field uniform; magi
- * share the green uniform (3-in-1 joke); events share SEELE purple.
+ * color from the genesis registry; everything else paints with a per-kind
+ * uniform (the visual punchline of node type, e.g. all magi green).
  */
 export function colorFor(node: GraphNode): string {
   if (isMagi(node)) return MAGI_UNIFORM_COLOR;
   if (isAngel(node)) return ANGEL_UNIFORM_COLOR;
   if (isEvent(node)) return EVENT_UNIFORM_COLOR;
+  if (isOrganization(node)) return ORGANIZATION_UNIFORM_COLOR;
+  if (isLocation(node)) return LOCATION_UNIFORM_COLOR;
+  if (isConcept(node)) return CONCEPT_UNIFORM_COLOR;
+  if (isEva(node)) return EVA_UNIFORM_COLOR;
   // character: look up genesis by primary shortcode (the first entry).
   const primaryCode = node.shortcodes[0];
   if (!primaryCode) return "#cccccc";

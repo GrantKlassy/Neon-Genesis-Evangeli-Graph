@@ -1,8 +1,12 @@
 ---
 import {
   ANGEL_UNIFORM_COLOR,
+  CONCEPT_UNIFORM_COLOR,
   EDGE_COLORS,
+  EVA_UNIFORM_COLOR,
+  LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
+  ORGANIZATION_UNIFORM_COLOR,
 } from "../graph";
 import { colorOf } from "../genesis";
 
@@ -24,11 +28,32 @@ const nodeLegend = [
     label: "Magi (3-in-1)",
     color: MAGI_UNIFORM_COLOR,
   },
+  {
+    id: "eva",
+    label: "EVA Units",
+    color: EVA_UNIFORM_COLOR,
+  },
+  {
+    id: "organization",
+    label: "Organizations",
+    color: ORGANIZATION_UNIFORM_COLOR,
+  },
+  {
+    id: "location",
+    label: "Locations",
+    color: LOCATION_UNIFORM_COLOR,
+  },
+  {
+    id: "concept",
+    label: "Concepts",
+    color: CONCEPT_UNIFORM_COLOR,
+  },
 ] as const;
 
 const edgeLegend = [
   { id: "magi_link", label: "Magi link" },
   { id: "angel_sequence", label: "Angel sequence" },
+  { id: "pilots", label: "Pilots EVA" },
 ] as const;
 ---
 
@@ -215,8 +240,12 @@ const edgeLegend = [
     gateLabel,
     isAngel,
     isCharacter,
+    isConcept,
+    isEva,
     isEvent,
+    isLocation,
     isMagi,
+    isOrganization,
     maskLabel,
   } from "../graph";
   import type { GraphHandle } from "../scripts/graph3d";
@@ -269,6 +298,14 @@ const edgeLegend = [
           kindEl.textContent = `magi ${node.id}`;
         } else if (isEvent(node)) {
           kindEl.textContent = `event ${node.id}`;
+        } else if (isOrganization(node)) {
+          kindEl.textContent = `organization ${node.id}`;
+        } else if (isLocation(node)) {
+          kindEl.textContent = `location ${node.id}`;
+        } else if (isConcept(node)) {
+          kindEl.textContent = `concept ${node.id}`;
+        } else if (isEva(node)) {
+          kindEl.textContent = `eva ${node.id}`;
         }
       }
       if (titleEl) {
@@ -279,6 +316,10 @@ const edgeLegend = [
             : `#${node.number} --- ${node.name}`;
         else if (isMagi(node)) titleEl.textContent = mask(node.name);
         else if (isEvent(node)) titleEl.textContent = mask(node.name);
+        else if (isOrganization(node)) titleEl.textContent = mask(node.name);
+        else if (isLocation(node)) titleEl.textContent = mask(node.name);
+        else if (isConcept(node)) titleEl.textContent = mask(node.name);
+        else if (isEva(node)) titleEl.textContent = mask(node.name);
       }
       if (metaEl) {
         metaEl.innerHTML = "";
@@ -298,6 +339,19 @@ const edgeLegend = [
           rows.push(["shortcodes", codes]);
           rows.push(["gate", gateLabel(node.revealedAt)]);
         } else if (isEvent(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isOrganization(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isLocation(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isConcept(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isEva(node)) {
+          rows.push(["unit", masked ? "███" : node.name]);
           rows.push(["shortcodes", codes]);
           rows.push(["gate", gateLabel(node.revealedAt)]);
         }

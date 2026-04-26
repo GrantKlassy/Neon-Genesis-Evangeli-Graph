@@ -1,11 +1,19 @@
 ---
 import {
   ANGEL_UNIFORM_COLOR,
+  CONCEPT_UNIFORM_COLOR,
+  EVA_UNIFORM_COLOR,
+  LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
+  ORGANIZATION_UNIFORM_COLOR,
   evangelion,
   isAngel,
   isCharacter,
+  isConcept,
+  isEva,
+  isLocation,
   isMagi,
+  isOrganization,
 } from "../graph";
 import { colorOf } from "../genesis";
 import G from "./G.astro";
@@ -33,6 +41,10 @@ const angels = evangelion.nodes
   .sort((a, b) => a.number - b.number);
 
 const magi = evangelion.nodes.filter(isMagi);
+const organizations = evangelion.nodes.filter(isOrganization);
+const locations = evangelion.nodes.filter(isLocation);
+const concepts = evangelion.nodes.filter(isConcept);
+const evas = evangelion.nodes.filter(isEva).sort((a, b) => a.number - b.number);
 ---
 
 <section
@@ -170,6 +182,151 @@ const magi = evangelion.nodes.filter(isMagi);
               </p>
               <p class="font-mono text-[0.65rem] tracking-wider text-[color:var(--color-magi-green)] uppercase">
                 {m.personality}
+              </p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-eva-orange)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-evas"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-eva-orange)] uppercase sm:text-sm"
+    >
+      EVA Units
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      The mecha. Each unit pairs with its pilot via a <span
+        class="font-mono text-[color:var(--color-eva-orange)]">pilots</span
+      > edge in the graph; later units carry the same spoiler gate as the show's
+      reveals.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        evas.map((e) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`eva-${e.id}`}
+            data-shortcodes={e.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${EVA_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={e.displayName} />
+              </p>
+              <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
+                shortcodes &middot; {e.shortcodes.join(" / ")}
+              </p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-nerv-red)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-organizations"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-nerv-red)] uppercase sm:text-sm"
+    >
+      Organizations
+    </h3>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        organizations.map((o) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`organization-${o.id}`}
+            data-shortcodes={o.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${ORGANIZATION_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={o.name} />
+              </p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-edge-blue)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-locations"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-edge-blue)] uppercase sm:text-sm"
+    >
+      Locations
+    </h3>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        locations.map((l) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`location-${l.id}`}
+            data-shortcodes={l.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${LOCATION_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                {l.name}
+              </p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-text-dim)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-concepts"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-text)] uppercase sm:text-sm"
+    >
+      Concepts
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      Abstract / in-universe concept nodes. The first entry is a placeholder
+      seed; the catalog fills in as the investigation grows.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        concepts.map((c) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`concept-${c.id}`}
+            data-shortcodes={c.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${CONCEPT_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                {c.name}
               </p>
             </div>
           </li>
