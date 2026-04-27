@@ -571,6 +571,46 @@ export const genesis = {
     secondary: ["#ff8800", "#ffae00"],
     notes: "Instrumentality. Pink-orange tang of dissolved humanity.",
   },
+  hedgehogsDilemma: {
+    shortcode: "hedgehogsDilemma",
+    kind: "CONCEPTS",
+    displayName: "Hedgehog's Dilemma",
+    aliases: ["Hedgehog's Dilemma", "Hedgehog Dilemma"],
+    primary: "#b87a4a",
+    secondary: ["#5a3a2a", "#e3b58a"],
+    notes:
+      "The closer two people draw, the more they hurt each other --- the central interpersonal motif framed in Episode 4.",
+  },
+  trauma: {
+    shortcode: "trauma",
+    kind: "CONCEPTS",
+    displayName: "Trauma",
+    aliases: ["Trauma"],
+    primary: "#5a2a4a",
+    secondary: ["#3a1a2a", "#9a5a7a"],
+    notes:
+      "The unhealed wounds the cast carries --- Shinji's father, Asuka's mother, Misato's father, Rei's nature.",
+  },
+  rejection: {
+    shortcode: "rejection",
+    kind: "CONCEPTS",
+    displayName: "Rejection",
+    aliases: ["Rejection"],
+    primary: "#4a1a3d",
+    secondary: ["#2a0a1d", "#8a3a6d"],
+    notes:
+      "The fear and the act --- Shinji's reflexive 'I mustn't run away' braided with the dread of being pushed away.",
+  },
+  abandonment: {
+    shortcode: "abandonment",
+    kind: "CONCEPTS",
+    displayName: "Abandonment",
+    aliases: ["Abandonment"],
+    primary: "#2a3a5a",
+    secondary: ["#1a2a3a", "#5a7a9a"],
+    notes:
+      "Parents who left, parents who are absent in the room --- the through-line under every Ikari and Akagi mother arc.",
+  },
 } as const satisfies GenesisRegistry;
 
 export type GenesisShortcode = keyof typeof genesis;

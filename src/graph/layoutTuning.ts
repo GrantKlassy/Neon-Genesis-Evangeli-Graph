@@ -29,6 +29,14 @@ export const EDGE_SPRING_LENGTH: Record<EdgeKind, number> = {
   // enough that Shinji/Gendo/Yui visibly cluster around Ikari, loose enough
   // that they don't pile on top of each other.
   member_of_family: 3.0,
+  // Generic links sit at neutral rest length --- long enough that a dense
+  // mesh (e.g. all 5 piloted EVAs fully connected) doesn't collapse into
+  // a knot.
+  generic: 4.0,
+  // EVA <-> defeated-target rest length. Tighter than generic so an EVA
+  // visibly settles next to the things it eliminated (Unit-01 by Sachiel,
+  // etc.) without overpowering pilots-pulls toward the unit's own pilot.
+  eliminated: 3.2,
 };
 
 export const EDGE_WEIGHT: Record<EdgeKind, number> = {
@@ -42,4 +50,12 @@ export const EDGE_WEIGHT: Record<EdgeKind, number> = {
   // anchor without overpowering the pilots / identity-reveal pulls that
   // dominate each character's layout neighborhood.
   member_of_family: 2.0,
+  // Generic links pull lightly --- they're the lowest-priority connection
+  // class, so they tug toward rest without outranking the meaningful
+  // structural pulls (magi triangle, family roll-ups, pilot pairs).
+  generic: 1.2,
+  // Eliminated edges pull moderately --- the EVA reads as visibly tied to
+  // the angel/concept it took down, but not as tightly coupled as a pilot
+  // <-> unit pair (which is a continuous identity, not a single event).
+  eliminated: 2.0,
 };

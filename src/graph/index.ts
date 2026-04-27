@@ -148,6 +148,14 @@ export const EDGE_COLORS: Record<EdgeKind, string> = {
   // Structural-blue lineage line: family membership reads as a structural
   // tie, not a dramatic reveal --- separate visual class from identity_reveal.
   member_of_family: "#3a8fff",
+  // Plain gray --- generic links carry no canonical meaning, just "these
+  // two nodes are related." Reads as background chrome behind the
+  // semantically-loaded edge classes.
+  generic: "#888888",
+  // NERV-red alert tone --- the visual signature of an angel kill. Distinct
+  // from the org-chrome NERV red and the AT-field angel red so the edge
+  // reads as its own class against either endpoint.
+  eliminated: "#ff2a3c",
 };
 
 export { EDGE_SPRING_LENGTH, EDGE_WEIGHT } from "./layoutTuning";

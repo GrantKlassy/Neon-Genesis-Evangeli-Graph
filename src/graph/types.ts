@@ -64,7 +64,9 @@ export type EdgeKind =
   | "angel_sequence"
   | "identity_reveal"
   | "pilots"
-  | "member_of_family";
+  | "member_of_family"
+  | "generic"
+  | "eliminated";
 
 interface NodeBase {
   id: string;

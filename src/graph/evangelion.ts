@@ -435,6 +435,42 @@ const concepts: ConceptNode[] = [
     notes:
       "Instrumentality. The pink-orange tang of dissolved humanity. Unfolds across End of Evangelion (and abstractly in TV ep 25-26).",
   },
+  {
+    id: "concept_hedgehogs_dilemma",
+    kind: "concept",
+    name: "Hedgehog's Dilemma",
+    displayName: "Hedgehog's Dilemma",
+    shortcodes: ["hedgehogsDilemma"],
+    notes:
+      "Two hedgehogs huddling for warmth wound each other with their spines --- the closer the cast tries to get, the more they hurt each other. Named in Episode 4.",
+  },
+  {
+    id: "concept_trauma",
+    kind: "concept",
+    name: "Trauma",
+    displayName: "Trauma",
+    shortcodes: ["trauma"],
+    notes:
+      "Unhealed wounds the cast carries into every interaction. Shinji's father, Asuka's mother, Misato's father, Rei's nature.",
+  },
+  {
+    id: "concept_rejection",
+    kind: "concept",
+    name: "Rejection",
+    displayName: "Rejection",
+    shortcodes: ["rejection"],
+    notes:
+      "Fear of being pushed away, braided with Shinji's reflexive 'I mustn't run away.' The hedgehog's dilemma seen from the inside.",
+  },
+  {
+    id: "concept_abandonment",
+    kind: "concept",
+    name: "Abandonment",
+    displayName: "Abandonment",
+    shortcodes: ["abandonment"],
+    notes:
+      "Parents who left, parents who are absent in the room. The through-line under every Ikari and Akagi mother arc.",
+  },
 ];
 
 const families: FamilyNode[] = [
@@ -712,6 +748,44 @@ function buildEdges(): Edge[] {
       shortcodes: e.shortcodes,
       notes: e.notes,
     });
+  }
+
+  // Eliminated edges: EVA -> angel/concept the unit took down. Seed with
+  // the canonical first kill, Unit-01 vs Sachiel (Ep. 2). More entries
+  // accrue as the catalog grows.
+  out.push({
+    from: "eva_unit01",
+    to: "angel_03_sachiel",
+    kind: "eliminated",
+    weight: EDGE_WEIGHT.eliminated,
+    shortcodes: ["unit01", "sachiel"],
+    notes: "Unit-01 eliminates Sachiel, the Third Angel (Ep. 2).",
+  });
+
+  // Generic EVA <-> EVA mesh: Unit-00 through Unit-04 fully connected
+  // (K5 = 10 edges). Mass Production is intentionally excluded --- it's a
+  // separate visual class belonging to the EoE finale, not the piloted
+  // canon roster. Endpoint masking handles the spoiler gates: an edge
+  // touching Unit-04 stays hidden until Ep. 18 because Unit-04 itself is
+  // gated there.
+  const genericWeight = EDGE_WEIGHT.generic;
+  const pilotedEvas = [
+    "eva_unit00",
+    "eva_unit01",
+    "eva_unit02",
+    "eva_unit03",
+    "eva_unit04",
+  ];
+  for (let i = 0; i < pilotedEvas.length; i++) {
+    for (let j = i + 1; j < pilotedEvas.length; j++) {
+      out.push({
+        from: pilotedEvas[i]!,
+        to: pilotedEvas[j]!,
+        kind: "generic",
+        weight: genericWeight,
+        notes: "",
+      });
+    }
   }
 
   return out;
