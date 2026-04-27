@@ -48,12 +48,13 @@ test.describe("WebGL launches", () => {
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
     const handle = await getGraphHandle(page);
-    // 11 chars + 18 angels + 3 magi + 1 org + 1 loc + 3 concepts + 2 families + 6 evas = 45
-    expect(handle!.nodeCount).toBe(45);
-    // 3 magi + 17 angel-sequence + 3 identity-reveal + 4 pilots + 5 member_of_family = 32
-    expect(handle!.edgeCount).toBe(32);
+    // 11 chars + 18 angels + 3 magi + 1 org + 1 loc + 7 concepts + 2 families + 6 evas = 49
+    expect(handle!.nodeCount).toBe(49);
+    // 3 magi + 17 angel-sequence + 3 identity-reveal + 4 pilots + 5 member_of_family
+    //   + 10 generic (K5 mesh between Unit-00..Unit-04) + 1 eliminated = 43
+    expect(handle!.edgeCount).toBe(43);
     const root = rootEl(page);
-    await expect(root).toHaveAttribute("data-node-count", "45");
+    await expect(root).toHaveAttribute("data-node-count", "49");
   });
 
   test("canvas shows non-background pixels (something is drawn)", async ({
