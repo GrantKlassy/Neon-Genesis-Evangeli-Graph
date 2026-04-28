@@ -51,8 +51,12 @@ test.describe("WebGL launches", () => {
     // 11 chars + 18 angels + 3 magi + 1 org + 1 loc + 7 concepts + 2 families + 6 evas = 49
     expect(handle!.nodeCount).toBe(49);
     // 3 magi + 17 angel-sequence + 3 identity-reveal + 4 pilots + 5 member_of_family
-    //   + 10 generic (K5 mesh between Unit-00..Unit-04) + 1 eliminated = 43
-    expect(handle!.edgeCount).toBe(43);
+    //   + 10 generic (K5 mesh between Unit-00..Unit-04) + 15 eliminated = 57
+    // Eliminated breakdown: Unit-01 takes 10 kills (Sachiel, Shamshel, Ramiel,
+    //   Israfel-co, Matarael, Sahaquiel, Leliel, Bardiel, Zeruel, Tabris),
+    //   Unit-02 takes 4 (Gaghiel, Israfel-co, Sandalphon, Arael), Unit-00
+    //   takes 1 (Armisael self-destruct).
+    expect(handle!.edgeCount).toBe(57);
     const root = rootEl(page);
     await expect(root).toHaveAttribute("data-node-count", "49");
   });

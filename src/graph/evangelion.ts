@@ -767,17 +767,154 @@ function buildEdges(): Edge[] {
     });
   }
 
-  // Eliminated edges: EVA -> angel/concept the unit took down. Seed with
-  // the canonical first kill, Unit-01 vs Sachiel (Ep. 2). More entries
-  // accrue as the catalog grows.
-  out.push({
-    from: "eva_unit01",
-    to: "angel_03_sachiel",
-    kind: "eliminated",
-    weight: EDGE_WEIGHT.eliminated,
-    shortcodes: ["unit01", "sachiel"],
-    notes: "Unit-01 eliminates Sachiel, the Third Angel (Ep. 2).",
-  });
+  // Eliminated edges: EVA -> angel the unit took down, one row per
+  // participating unit. Each edge is gated to the episode the kill happens
+  // on screen --- you don't get to know who eliminated Tabris before you
+  // watch Ep 24. Adam (Second Impact backstory), Lilith (EoE, no EVA in
+  // canon), Iruel (defeated by Ritsuko's Magi reprogram, no EVA), and Lilim
+  // (humanity itself) are intentionally absent --- none have a canonical
+  // EVA killer in the TV series.
+  const eliminatedWeight = EDGE_WEIGHT.eliminated;
+  const eliminations: Array<{
+    eva: string;
+    evaShortcode: string;
+    angel: string;
+    angelShortcode: string;
+    episode: number;
+    notes: string;
+  }> = [
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_03_sachiel",
+      angelShortcode: "sachiel",
+      episode: 2,
+      notes: "Unit-01 berserks and finishes the Third Angel in Tokyo-3 (Ep. 2).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_04_shamshel",
+      angelShortcode: "shamshel",
+      episode: 3,
+      notes: "Unit-01 cuts down the tendril-whip Fourth Angel with prog knives (Ep. 3).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_05_ramiel",
+      angelShortcode: "ramiel",
+      episode: 6,
+      notes: "Operation Yashima --- Unit-01 lands the positron rifle shot, Unit-00 holds the heat shield (Ep. 6).",
+    },
+    {
+      eva: "eva_unit02",
+      evaShortcode: "unit02",
+      angel: "angel_06_gaghiel",
+      angelShortcode: "gaghiel",
+      episode: 8,
+      notes: "Unit-02 pries open Gaghiel's jaws underwater and detonates the fleet's payload (Ep. 8).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_07_israfel",
+      angelShortcode: "israfel",
+      episode: 9,
+      notes: "Synchronized-dance kill --- Unit-01 lands one of the simultaneous strikes (Ep. 9).",
+    },
+    {
+      eva: "eva_unit02",
+      evaShortcode: "unit02",
+      angel: "angel_07_israfel",
+      angelShortcode: "israfel",
+      episode: 9,
+      notes: "Synchronized-dance kill --- Unit-02 lands the other simultaneous strike (Ep. 9).",
+    },
+    {
+      eva: "eva_unit02",
+      evaShortcode: "unit02",
+      angel: "angel_08_sandalphon",
+      angelShortcode: "sandalphon",
+      episode: 10,
+      notes: "Unit-02 retrieves the embryonic Sandalphon from the Mt. Asama caldera and destroys it (Ep. 10).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_09_matarael",
+      angelShortcode: "matarael",
+      episode: 11,
+      notes: "Manual operation during the Tokyo-3 blackout --- Unit-01 lands the kill shot on Matarael's eye (Ep. 11).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_10_sahaquiel",
+      angelShortcode: "sahaquiel",
+      episode: 12,
+      notes: "All three EVAs catch the falling Tenth Angel; Unit-01 drives the prog knife through its core (Ep. 12).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_12_leliel",
+      angelShortcode: "leliel",
+      episode: 16,
+      notes: "Unit-01 berserks out of Leliel's Dirac sea, splitting the shadow from inside (Ep. 16).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_13_bardiel",
+      angelShortcode: "bardiel",
+      episode: 18,
+      notes: "Unit-01 under Dummy Plug control destroys the possessed Unit-03, killing Bardiel (Ep. 18).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_14_zeruel",
+      angelShortcode: "zeruel",
+      episode: 19,
+      notes: "Unit-01 berserks again and consumes Zeruel's S2 organ (Ep. 19).",
+    },
+    {
+      eva: "eva_unit02",
+      evaShortcode: "unit02",
+      angel: "angel_15_arael",
+      angelShortcode: "arael",
+      episode: 22,
+      notes: "Unit-02 hurls the Lance of Longinus into the bird-of-light Fifteenth Angel (Ep. 22).",
+    },
+    {
+      eva: "eva_unit00",
+      evaShortcode: "unit00",
+      angel: "angel_16_armisael",
+      angelShortcode: "armisael",
+      episode: 23,
+      notes: "Rei self-destructs Unit-00 to take the helix Sixteenth Angel with her (Ep. 23).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_17_tabris",
+      angelShortcode: "tabris",
+      episode: 24,
+      notes: "Unit-01 crushes Kaworu / Tabris in its hand at Shinji's request (Ep. 24).",
+    },
+  ];
+  for (const e of eliminations) {
+    out.push({
+      from: e.eva,
+      to: e.angel,
+      kind: "eliminated",
+      weight: eliminatedWeight,
+      revealedAt: { kind: "ep", episode: e.episode },
+      shortcodes: [e.evaShortcode, e.angelShortcode],
+      notes: e.notes,
+    });
+  }
 
   // Generic EVA <-> EVA mesh: Unit-00 through Unit-04 fully connected
   // (K5 = 10 edges). Mass Production is intentionally excluded --- it's a

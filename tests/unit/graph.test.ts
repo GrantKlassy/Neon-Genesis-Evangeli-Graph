@@ -492,6 +492,102 @@ describe("evangelion graph", () => {
       }
     });
   });
+
+  describe("eliminated edges (EVA -> angel kills)", () => {
+    const eliminated = evangelion.edges.filter((e) => e.kind === "eliminated");
+
+    it("encodes 15 canon kills across the TV chain", () => {
+      // Unit-01: Sachiel, Shamshel, Ramiel, Israfel (co), Matarael,
+      //   Sahaquiel, Leliel, Bardiel, Zeruel, Tabris = 10
+      // Unit-02: Gaghiel, Israfel (co), Sandalphon, Arael = 4
+      // Unit-00: Armisael (self-destruct) = 1
+      // Adam, Lilith, Iruel, Lilim have no canonical EVA killer -> excluded.
+      expect(eliminated).toHaveLength(15);
+    });
+
+    it("Unit-01 takes the canonical first three kills (Sachiel, Shamshel, Ramiel)", () => {
+      const has = (from: string, to: string) =>
+        eliminated.find((e) => e.from === from && e.to === to);
+      expect(has("eva_unit01", "angel_03_sachiel")).toBeDefined();
+      expect(has("eva_unit01", "angel_04_shamshel")).toBeDefined();
+      expect(has("eva_unit01", "angel_05_ramiel")).toBeDefined();
+    });
+
+    it("Unit-02 takes Gaghiel, Sandalphon, and Arael", () => {
+      const has = (from: string, to: string) =>
+        eliminated.find((e) => e.from === from && e.to === to);
+      expect(has("eva_unit02", "angel_06_gaghiel")).toBeDefined();
+      expect(has("eva_unit02", "angel_08_sandalphon")).toBeDefined();
+      expect(has("eva_unit02", "angel_15_arael")).toBeDefined();
+    });
+
+    it("Israfel is a co-kill --- both Unit-01 and Unit-02 are credited (Ep. 9)", () => {
+      const israfelKills = eliminated.filter(
+        (e) => e.to === "angel_07_israfel",
+      );
+      const evaIds = israfelKills.map((e) => e.from).sort();
+      expect(evaIds).toEqual(["eva_unit01", "eva_unit02"]);
+      for (const e of israfelKills) {
+        expect(e.revealedAt).toEqual({ kind: "ep", episode: 9 });
+      }
+    });
+
+    it("Unit-00's only kill is Armisael (self-destruct, Ep. 23)", () => {
+      const unit00Kills = eliminated.filter((e) => e.from === "eva_unit00");
+      expect(unit00Kills).toHaveLength(1);
+      expect(unit00Kills[0]!.to).toBe("angel_16_armisael");
+      expect(unit00Kills[0]!.revealedAt).toEqual({
+        kind: "ep",
+        episode: 23,
+      });
+    });
+
+    it("Unit-01 takes Tabris in Ep. 24", () => {
+      const tabrisKill = eliminated.find(
+        (e) => e.from === "eva_unit01" && e.to === "angel_17_tabris",
+      );
+      expect(tabrisKill).toBeDefined();
+      expect(tabrisKill!.revealedAt).toEqual({ kind: "ep", episode: 24 });
+    });
+
+    it("every eliminated edge resolves to an EVA on the from side and an angel on the to side", () => {
+      const idx = nodeIndex(evangelion);
+      for (const e of eliminated) {
+        const from = idx.get(e.from)!;
+        const to = idx.get(e.to)!;
+        expect(from.kind, `${e.from} -> ${e.to}: from must be eva`).toBe("eva");
+        expect(to.kind, `${e.from} -> ${e.to}: to must be angel`).toBe("angel");
+      }
+    });
+
+    it("every eliminated edge stamps the canonical weight", () => {
+      for (const e of eliminated) {
+        expect(e.weight).toBe(EDGE_WEIGHT.eliminated);
+      }
+    });
+
+    it("every eliminated edge is gated to its kill episode (no ungated kills)", () => {
+      for (const e of eliminated) {
+        expect(
+          e.revealedAt,
+          `${e.from} -> ${e.to} has no revealedAt gate`,
+        ).toBeDefined();
+        expect(e.revealedAt!.kind).toBe("ep");
+      }
+    });
+
+    it("none of the excluded angels (Adam, Lilith, Iruel, Lilim) have an eliminated edge", () => {
+      const excluded = new Set([
+        "angel_01_adam",
+        "angel_02_lilith",
+        "angel_11_iruel",
+        "angel_18_lilim",
+      ]);
+      for (const e of eliminated) {
+        expect(excluded.has(e.to), `${e.to} should have no killer`).toBe(false);
+      }
+    });
+  });
 });
 
 describe("validateGraph throws for invalid inputs", () => {
