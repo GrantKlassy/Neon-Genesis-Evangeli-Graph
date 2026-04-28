@@ -200,12 +200,12 @@ test.describe("spoiler dataset attributes", () => {
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
-    await revealWithProgress(page, { episode: 18, eoe: false, rebuild: true });
+    await revealWithProgress(page, { episode: 26, eoe: true, rebuild: false });
 
     const root = page.getByTestId("ngg-graph-root");
-    await expect(root).toHaveAttribute("data-spoiler-episode", "18");
-    await expect(root).toHaveAttribute("data-spoiler-eoe", "false");
-    await expect(root).toHaveAttribute("data-spoiler-rebuild", "true");
+    await expect(root).toHaveAttribute("data-spoiler-episode", "26");
+    await expect(root).toHaveAttribute("data-spoiler-eoe", "true");
+    await expect(root).toHaveAttribute("data-spoiler-rebuild", "false");
   });
 });
 
@@ -250,5 +250,59 @@ test.describe("spoiler gate --- EoE requires Ep. 26", () => {
     await page.getByTestId("ngg-spoiler-preset-all").click();
     const eoe = page.getByTestId("ngg-spoiler-eoe");
     await expect(eoe).toBeEnabled();
+  });
+});
+
+test.describe("spoiler gate --- Rebuild requires Ep. 26 + EoE", () => {
+  test("Rebuild is disabled at ep=0, ep=26 without EoE, and ep<26 with EoE off", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const rebuild = page.getByTestId("ngg-spoiler-rebuild");
+    const label = page.getByTestId("ngg-spoiler-rebuild-label");
+    const hint = page.getByTestId("ngg-spoiler-rebuild-hint");
+
+    // Default: ep=0, eoe=false --- locked.
+    await expect(rebuild).toBeDisabled();
+    await expect(label).toHaveAttribute("data-disabled", "true");
+    await expect(hint).toBeVisible();
+
+    // ep=26 but EoE still unchecked --- still locked, since Rebuild
+    // requires the user to have actually finished EoE.
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("26");
+    await expect(rebuild).toBeDisabled();
+    await expect(hint).toBeVisible();
+
+    // ep=26 + EoE checked --- unlocked.
+    await page.getByTestId("ngg-spoiler-eoe").check();
+    await expect(rebuild).toBeEnabled();
+    await expect(label).toHaveAttribute("data-disabled", "false");
+    await expect(hint).toBeHidden();
+  });
+
+  test("dropping the slider below 26 unchecks/disables EoE and Rebuild", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-preset-all").click();
+    const rebuild = page.getByTestId("ngg-spoiler-rebuild");
+    await expect(rebuild).toBeChecked();
+
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("10");
+    await expect(rebuild).not.toBeChecked();
+    await expect(rebuild).toBeDisabled();
+  });
+
+  test("unchecking EoE while at ep=26 also drops Rebuild", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-preset-all").click();
+    const rebuild = page.getByTestId("ngg-spoiler-rebuild");
+    await expect(rebuild).toBeChecked();
+
+    await page.getByTestId("ngg-spoiler-eoe").uncheck();
+    await expect(rebuild).not.toBeChecked();
+    await expect(rebuild).toBeDisabled();
   });
 });

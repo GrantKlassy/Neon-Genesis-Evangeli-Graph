@@ -42,6 +42,7 @@ const characters: CharacterNode[] = [
     displayName: "Shinji Ikari",
     shortcodes: ["shinji"],
     role: "Third Child / Pilot of Unit-01",
+    tags: [{ id: "child" }],
     notes: "The protagonist. Reluctant pilot of Evangelion Unit-01.",
   },
   {
@@ -51,6 +52,10 @@ const characters: CharacterNode[] = [
     shortcodes: ["asuka"],
     role: "Second Child / Pilot of Unit-02",
     revealedAt: { kind: "ep", episode: 8 },
+    tags: [
+      { id: "child" },
+      { id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } },
+    ],
     notes: "Hot-headed German-American pilot of Evangelion Unit-02.",
   },
   {
@@ -59,6 +64,10 @@ const characters: CharacterNode[] = [
     displayName: "Rei Ayanami",
     shortcodes: ["rei"],
     role: "First Child / Pilot of Unit-00",
+    tags: [
+      { id: "child" },
+      { id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } },
+    ],
     notes:
       "Quiet pilot of Unit-00. Lives alone, speaks rarely, follows orders precisely.",
   },
@@ -68,6 +77,7 @@ const characters: CharacterNode[] = [
     displayName: "Misato Katsuragi",
     shortcodes: ["misato"],
     role: "NERV Operations Director",
+    tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
     notes: "Tactical commander during angel attacks. Shinji's guardian.",
   },
   {
@@ -77,6 +87,10 @@ const characters: CharacterNode[] = [
     shortcodes: ["kaworu"],
     role: "Fifth Child",
     revealedAt: { kind: "ep", episode: 24 },
+    tags: [
+      { id: "child" },
+      { id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } },
+    ],
     notes:
       "The Fifth Child. Walks into the show with quiet, cosmic significance.",
   },
@@ -86,6 +100,7 @@ const characters: CharacterNode[] = [
     displayName: "Gendo Ikari",
     shortcodes: ["gendo"],
     role: "NERV Commander",
+    tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
     notes: "Shinji's estranged father. Runs NERV with his own agenda.",
   },
   {
@@ -94,6 +109,7 @@ const characters: CharacterNode[] = [
     displayName: "Ritsuko Akagi",
     shortcodes: ["ritsuko"],
     role: "NERV Chief Scientist",
+    tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
     notes:
       "Lead engineer on the Evangelions and the Magi. Daughter of Naoko Akagi.",
   },
@@ -113,6 +129,7 @@ const characters: CharacterNode[] = [
     shortcodes: ["toji"],
     role: "Classmate",
     revealedAt: { kind: "ep", episode: 3 },
+    tags: [{ id: "child", revealedAt: { kind: "ep", episode: 17 } }],
     notes:
       "Shinji's classmate. Athletic, gruff, fiercely loyal to those close to him.",
   },

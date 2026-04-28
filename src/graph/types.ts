@@ -59,6 +59,24 @@ export type RevealedAt =
   | { kind: "eoe" }
   | { kind: "rebuild" };
 
+/**
+ * Closed set of role / status tag identifiers a node can carry. New tags
+ * must be added here AND in the TAGS registry (src/graph/tags.ts).
+ */
+export type TagId = "child" | "dies-by-end-of-series";
+
+/**
+ * A tag instance attached to a node. Each occurrence carries its own
+ * spoiler gate: whether a node's "child" tag is visible from Ep 1 (Shinji)
+ * or only after the Fourth-Child reveal at Ep 17 (Toji) is decided
+ * per-node, not per-tag-type. Omit `revealedAt` for tags visible whenever
+ * the node itself is visible.
+ */
+export interface NodeTag {
+  id: TagId;
+  revealedAt?: RevealedAt;
+}
+
 export type EdgeKind =
   | "magi_link"
   | "angel_sequence"
@@ -87,6 +105,12 @@ interface NodeBase {
    * Spoiler gate. Omit for entities visible from Episode 1.
    */
   revealedAt?: RevealedAt;
+  /**
+   * Optional role / status tags. Each tag instance carries its own spoiler
+   * gate (see NodeTag). Tags are render-only metadata --- they do NOT
+   * affect graph layout or edge resolution.
+   */
+  tags?: NodeTag[];
   notes: string;
 }
 

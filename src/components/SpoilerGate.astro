@@ -92,7 +92,9 @@
         >
       </label>
       <label
-        class="flex cursor-pointer items-center gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-3 py-2 hover:border-[color:var(--color-magi-green)]/40"
+        id="ngg-spoiler-rebuild-label"
+        data-testid="ngg-spoiler-rebuild-label"
+        class="ngg-spoiler-rebuild-label flex cursor-pointer items-center gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-3 py-2 hover:border-[color:var(--color-magi-green)]/40"
       >
         <input
           type="checkbox"
@@ -111,6 +113,13 @@
       class="mt-2 hidden font-mono text-[0.65rem] leading-snug tracking-[0.1em] text-[color:var(--color-nerv-red)]/85 uppercase"
     >
       End of Evangelion picks up after Ep. 26. Finish the TV run first.
+    </p>
+    <p
+      id="ngg-spoiler-rebuild-hint"
+      data-testid="ngg-spoiler-rebuild-hint"
+      class="mt-2 hidden font-mono text-[0.65rem] leading-snug tracking-[0.1em] text-[color:var(--color-nerv-red)]/85 uppercase"
+    >
+      Rebuilds remix the TV run + EoE. Finish both first.
     </p>
 
     <div class="mt-5 flex items-center justify-between gap-2">
@@ -190,15 +199,18 @@
   }
 
   /*
-   * The EoE checkbox is only valid once the user has finished Ep. 26 ---
-   * EoE picks up after the original TV finale. While disabled, dim the row
-   * and show a not-allowed cursor so the gating reads as intentional.
+   * EoE requires Ep. 26 finished; Rebuild requires EoE on top of that
+   * (the films remix the TV run + EoE). While the prerequisite isn't met,
+   * dim the row and show a not-allowed cursor so the gating reads as
+   * intentional.
    */
-  .ngg-spoiler-eoe-label[data-disabled="true"] {
+  .ngg-spoiler-eoe-label[data-disabled="true"],
+  .ngg-spoiler-rebuild-label[data-disabled="true"] {
     cursor: not-allowed;
     opacity: 0.55;
   }
-  .ngg-spoiler-eoe-label[data-disabled="true"] input {
+  .ngg-spoiler-eoe-label[data-disabled="true"] input,
+  .ngg-spoiler-rebuild-label[data-disabled="true"] input {
     cursor: not-allowed;
   }
 </style>
@@ -219,6 +231,8 @@
     eoeLabel: HTMLElement;
     eoeHint: HTMLElement;
     rebuildChk: HTMLInputElement;
+    rebuildLabel: HTMLElement;
+    rebuildHint: HTMLElement;
     revealBtn: HTMLButtonElement;
     resetBtn: HTMLButtonElement;
     presetAllBtn: HTMLButtonElement;
@@ -245,6 +259,12 @@
     const rebuildChk = document.getElementById(
       "ngg-spoiler-rebuild",
     ) as HTMLInputElement | null;
+    const rebuildLabel = document.getElementById(
+      "ngg-spoiler-rebuild-label",
+    ) as HTMLElement | null;
+    const rebuildHint = document.getElementById(
+      "ngg-spoiler-rebuild-hint",
+    ) as HTMLElement | null;
     const revealBtn = document.getElementById(
       "ngg-spoiler-reveal",
     ) as HTMLButtonElement | null;
@@ -265,6 +285,8 @@
       !eoeLabel ||
       !eoeHint ||
       !rebuildChk ||
+      !rebuildLabel ||
+      !rebuildHint ||
       !revealBtn ||
       !resetBtn ||
       !presetAllBtn ||
@@ -280,6 +302,8 @@
       eoeLabel,
       eoeHint,
       rebuildChk,
+      rebuildLabel,
+      rebuildHint,
       revealBtn,
       resetBtn,
       presetAllBtn,
@@ -292,37 +316,48 @@
     els.epReadout.textContent = String(p.episode);
     els.eoeChk.checked = p.eoe;
     els.rebuildChk.checked = p.rebuild;
-    syncEoeAvailability(els);
+    syncAvailability(els);
   }
 
   function readControls(els: GateEls): SpoilerProgress {
     const ep = Number(els.slider.value);
     const episode = Math.max(0, Math.min(26, Number.isFinite(ep) ? ep : 0));
-    // EoE only counts if the user finished the TV run --- the gate UI
-    // disables the checkbox below 26, but read() defends in depth.
+    // EoE only counts if the user finished the TV run; Rebuild only counts
+    // if they've also finished EoE. The gate UI disables the boxes when
+    // their prerequisites are unmet, but read() defends in depth.
     const eoe = els.eoeChk.checked && episode >= 26;
-    return {
-      episode,
-      eoe,
-      rebuild: els.rebuildChk.checked,
-    };
+    const rebuild = els.rebuildChk.checked && eoe;
+    return { episode, eoe, rebuild };
   }
 
   /**
-   * The EoE checkbox is only available once the slider hits 26. EoE picks
-   * up after Ep. 26, so claiming "watched EoE" with episode < 26 is an
-   * impossible state. Below 26 we disable the checkbox, force-uncheck it,
-   * and surface a hint explaining why.
+   * Keep the EoE / Rebuild checkboxes in sync with their prerequisites.
+   *
+   *   EoE      requires episode >= 26 (EoE picks up after the TV finale).
+   *   Rebuild  requires EoE on top of that (the films remix the TV run +
+   *            EoE; you shouldn't watch Rebuilds without seeing both first).
+   *
+   * When a prerequisite isn't met we disable the checkbox, force-uncheck
+   * it, and surface a hint explaining why. Rebuild's prereq is recursive:
+   * if EoE drops, Rebuild drops too.
    */
-  function syncEoeAvailability(els: GateEls) {
+  function syncAvailability(els: GateEls) {
     const ep = Number(els.slider.value);
-    const ready = Number.isFinite(ep) && ep >= 26;
-    els.eoeChk.disabled = !ready;
-    els.eoeLabel.dataset.disabled = ready ? "false" : "true";
-    if (!ready && els.eoeChk.checked) {
+    const eoeReady = Number.isFinite(ep) && ep >= 26;
+    els.eoeChk.disabled = !eoeReady;
+    els.eoeLabel.dataset.disabled = eoeReady ? "false" : "true";
+    if (!eoeReady && els.eoeChk.checked) {
       els.eoeChk.checked = false;
     }
-    els.eoeHint.classList.toggle("hidden", ready);
+    els.eoeHint.classList.toggle("hidden", eoeReady);
+
+    const rebuildReady = eoeReady && els.eoeChk.checked;
+    els.rebuildChk.disabled = !rebuildReady;
+    els.rebuildLabel.dataset.disabled = rebuildReady ? "false" : "true";
+    if (!rebuildReady && els.rebuildChk.checked) {
+      els.rebuildChk.checked = false;
+    }
+    els.rebuildHint.classList.toggle("hidden", rebuildReady);
   }
 
   function showGate(els: GateEls) {
@@ -355,16 +390,26 @@
 
     els.slider.addEventListener("input", () => {
       els.epReadout.textContent = els.slider.value;
-      syncEoeAvailability(els);
+      syncAvailability(els);
     });
 
-    // Defense in depth: if the checkbox somehow gets toggled while disabled,
-    // force it back off. Browsers normally suppress click events on disabled
-    // inputs, but the underlying label can still flip the input in edge cases.
+    // Defense in depth: if a checkbox somehow gets toggled while disabled,
+    // force it back off and re-sync. Browsers normally suppress click
+    // events on disabled inputs, but the underlying label can still flip
+    // the input in edge cases. Toggling EoE also gates Rebuild, so re-sync
+    // covers the recursive prerequisite.
     els.eoeChk.addEventListener("change", () => {
       const ep = Number(els.slider.value);
       if (els.eoeChk.checked && (!Number.isFinite(ep) || ep < 26)) {
         els.eoeChk.checked = false;
+      }
+      syncAvailability(els);
+    });
+    els.rebuildChk.addEventListener("change", () => {
+      const ep = Number(els.slider.value);
+      const eoeReady = Number.isFinite(ep) && ep >= 26 && els.eoeChk.checked;
+      if (els.rebuildChk.checked && !eoeReady) {
+        els.rebuildChk.checked = false;
       }
     });
 

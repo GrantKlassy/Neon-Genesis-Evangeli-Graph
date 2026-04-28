@@ -28,6 +28,11 @@ export const SPOILER_NONE: TestSpoilerProgress = {
  * shown on every page load (no persistence), so tests that want a specific
  * mask state walk through the same UI a real user would: set the slider,
  * tick the EoE / Rebuild boxes if needed, click reveal.
+ *
+ * EoE and Rebuild have prerequisites in the UI (EoE needs ep>=26, Rebuild
+ * needs EoE on top of that). We skip the check() if the box is disabled
+ * --- that way callers can pass an impossible state and still get a clean
+ * "no, that's not allowed" pass-through rather than a hard failure.
  */
 export async function revealWithProgress(
   page: Page,
@@ -45,7 +50,10 @@ export async function revealWithProgress(
     }
   }
   if (progress.rebuild) {
-    await page.getByTestId("ngg-spoiler-rebuild").check();
+    const rebuild = page.getByTestId("ngg-spoiler-rebuild");
+    if (await rebuild.isEnabled()) {
+      await rebuild.check();
+    }
   }
   await page.getByTestId("ngg-spoiler-reveal").click();
   await gate.waitFor({ state: "hidden" });

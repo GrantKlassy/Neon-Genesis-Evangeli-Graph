@@ -133,7 +133,7 @@ describe("parseSpoilerProgress", () => {
   });
 });
 
-describe("normalizeSpoilerProgress (EoE invariant)", () => {
+describe("normalizeSpoilerProgress (EoE/Rebuild invariants)", () => {
   it("is a no-op for any valid state", () => {
     expect(
       normalizeSpoilerProgress({ episode: 0, eoe: false, rebuild: false }),
@@ -142,8 +142,8 @@ describe("normalizeSpoilerProgress (EoE invariant)", () => {
       normalizeSpoilerProgress({ episode: 26, eoe: true, rebuild: true }),
     ).toEqual({ episode: 26, eoe: true, rebuild: true });
     expect(
-      normalizeSpoilerProgress({ episode: 13, eoe: false, rebuild: true }),
-    ).toEqual({ episode: 13, eoe: false, rebuild: true });
+      normalizeSpoilerProgress({ episode: 26, eoe: true, rebuild: false }),
+    ).toEqual({ episode: 26, eoe: true, rebuild: false });
   });
 
   it("rejects the impossible EoE+ep<26 state by raising episode to 26", () => {
@@ -153,6 +153,18 @@ describe("normalizeSpoilerProgress (EoE invariant)", () => {
     expect(
       normalizeSpoilerProgress({ episode: 25, eoe: true, rebuild: false }),
     ).toEqual({ episode: 26, eoe: true, rebuild: false });
+  });
+
+  it("rejects the impossible Rebuild-without-EoE state by lifting EoE/episode", () => {
+    // Rebuilds remix the TV run + EoE; rebuild=true with eoe=false (or
+    // episode<26) is an impossible state. Lift the prerequisites rather
+    // than dropping the rebuild flag.
+    expect(
+      normalizeSpoilerProgress({ episode: 13, eoe: false, rebuild: true }),
+    ).toEqual({ episode: 26, eoe: true, rebuild: true });
+    expect(
+      normalizeSpoilerProgress({ episode: 26, eoe: false, rebuild: true }),
+    ).toEqual({ episode: 26, eoe: true, rebuild: true });
   });
 
   it("clamps episode into [0, 26] in addition to EoE check", () => {

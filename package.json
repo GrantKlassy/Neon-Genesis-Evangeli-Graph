@@ -12,7 +12,7 @@
     "format:check": "prettier --check .",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "test:invariants": "vitest run tests/unit/genesis.test.ts tests/unit/graph.test.ts tests/unit/highlight.test.ts",
+    "test:invariants": "vitest run tests/unit/genesis.test.ts tests/unit/graph.test.ts tests/unit/highlight.test.ts tests/unit/invariants.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test": "pnpm run test:unit && pnpm run test:e2e",

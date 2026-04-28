@@ -12,14 +12,18 @@ import type {
   LocationNode,
   MagiNode,
   NodeKind,
+  NodeTag,
   OrganizationNode,
   RevealedAt,
   SpoilerProgress,
+  TagId,
 } from "./types";
 import {
   SPOILER_PROGRESS_DEFAULT,
   SPOILER_PROGRESS_FULL,
 } from "./types";
+import { TAG_IDS, TAGS, isTagId, visibleTags } from "./tags";
+import type { TagDef } from "./tags";
 import {
   assertGenesisValid,
   colorOf,
@@ -41,11 +45,15 @@ export type {
   LocationNode,
   MagiNode,
   NodeKind,
+  NodeTag,
   OrganizationNode,
   RevealedAt,
   SpoilerProgress,
+  TagDef,
+  TagId,
 };
 export { SPOILER_PROGRESS_DEFAULT, SPOILER_PROGRESS_FULL };
+export { TAG_IDS, TAGS, isTagId, visibleTags };
 
 export { evangelion } from "./evangelion";
 
@@ -257,17 +265,18 @@ export function gateLabel(gate: RevealedAt | undefined): string {
  * string is missing or malformed. Used by the gate's localStorage read path
  * so a corrupt cookie doesn't blow up the renderer.
  *
- * Hard invariant: a stored EoE flag implies the user finished Episode 26.
- * EoE picks up after the events of Ep 26 (the original TV finale covers the
- * same Instrumentality territory abstractly), so claiming "watched EoE" with
- * episode < 26 is an impossible state. We force episode to 26 in that case
- * rather than dropping the EoE flag --- the safer assumption is that the user
- * really has been spoiled, and we should not hide content from them.
+ * Hard invariants: EoE implies the user finished Episode 26, and Rebuild
+ * implies the user finished EoE. EoE picks up after Ep 26, and the Rebuild
+ * films remix the TV run + EoE --- you shouldn't watch Rebuilds without
+ * having seen both first. When we encounter the impossible states (eoe=true
+ * with ep<26, or rebuild=true without eoe) we lift the prerequisites rather
+ * than dropping the flag --- the safer assumption is that the user really
+ * has been spoiled and we should not hide content from them.
  */
 export function normalizeSpoilerProgress(p: SpoilerProgress): SpoilerProgress {
   const episode = Math.max(0, Math.min(26, Math.floor(p.episode)));
-  const eoe = p.eoe === true;
   const rebuild = p.rebuild === true;
+  const eoe = p.eoe === true || rebuild;
   return {
     episode: eoe && episode < 26 ? 26 : episode,
     eoe,
@@ -395,6 +404,44 @@ export function validateGraph(graph: EvangelionGraph): void {
       }
     }
     validateRevealedAt(`Node ${node.id}`, node.revealedAt);
+
+    if (node.tags !== undefined) {
+      if (!Array.isArray(node.tags)) {
+        throw new Error(`Node ${node.id} tags must be an array`);
+      }
+      const seenTags = new Set<TagId>();
+      for (const tag of node.tags) {
+        if (!tag || typeof tag.id !== "string") {
+          throw new Error(`Node ${node.id} has a malformed tag entry`);
+        }
+        if (!isTagId(tag.id)) {
+          throw new Error(
+            `Node ${node.id} carries unknown tag id "${tag.id}"`,
+          );
+        }
+        if (seenTags.has(tag.id)) {
+          throw new Error(
+            `Node ${node.id} carries duplicate tag "${tag.id}"`,
+          );
+        }
+        seenTags.add(tag.id);
+        validateRevealedAt(`Node ${node.id} tag ${tag.id}`, tag.revealedAt);
+
+        // Tags with a canonicalGate in the registry must be stamped
+        // consistently across every node --- this is what makes the
+        // "always-EoE" invariant for dies-by-end-of-series testable.
+        const def = TAGS[tag.id];
+        if (def.canonicalGate) {
+          const stamped = JSON.stringify(tag.revealedAt ?? null);
+          const expected = JSON.stringify(def.canonicalGate);
+          if (stamped !== expected) {
+            throw new Error(
+              `Node ${node.id} tag "${tag.id}" must use canonical gate ${expected} --- got ${stamped}`,
+            );
+          }
+        }
+      }
+    }
   }
 
   for (const edge of graph.edges) {
@@ -421,6 +468,24 @@ export function validateGraph(graph: EvangelionGraph): void {
       }
     }
     validateRevealedAt(`Edge ${edge.from} -> ${edge.to}`, edge.revealedAt);
+  }
+
+  // No duplicate edges: same (from, to, kind) cannot appear twice. The
+  // graph is undirected for layout purposes, so (A->B, kind=K) and
+  // (B->A, kind=K) also count as duplicates --- only one direction needed.
+  const edgeKey = (a: string, b: string, kind: string): string => {
+    const [lo, hi] = a < b ? [a, b] : [b, a];
+    return `${lo}|${hi}|${kind}`;
+  };
+  const seenEdges = new Set<string>();
+  for (const edge of graph.edges) {
+    const key = edgeKey(edge.from, edge.to, edge.kind);
+    if (seenEdges.has(key)) {
+      throw new Error(
+        `Duplicate edge: ${edge.from} <-> ${edge.to} (kind=${edge.kind})`,
+      );
+    }
+    seenEdges.add(key);
   }
 
   // Family invariant: every family node must collect at least 2 members
