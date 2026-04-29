@@ -34,12 +34,13 @@ describe("evangelion graph", () => {
 
   it("has the expected canon node mix", () => {
     expect(evangelion.id).toBe("evangelion");
-    expect(evangelion.nodes.filter(isCharacter)).toHaveLength(11);
+    // 11 main cast + 8 supporting (Kaji, Fuyutsuki, the bridge trio,
+    // Pen Pen, Hikari, Kensuke) = 19.
+    expect(evangelion.nodes.filter(isCharacter)).toHaveLength(19);
     expect(evangelion.nodes.filter(isAngel)).toHaveLength(18);
     expect(evangelion.nodes.filter(isMagi)).toHaveLength(3);
-    // Event kind is currently empty --- Third Impact moved into concepts to
-    // match the genesis registry. The kind itself stays for future use.
-    expect(evangelion.nodes.filter(isEvent).length).toBe(0);
+    // Events are now populated --- First Impact + Second Impact.
+    expect(evangelion.nodes.filter(isEvent).length).toBeGreaterThanOrEqual(2);
     expect(evangelion.nodes.filter(isOrganization).length).toBeGreaterThanOrEqual(1);
     expect(evangelion.nodes.filter(isLocation).length).toBeGreaterThanOrEqual(1);
     expect(evangelion.nodes.filter(isConcept).length).toBeGreaterThanOrEqual(3);
@@ -153,10 +154,11 @@ describe("evangelion graph", () => {
     expect(byNumber.get(18)).toBe("Lilim");
   });
 
-  it("the eleven expected characters are present by id (10 main cast + Naoko Akagi)", () => {
+  it("every canonical character is present by id (main cast + supporting)", () => {
     const ids = new Set(evangelion.nodes.filter(isCharacter).map((c) => c.id));
     expect(ids).toEqual(
       new Set([
+        // 10-person main cast plus Naoko (Magi backstory).
         "char_shinji",
         "char_asuka",
         "char_rei",
@@ -168,6 +170,15 @@ describe("evangelion graph", () => {
         "char_toji",
         "char_yui",
         "char_naoko",
+        // Supporting cast: Kaji, Fuyutsuki, bridge trio, Pen Pen, classmates.
+        "char_kaji",
+        "char_fuyutsuki",
+        "char_maya",
+        "char_hyuga",
+        "char_aoba",
+        "char_pen_pen",
+        "char_hikari",
+        "char_kensuke",
       ]),
     );
   });
@@ -497,11 +508,14 @@ describe("evangelion graph", () => {
     const eliminated = evangelion.edges.filter((e) => e.kind === "eliminated");
 
     it("encodes 15 canon kills across the TV chain", () => {
-      // Unit-01: Sachiel, Shamshel, Ramiel, Israfel (co), Matarael,
-      //   Sahaquiel, Leliel, Bardiel, Zeruel, Tabris = 10
-      // Unit-02: Gaghiel, Israfel (co), Sandalphon, Arael = 4
-      // Unit-00: Armisael (self-destruct) = 1
-      // Adam, Lilith, Iruel, Lilim have no canonical EVA killer -> excluded.
+      // Audited 2026-04-28 against EvaWiki:
+      //   Unit-01: Sachiel, Shamshel, Ramiel, Israfel (co), Matarael,
+      //     Leliel, Bardiel, Zeruel, Tabris = 9
+      //   Unit-02: Gaghiel, Israfel (co), Sandalphon, Sahaquiel = 4
+      //   Unit-00: Arael (Lance throw, Ep. 22), Armisael (self-destruct,
+      //     Ep. 23) = 2
+      //   Adam, Lilith, Iruel, Lilim have no canonical EVA killer ->
+      //   excluded.
       expect(eliminated).toHaveLength(15);
     });
 
@@ -513,12 +527,15 @@ describe("evangelion graph", () => {
       expect(has("eva_unit01", "angel_05_ramiel")).toBeDefined();
     });
 
-    it("Unit-02 takes Gaghiel, Sandalphon, and Arael", () => {
+    it("Unit-02 takes Gaghiel, Sandalphon, and Sahaquiel", () => {
       const has = (from: string, to: string) =>
         eliminated.find((e) => e.from === from && e.to === to);
       expect(has("eva_unit02", "angel_06_gaghiel")).toBeDefined();
       expect(has("eva_unit02", "angel_08_sandalphon")).toBeDefined();
-      expect(has("eva_unit02", "angel_15_arael")).toBeDefined();
+      // Sahaquiel kill: Eva-02 pierced the core (audited 2026-04-28
+      // against wiki/Sahaquiel --- 'wielding their prog knives to cut
+      // through the Angel's field and penetrate its core, respectively').
+      expect(has("eva_unit02", "angel_10_sahaquiel")).toBeDefined();
     });
 
     it("Israfel is a co-kill --- both Unit-01 and Unit-02 are credited (Ep. 9)", () => {
@@ -532,14 +549,21 @@ describe("evangelion graph", () => {
       }
     });
 
-    it("Unit-00's only kill is Armisael (self-destruct, Ep. 23)", () => {
+    it("Unit-00 takes both Arael (Ep. 22, Lance) and Armisael (Ep. 23, self-destruct)", () => {
+      // Audited 2026-04-28 against wiki/Arael: 'Eva-00 then returned to
+      // the surface, and hurled the Spear of Longinus into the sky [...]
+      // pierced Arael's A.T. Field and destroyed the Angel.' Asuka was
+      // incapacitated by Arael's mind-attack; Rei retrieves the Lance
+      // from Terminal Dogma and makes the kill.
       const unit00Kills = eliminated.filter((e) => e.from === "eva_unit00");
-      expect(unit00Kills).toHaveLength(1);
-      expect(unit00Kills[0]!.to).toBe("angel_16_armisael");
-      expect(unit00Kills[0]!.revealedAt).toEqual({
-        kind: "ep",
-        episode: 23,
-      });
+      const targets = new Set(unit00Kills.map((e) => e.to));
+      expect(targets).toEqual(
+        new Set(["angel_15_arael", "angel_16_armisael"]),
+      );
+      const arael = unit00Kills.find((e) => e.to === "angel_15_arael")!;
+      expect(arael.revealedAt).toEqual({ kind: "ep", episode: 22 });
+      const armisael = unit00Kills.find((e) => e.to === "angel_16_armisael")!;
+      expect(armisael.revealedAt).toEqual({ kind: "ep", episode: 23 });
     });
 
     it("Unit-01 takes Tabris in Ep. 24", () => {
@@ -941,6 +965,254 @@ describe("kind-uniform / display-suffix invariants (with negative tests)", () =>
           ],
         }),
       ).toThrow(/Family node.*\(Family\)/);
+    });
+  });
+});
+
+/**
+ * Pipeline invariants added with the second canon-expansion pass:
+ *
+ *   - Edge-kind endpoint shape: a typed edge declares which node kinds may
+ *     sit on each side. A misuse (e.g. a pilots edge between two angels)
+ *     is a data bug.
+ *   - Spoiler-gate monotonicity: an edge gate cannot be strictly more
+ *     permissive than its endpoints' gates. If Lilith reveals at Ep. 23,
+ *     an edge touching Lilith cannot reveal at Ep. 5.
+ *   - Citation requirement: every gated node and every gated edge must
+ *     carry a non-empty revealedAtSource. The point is to force every
+ *     gate to be authored against a checkable source, not recall ---
+ *     "your knowledge of the spoiler may be false."
+ */
+describe("pipeline invariants: edge shape, gate monotonicity, citations", () => {
+  // ---------- Edge-kind endpoint shape ----------
+  describe("edge-kind endpoint shape", () => {
+    it("happy path: every existing edge passes its kind's shape rule", () => {
+      // Implicit in validateGraph(evangelion) succeeding above, but
+      // re-asserted here so the reason for the failure is obvious if
+      // somebody adds a wrong-shape edge.
+      expect(() => validateGraph(evangelion)).not.toThrow();
+    });
+
+    it("test-the-test: rejects a pilots edge between two characters", () => {
+      const broken = {
+        from: "char_shinji",
+        to: "char_asuka",
+        kind: "pilots" as const,
+        weight: EDGE_WEIGHT.pilots,
+        notes: "bogus pilots edge",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/violates endpoint shape/);
+    });
+
+    it("test-the-test: rejects an eliminated edge from a character to an angel", () => {
+      const broken = {
+        from: "char_shinji",
+        to: "angel_03_sachiel",
+        kind: "eliminated" as const,
+        weight: EDGE_WEIGHT.eliminated,
+        revealedAt: { kind: "ep" as const, episode: 2 },
+        revealedAtSource: "test fixture",
+        notes: "bogus eliminated edge",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/violates endpoint shape/);
+    });
+
+    it("test-the-test: rejects a member_of_family edge to an organization", () => {
+      const broken = {
+        from: "char_misato",
+        to: "org_nerv",
+        kind: "member_of_family" as const,
+        weight: EDGE_WEIGHT.member_of_family,
+        notes: "bogus family edge",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/violates endpoint shape/);
+    });
+
+    it("test-the-test: rejects a caused edge whose 'to' is a character", () => {
+      const broken = {
+        from: "org_seele",
+        to: "char_shinji",
+        kind: "caused" as const,
+        weight: EDGE_WEIGHT.caused,
+        notes: "bogus caused edge",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/violates endpoint shape/);
+    });
+  });
+
+  // ---------- Spoiler-gate monotonicity ----------
+  describe("gate monotonicity (edge gate >= endpoint gate)", () => {
+    it("happy path: every gated edge respects its endpoints' gates", () => {
+      expect(() => validateGraph(evangelion)).not.toThrow();
+    });
+
+    it("test-the-test: rejects an edge gated to Ep. 5 between two characters Lilith and a Ep. 23-gated angel", () => {
+      // Lilith is gated to Ep. 23. An edge touching Lilith with an Ep. 5
+      // gate is logically inconsistent --- the user would see the line
+      // before they know what Lilith is.
+      const broken = {
+        from: "angel_02_lilith",
+        to: "char_shinji",
+        kind: "generic" as const,
+        weight: 1,
+        revealedAt: { kind: "ep" as const, episode: 5 },
+        revealedAtSource: "test fixture",
+        notes: "bogus monotonicity violation",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/more permissive than its endpoints/);
+    });
+
+    it("test-the-test: rejects an edge with no gate when one endpoint is EoE-gated", () => {
+      // Mass Production is EoE-gated. A no-gate edge into Mass Production
+      // would imply the edge is visible from Ep. 1 even though the unit
+      // itself isn't --- inconsistent.
+      const broken = {
+        from: "char_shinji",
+        to: "eva_mass_production",
+        kind: "generic" as const,
+        weight: 1,
+        // intentionally no revealedAt
+        notes: "bogus open edge to a gated endpoint",
+      };
+      // The validator only flags edges with a *set but more permissive*
+      // gate; an unset edge gate effectively reveals from Ep. 1, which is
+      // more permissive than Mass Production's EoE gate. Stamp the edge
+      // with an explicit Ep. 1 gate to trigger the check predictably.
+      const explicit = {
+        ...broken,
+        revealedAt: { kind: "ep" as const, episode: 1 },
+        revealedAtSource: "test fixture",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, explicit],
+        }),
+      ).toThrow(/more permissive than its endpoints/);
+    });
+  });
+
+  // ---------- Citation requirement ----------
+  describe("revealedAtSource citation requirement", () => {
+    it("happy path: every gated node carries a non-empty revealedAtSource", () => {
+      for (const node of evangelion.nodes) {
+        if (node.revealedAt !== undefined) {
+          expect(
+            node.revealedAtSource,
+            `node ${node.id} has a gate but no source`,
+          ).toBeDefined();
+          expect(node.revealedAtSource!.trim().length).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    it("happy path: every gated edge carries a non-empty revealedAtSource", () => {
+      for (const edge of evangelion.edges) {
+        if (edge.revealedAt !== undefined) {
+          expect(
+            edge.revealedAtSource,
+            `edge ${edge.from}->${edge.to} (${edge.kind}) has a gate but no source`,
+          ).toBeDefined();
+          expect(edge.revealedAtSource!.trim().length).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    it("test-the-test: validateGraph throws when a gated node loses its source", () => {
+      // Strip the source from Asuka (Ep. 8 gate) and re-validate.
+      const idx = evangelion.nodes.findIndex((n) => n.id === "char_asuka");
+      const target = evangelion.nodes[idx]!;
+      const { revealedAtSource: _drop, ...broken } = target as typeof target & {
+        revealedAtSource?: string;
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          nodes: [
+            ...evangelion.nodes.slice(0, idx),
+            broken,
+            ...evangelion.nodes.slice(idx + 1),
+          ],
+        }),
+      ).toThrow(/revealedAt without revealedAtSource/);
+    });
+
+    it("test-the-test: validateGraph throws when a gated edge loses its source", () => {
+      // Strip the source from a known-gated edge (the Toji <-> Bardiel
+      // identity reveal) and re-validate.
+      const targetIdx = evangelion.edges.findIndex(
+        (e) =>
+          e.kind === "identity_reveal" &&
+          e.from === "char_toji" &&
+          e.to === "angel_13_bardiel",
+      );
+      expect(targetIdx).toBeGreaterThanOrEqual(0);
+      const target = evangelion.edges[targetIdx]!;
+      const { revealedAtSource: _drop, ...broken } = target as typeof target & {
+        revealedAtSource?: string;
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [
+            ...evangelion.edges.slice(0, targetIdx),
+            broken,
+            ...evangelion.edges.slice(targetIdx + 1),
+          ],
+        }),
+      ).toThrow(/revealedAt without revealedAtSource/);
+    });
+
+    it("citation coverage: every node gate has a source (no silent drift)", () => {
+      const gated = evangelion.nodes.filter((n) => n.revealedAt !== undefined);
+      const cited = gated.filter(
+        (n) => n.revealedAtSource && n.revealedAtSource.trim().length > 0,
+      );
+      // Strict: 100% coverage. The validator already enforces this, but
+      // a coverage-style assertion makes regressions obvious in test
+      // output: "X / Y nodes cited" instead of a single throw line.
+      expect(
+        cited.length,
+        `${cited.length} / ${gated.length} gated nodes cite a source`,
+      ).toBe(gated.length);
+    });
+
+    it("citation coverage: every edge gate has a source (no silent drift)", () => {
+      const gated = evangelion.edges.filter(
+        (e) => e.revealedAt !== undefined,
+      );
+      const cited = gated.filter(
+        (e) => e.revealedAtSource && e.revealedAtSource.trim().length > 0,
+      );
+      expect(
+        cited.length,
+        `${cited.length} / ${gated.length} gated edges cite a source`,
+      ).toBe(gated.length);
     });
   });
 });

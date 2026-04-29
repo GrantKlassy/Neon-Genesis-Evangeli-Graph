@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  EVAGEEKS_BASE_URL,
   GENESIS_KINDS,
   assertGenesisValid,
   colorOf,
   entry,
+  evageeksUrlOf,
   genesis,
   genesisAsCssVars,
   isShortcode,
@@ -195,13 +197,140 @@ describe("genesis helpers", () => {
   });
 
   it("resolveAlias returns null for unknown text", () => {
-    expect(resolveAlias("Pen Pen")).toBeNull();
+    expect(resolveAlias("This Is Not An Alias")).toBeNull();
     expect(resolveAlias("")).toBeNull();
   });
 
   it("entry returns the entry or undefined", () => {
     expect(entry("shinji")?.displayName).toBe("Shinji Ikari");
     expect(entry("nope")).toBeUndefined();
+  });
+});
+
+describe("evageeks links", () => {
+  it("evageeksUrlOf returns the joined URL for entries with a slug", () => {
+    expect(evageeksUrlOf("shinji")).toBe(`${EVAGEEKS_BASE_URL}Shinji_Ikari`);
+    expect(evageeksUrlOf("sachiel")).toBe(`${EVAGEEKS_BASE_URL}Sachiel`);
+    expect(evageeksUrlOf("unit01")).toBe(
+      `${EVAGEEKS_BASE_URL}Evangelion_Unit-01`,
+    );
+    expect(evageeksUrlOf("atField")).toBe(`${EVAGEEKS_BASE_URL}A.T._Field`);
+    expect(evageeksUrlOf("nerv")).toBe(`${EVAGEEKS_BASE_URL}Nerv`);
+    expect(evageeksUrlOf("seele")).toBe(`${EVAGEEKS_BASE_URL}Seele`);
+    expect(evageeksUrlOf("nervHq")).toBe(`${EVAGEEKS_BASE_URL}Nerv_HQ`);
+  });
+
+  it("the three Magi share the single /Magi article", () => {
+    for (const code of ["casper", "melchior", "balthasar"]) {
+      expect(evageeksUrlOf(code)).toBe(`${EVAGEEKS_BASE_URL}Magi`);
+    }
+  });
+
+  it("evageeksUrlOf returns null for entries with no wiki page", () => {
+    // Psyche concepts the wiki does not index.
+    expect(evageeksUrlOf("hedgehogsDilemma")).toBeNull();
+    expect(evageeksUrlOf("trauma")).toBeNull();
+    expect(evageeksUrlOf("rejection")).toBeNull();
+    expect(evageeksUrlOf("abandonment")).toBeNull();
+    // Family-name registry entries are color-only, not wiki-indexed.
+    expect(evageeksUrlOf("ikari")).toBeNull();
+    expect(evageeksUrlOf("akagi")).toBeNull();
+  });
+
+  it("evageeksUrlOf returns null for unknown shortcodes", () => {
+    expect(evageeksUrlOf("definitely-not-a-shortcode")).toBeNull();
+  });
+
+  it("every canonical character has an evageeks slug", () => {
+    for (const code of [
+      "shinji",
+      "asuka",
+      "rei",
+      "misato",
+      "kaworu",
+      "gendo",
+      "ritsuko",
+      "mari",
+      "toji",
+      "yui",
+      "naoko",
+    ]) {
+      expect(
+        evageeksUrlOf(code),
+        `expected an evageeks URL for ${code}`,
+      ).not.toBeNull();
+    }
+  });
+
+  it("every canonical angel has an evageeks slug", () => {
+    for (const code of [
+      "adam",
+      "lilith",
+      "sachiel",
+      "shamshel",
+      "ramiel",
+      "gaghiel",
+      "israfel",
+      "sandalphon",
+      "matarael",
+      "sahaquiel",
+      "iruel",
+      "leliel",
+      "bardiel",
+      "zeruel",
+      "arael",
+      "armisael",
+      "tabris",
+      "lilim",
+    ]) {
+      expect(
+        evageeksUrlOf(code),
+        `expected an evageeks URL for ${code}`,
+      ).not.toBeNull();
+    }
+  });
+
+  it("every EVA unit has an evageeks slug", () => {
+    for (const code of [
+      "unit00",
+      "unit01",
+      "unit02",
+      "unit03",
+      "unit04",
+      "massProduction",
+    ]) {
+      expect(
+        evageeksUrlOf(code),
+        `expected an evageeks URL for ${code}`,
+      ).not.toBeNull();
+    }
+  });
+
+  it("validateGenesis rejects evageeksSlug values with whitespace or scheme", () => {
+    const ok = validateGenesis();
+    expect(ok.ok).toBe(true);
+
+    const broken = {
+      ...genesis,
+      shinji: {
+        ...genesis.shinji,
+        evageeksSlug: "Shinji Ikari",
+      },
+    };
+    const r1 = validateGenesis(broken as unknown as typeof genesis);
+    expect(r1.ok).toBe(false);
+    expect(r1.errors.some((e) => e.includes("whitespace"))).toBe(true);
+
+    const broken2 = {
+      ...genesis,
+      shinji: {
+        ...genesis.shinji,
+        evageeksSlug: "https://wiki.evageeks.org/Shinji_Ikari",
+      },
+    };
+    const r2 = validateGenesis(broken2 as unknown as typeof genesis);
+    expect(r2.ok).toBe(false);
+    expect(r2.errors.some((e) => e.includes("must be a slug"))).toBe(true);
   });
 });
 

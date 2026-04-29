@@ -83,6 +83,9 @@ export type EdgeKind =
   | "identity_reveal"
   | "pilots"
   | "member_of_family"
+  | "member_of_org"
+  | "located_in"
+  | "caused"
   | "generic"
   | "eliminated";
 
@@ -105,6 +108,15 @@ interface NodeBase {
    * Spoiler gate. Omit for entities visible from Episode 1.
    */
   revealedAt?: RevealedAt;
+  /**
+   * Citation grounding the spoiler gate. Free-text, but in practice an
+   * EvaWiki URL or "Ep. NN --- <event>" string. REQUIRED whenever
+   * revealedAt is set (the validator throws when missing). The field
+   * exists to force-author every gate against a checkable source instead
+   * of trusting recall --- see CLAUDE.md / "your knowledge of the spoiler
+   * may be false."
+   */
+  revealedAtSource?: string;
   /**
    * Optional role / status tags. Each tag instance carries its own spoiler
    * gate (see NodeTag). Tags are render-only metadata --- they do NOT
@@ -212,6 +224,11 @@ export interface Edge {
    * either endpoint is masked (a half-revealed line still leaks information).
    */
   revealedAt?: RevealedAt;
+  /**
+   * Citation grounding the edge's spoiler gate. Required when revealedAt
+   * is set --- same rule as on NodeBase.
+   */
+  revealedAtSource?: string;
   notes: string;
 }
 

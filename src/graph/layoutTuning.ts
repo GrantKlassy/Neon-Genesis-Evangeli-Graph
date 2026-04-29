@@ -29,6 +29,17 @@ export const EDGE_SPRING_LENGTH: Record<EdgeKind, number> = {
   // enough that Shinji/Gendo/Yui visibly cluster around Ikari, loose enough
   // that they don't pile on top of each other.
   member_of_family: 3.0,
+  // Org membership: similar shape to family --- members orbit the org
+  // anchor (NERV, SEELE) at slightly looser rest length since the org is
+  // a structural roll-up, not a tight emotional unit.
+  member_of_org: 3.4,
+  // Located-in: a child place sits just outside its parent (NERV HQ inside
+  // the Geofront inside Tokyo-3). Short rest so the nesting reads visually
+  // as a tight cluster.
+  located_in: 2.6,
+  // Caused: an event/concept and its trigger sit close (Adam --- Second
+  // Impact) but not as tightly as an identity reveal.
+  caused: 3.6,
   // Generic links sit at neutral rest length --- long enough that a dense
   // mesh (e.g. all 5 piloted EVAs fully connected) doesn't collapse into
   // a knot.
@@ -50,6 +61,17 @@ export const EDGE_WEIGHT: Record<EdgeKind, number> = {
   // anchor without overpowering the pilots / identity-reveal pulls that
   // dominate each character's layout neighborhood.
   member_of_family: 2.0,
+  // Org membership pulls slightly less than family --- a NERV employee is
+  // anchored to NERV but their character/family identity should still
+  // dominate the local layout.
+  member_of_org: 1.6,
+  // Located-in pulls firmly so the spatial nesting (Tokyo-3 / Geofront /
+  // NERV HQ / Terminal Dogma) reads as a coherent stack.
+  located_in: 1.9,
+  // Caused edges link a backstory cause to its event/concept (Adam ->
+  // Second Impact) at moderate weight --- enough to associate, not enough
+  // to drag either endpoint out of its own canonical neighborhood.
+  caused: 1.5,
   // Generic links pull lightly --- they're the lowest-priority connection
   // class, so they tug toward rest without outranking the meaningful
   // structural pulls (magi triangle, family roll-ups, pilot pairs).

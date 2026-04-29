@@ -42,6 +42,20 @@ export function colorOf(shortcode: string): string {
   return ent?.primary ?? "#cccccc";
 }
 
+/** Base URL for every EvaWiki article. Joined with the slug at link time. */
+export const EVAGEEKS_BASE_URL = "https://wiki.evageeks.org/";
+
+/**
+ * Resolve a shortcode's EvaWiki article URL, or null when the wiki does not
+ * index the entity (Hedgehog's Dilemma and the other psyche concepts, the
+ * family-name registry entries). Slugs are pre-verified --- see registry.ts.
+ */
+export function evageeksUrlOf(shortcode: string): string | null {
+  const ent = entry(shortcode);
+  if (!ent?.evageeksSlug) return null;
+  return `${EVAGEEKS_BASE_URL}${ent.evageeksSlug}`;
+}
+
 /** Resolve a shortcode's kind, or null. */
 export function kindOf(shortcode: string): GenesisKind | null {
   const ent = entry(shortcode);
@@ -165,6 +179,21 @@ export function validateGenesis(
         }
       });
     }
+    if (ent.evageeksSlug !== undefined) {
+      const slug = ent.evageeksSlug;
+      if (typeof slug !== "string" || slug.length === 0) {
+        errors.push(`${code}: evageeksSlug must be a non-empty string when set`);
+      } else if (/\s/.test(slug)) {
+        errors.push(
+          `${code}: evageeksSlug "${slug}" contains whitespace --- use underscores`,
+        );
+      } else if (slug.startsWith("/") || slug.includes("://")) {
+        errors.push(
+          `${code}: evageeksSlug "${slug}" must be a slug (no scheme, no leading slash)`,
+        );
+      }
+    }
+
     if (!Array.isArray(ent.aliases) || ent.aliases.length === 0) {
       errors.push(`${code}: must declare at least one alias`);
     } else {

@@ -17,7 +17,8 @@ export type GenesisKind =
   | "EVA"
   | "ORGANIZATIONS"
   | "LOCATIONS"
-  | "CONCEPTS";
+  | "CONCEPTS"
+  | "EVENTS";
 
 export interface GenesisEntry {
   /** Unique key. Lowercase, no spaces. The thing the rest of the codebase points at. */
@@ -44,6 +45,15 @@ export interface GenesisEntry {
   secondary: string[];
   /** One-line lore note used for tooltips and hover detail. */
   notes: string;
+  /**
+   * EvaWiki article slug at https://wiki.evageeks.org/{slug}. Optional ---
+   * concepts the wiki does not index (Hedgehog's Dilemma, Trauma, etc.) and
+   * the family-name registry entries (no per-family wiki page) leave this
+   * unset. The Magi nodes share a single slug ("Magi") because the wiki
+   * does not have per-personality articles for Casper / Melchior /
+   * Balthasar.
+   */
+  evageeksSlug?: string;
 }
 
 export type GenesisRegistry = Record<string, GenesisEntry>;
@@ -60,4 +70,5 @@ export const GENESIS_KINDS: readonly GenesisKind[] = [
   "ORGANIZATIONS",
   "LOCATIONS",
   "CONCEPTS",
+  "EVENTS",
 ] as const;

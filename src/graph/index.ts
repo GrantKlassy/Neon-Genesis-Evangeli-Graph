@@ -156,6 +156,14 @@ export const EDGE_COLORS: Record<EdgeKind, string> = {
   // Structural-blue lineage line: family membership reads as a structural
   // tie, not a dramatic reveal --- separate visual class from identity_reveal.
   member_of_family: "#3a8fff",
+  // NERV-emblem deep red for org membership --- distinct from the brighter
+  // "eliminated" alert red and the structural family blue.
+  member_of_org: "#a8131e",
+  // Geofront teal for spatial nesting --- LOCATION_UNIFORM_COLOR neighbor.
+  located_in: "#3aaad3",
+  // Causation tone: warm amber, distinct from both the angel-sequence orange
+  // and the event-purple chrome, so cause/effect arcs read on their own.
+  caused: "#e0b400",
   // Plain gray --- generic links carry no canonical meaning, just "these
   // two nodes are related." Reads as background chrome behind the
   // semantically-loaded edge classes.
@@ -321,10 +329,11 @@ function validateRevealedAt(loc: string, gate: RevealedAt | undefined): void {
       if (
         typeof gate.episode !== "number" ||
         !Number.isFinite(gate.episode) ||
-        gate.episode < 1
+        gate.episode < 1 ||
+        gate.episode > 26
       ) {
         throw new Error(
-          `${loc}: revealedAt.episode must be a positive number, got ${gate.episode}`,
+          `${loc}: revealedAt.episode must be 1..26, got ${gate.episode}`,
         );
       }
       break;
@@ -339,6 +348,112 @@ function validateRevealedAt(loc: string, gate: RevealedAt | undefined): void {
     }
   }
 }
+
+/**
+ * Compare two gates: returns -1 if a is strictly earlier (more permissive)
+ * than b, 0 if they're equivalent, 1 if a is strictly later (more
+ * restrictive). Used by the monotonicity invariant.
+ *
+ * Total order: undefined < ep1 < ep2 < ... < ep26 < eoe < rebuild.
+ *
+ *   - undefined (open) reveals from Ep. 1 onward, the most permissive gate.
+ *   - eoe unlocks at episode 25+ OR the eoe flag (effectively post-26).
+ *   - rebuild requires watching the Rebuild films, which presupposes EoE.
+ */
+function gateRank(gate: RevealedAt | undefined): number {
+  if (!gate) return 0;
+  switch (gate.kind) {
+    case "ep":
+      return gate.episode;
+    case "eoe":
+      // EoE sits just after Ep. 26 in the canonical viewing order.
+      return 27;
+    case "rebuild":
+      // Rebuild gates require EoE first (see normalizeSpoilerProgress);
+      // place it strictly above EoE.
+      return 28;
+  }
+}
+
+/**
+ * Endpoint-kind whitelist for typed edges. Each new edge kind that ties
+ * a specific node-pair shape declares its allowed (from, to) sets here.
+ * The validator throws when an edge violates the shape, catching e.g.
+ * a `pilots` edge between two characters or a `member_of_org` edge with
+ * an angel as the from-node.
+ */
+const EDGE_ENDPOINT_SHAPES: Partial<
+  Record<
+    EdgeKind,
+    {
+      from: ReadonlyArray<NodeKind>;
+      to: ReadonlyArray<NodeKind>;
+      // Allow either direction (the graph is undirected for layout, so a
+      // few edges are authored in the "natural language" direction even
+      // though the validator could see them flipped).
+      symmetric?: boolean;
+    }
+  >
+> = {
+  magi_link: { from: ["magi"], to: ["magi"], symmetric: true },
+  angel_sequence: { from: ["angel"], to: ["angel"], symmetric: true },
+  pilots: { from: ["character"], to: ["eva"], symmetric: true },
+  member_of_family: {
+    from: ["character"],
+    to: ["family"],
+    symmetric: true,
+  },
+  member_of_org: {
+    // Characters or EVA units (Mass Production line is org-affiliated)
+    // can be members of an organization.
+    from: ["character", "eva"],
+    to: ["organization"],
+    symmetric: true,
+  },
+  located_in: {
+    // Spatial nesting: location -> location, OR a thing-with-physical-
+    // -presence (angel, eva, concept-with-physical-form like the Moons,
+    // org with HQ) -> location. Keep the from-side broad; tighten if a
+    // specific bug shows up.
+    from: ["location", "angel", "eva", "concept", "organization"],
+    to: ["location"],
+    symmetric: false,
+  },
+  caused: {
+    // A cause -> an event or a concept-as-effect. The from-side is
+    // intentionally broad (an angel, an org, a location, even another
+    // event can be a cause); the to-side must be event or concept so
+    // the edge expresses cause-to-effect, not effect-to-cause.
+    from: [
+      "angel",
+      "eva",
+      "organization",
+      "location",
+      "concept",
+      "event",
+      "character",
+    ],
+    to: ["event", "concept"],
+    symmetric: false,
+  },
+  eliminated: {
+    // EVA -> angel. The Israfel double-attribution and Sahaquiel team-up
+    // are encoded as separate edges, each EVA -> angel.
+    from: ["eva"],
+    to: ["angel"],
+    symmetric: false,
+  },
+  identity_reveal: {
+    // Late-show "X is really Y" reveals: character <-> angel (Toji <->
+    // Bardiel, Kaworu <-> Tabris) or character <-> character (Rei <->
+    // Yui). Keep both sides broad over those two kinds.
+    from: ["character", "angel"],
+    to: ["character", "angel"],
+    symmetric: true,
+  },
+  // generic intentionally absent --- no shape constraint, that's the
+  // point of generic.
+};
 
 /**
  * Validate graph integrity. Throws on first failure with a descriptive message.
@@ -405,6 +520,19 @@ export function validateGraph(graph: EvangelionGraph): void {
     }
     validateRevealedAt(`Node ${node.id}`, node.revealedAt);
 
+    // Citation invariant: a gated node must declare its source. Same
+    // shape as the edge invariant below.
+    if (node.revealedAt !== undefined) {
+      if (
+        node.revealedAtSource === undefined ||
+        node.revealedAtSource.trim().length === 0
+      ) {
+        throw new Error(
+          `Node ${node.id} has revealedAt without revealedAtSource --- every gate must cite its source (wiki URL or "Inherits ..." reference)`,
+        );
+      }
+    }
+
     if (node.tags !== undefined) {
       if (!Array.isArray(node.tags)) {
         throw new Error(`Node ${node.id} tags must be an array`);
@@ -444,6 +572,13 @@ export function validateGraph(graph: EvangelionGraph): void {
     }
   }
 
+  // Build a node-id -> node lookup for the per-edge shape and gate-monotonicity
+  // checks below.
+  const nodeById = new Map<string, GraphNode>();
+  for (const node of graph.nodes) {
+    nodeById.set(node.id, node);
+  }
+
   for (const edge of graph.edges) {
     if (!ids.has(edge.from)) {
       throw new Error(
@@ -468,6 +603,67 @@ export function validateGraph(graph: EvangelionGraph): void {
       }
     }
     validateRevealedAt(`Edge ${edge.from} -> ${edge.to}`, edge.revealedAt);
+
+    // Endpoint-kind shape: a typed edge declares which node kinds may
+    // sit on each side. A misuse (e.g. a pilots edge between two
+    // angels) is a data bug, not a layout choice.
+    const shape = EDGE_ENDPOINT_SHAPES[edge.kind];
+    if (shape) {
+      const from = nodeById.get(edge.from)!;
+      const to = nodeById.get(edge.to)!;
+      const fromKind = from.kind;
+      const toKind = to.kind;
+      const ok = (() => {
+        const direct =
+          shape.from.includes(fromKind) && shape.to.includes(toKind);
+        if (direct) return true;
+        if (shape.symmetric) {
+          return (
+            shape.from.includes(toKind) && shape.to.includes(fromKind)
+          );
+        }
+        return false;
+      })();
+      if (!ok) {
+        throw new Error(
+          `Edge ${edge.from} (${fromKind}) -> ${edge.to} (${toKind}) of kind "${edge.kind}" violates endpoint shape: expected ${shape.symmetric ? "{" + shape.from.join("|") + "} <-> {" + shape.to.join("|") + "}" : "{" + shape.from.join("|") + "} -> {" + shape.to.join("|") + "}"}`,
+        );
+      }
+    }
+
+    // Spoiler-gate monotonicity: an edge's gate cannot be strictly more
+    // permissive than either endpoint's gate. If Lilith reveals at Ep.
+    // 23, an edge touching Lilith cannot reveal at Ep. 5 --- the user
+    // would see the line connecting "<MASKED>" to its other endpoint
+    // long before they know what Lilith is. Endpoint masking already
+    // hides such an edge in the renderer, but the data is logically
+    // inconsistent and almost certainly indicates an authoring bug.
+    const fromNode = nodeById.get(edge.from)!;
+    const toNode = nodeById.get(edge.to)!;
+    const edgeRank = gateRank(edge.revealedAt);
+    const fromRank = gateRank(fromNode.revealedAt);
+    const toRank = gateRank(toNode.revealedAt);
+    const endpointRank = Math.max(fromRank, toRank);
+    if (edge.revealedAt !== undefined && edgeRank < endpointRank) {
+      throw new Error(
+        `Edge ${edge.from} -> ${edge.to} (kind=${edge.kind}) gate is more permissive than its endpoints: edge=${JSON.stringify(edge.revealedAt)} (rank ${edgeRank}) but endpoint rank ${endpointRank} (from=${JSON.stringify(fromNode.revealedAt) || "open"}, to=${JSON.stringify(toNode.revealedAt) || "open"})`,
+      );
+    }
+
+    // Citation invariant: every gated edge must declare a source. The
+    // source can be a wiki URL, an "Inherits X gate" string, or any
+    // free-text reference --- it just has to be non-empty so we know
+    // a human checked it.
+    if (edge.revealedAt !== undefined) {
+      if (
+        edge.revealedAtSource === undefined ||
+        edge.revealedAtSource.trim().length === 0
+      ) {
+        throw new Error(
+          `Edge ${edge.from} -> ${edge.to} (kind=${edge.kind}) has revealedAt without revealedAtSource --- every gate must cite its source`,
+        );
+      }
+    }
   }
 
   // No duplicate edges: same (from, to, kind) cannot appear twice. The

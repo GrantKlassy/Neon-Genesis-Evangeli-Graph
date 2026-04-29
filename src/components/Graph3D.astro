@@ -4,6 +4,7 @@ import {
   CONCEPT_UNIFORM_COLOR,
   EDGE_COLORS,
   EVA_UNIFORM_COLOR,
+  EVENT_UNIFORM_COLOR,
   FAMILY_UNIFORM_COLOR,
   LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
@@ -54,6 +55,11 @@ const nodeLegend = [
     label: "Families (uniform)",
     color: FAMILY_UNIFORM_COLOR,
   },
+  {
+    id: "event",
+    label: "Events",
+    color: EVENT_UNIFORM_COLOR,
+  },
 ] as const;
 
 const edgeLegend = [
@@ -61,6 +67,9 @@ const edgeLegend = [
   { id: "angel_sequence", label: "Angel sequence" },
   { id: "pilots", label: "Pilots EVA" },
   { id: "member_of_family", label: "Member of family" },
+  { id: "member_of_org", label: "Member of org" },
+  { id: "located_in", label: "Located in" },
+  { id: "caused", label: "Caused" },
   { id: "eliminated", label: "Eliminated" },
 ] as const;
 ---

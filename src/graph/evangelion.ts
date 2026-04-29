@@ -5,6 +5,7 @@ import type {
   Edge,
   EvaNode,
   EvangelionGraph,
+  EventNode,
   FamilyNode,
   LocationNode,
   MagiNode,
@@ -52,6 +53,8 @@ const characters: CharacterNode[] = [
     shortcodes: ["asuka"],
     role: "Second Child / Pilot of Unit-02",
     revealedAt: { kind: "ep", episode: 8 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Asuka_Langley_Soryu --- arrives with Unit-02 on the Pacific fleet in Ep. 8 ('Asuka Strikes')",
     tags: [
       { id: "child" },
       { id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } },
@@ -87,6 +90,8 @@ const characters: CharacterNode[] = [
     shortcodes: ["kaworu"],
     role: "Fifth Child",
     revealedAt: { kind: "ep", episode: 24 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Kaworu_Nagisa --- arrives in Ep. 24 ('The Final Messenger') as the Fifth Child / Tabris",
     tags: [
       { id: "child" },
       { id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } },
@@ -120,6 +125,8 @@ const characters: CharacterNode[] = [
     shortcodes: ["mari"],
     role: "Pilot (Rebuild)",
     revealedAt: { kind: "rebuild" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Mari_Makinami_Illustrious --- Rebuild-only pilot, no TV-canon presence",
     notes: "Rebuild-only pilot. Excitable, opportunistic, sings in combat.",
   },
   {
@@ -129,6 +136,8 @@ const characters: CharacterNode[] = [
     shortcodes: ["toji"],
     role: "Classmate",
     revealedAt: { kind: "ep", episode: 3 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_03 --- introduces the three classmates (Toji, Kensuke, Hikari)",
     tags: [{ id: "child", revealedAt: { kind: "ep", episode: 17 } }],
     notes:
       "Shinji's classmate. Athletic, gruff, fiercely loyal to those close to him.",
@@ -140,6 +149,8 @@ const characters: CharacterNode[] = [
     shortcodes: ["yui"],
     role: "Lost researcher (Unit-01 contact experiment)",
     revealedAt: { kind: "ep", episode: 20 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Yui_Ikari --- Director's Cut Ep. 20 ('Weaving a Story 2: oral stage') drops the Yui-in-Unit-01 backstory",
     notes:
       "Shinji's mother. Lost during a contact experiment with Unit-01.",
   },
@@ -150,8 +161,96 @@ const characters: CharacterNode[] = [
     shortcodes: ["naoko"],
     role: "Magi designer (lost)",
     revealedAt: { kind: "ep", episode: 21 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Naoko_Akagi --- Director's Cut Ep. 21 backstory drop introduces Naoko alongside Yui at GEHIRN",
     notes:
       "Original architect of the Magi system. Ritsuko's mother. Took her own life on the Magi launch day; her three personalities became Casper, Melchior, and Balthasar.",
+  },
+  {
+    id: "char_kaji",
+    kind: "character",
+    displayName: "Ryoji Kaji",
+    shortcodes: ["kaji"],
+    role: "NERV special inspector / triple agent",
+    revealedAt: { kind: "ep", episode: 8 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Ryoji_Kaji --- 'Kaji's first appearance in the series is in episode 8' (with Asuka on the Pacific fleet)",
+    tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
+    notes:
+      "Misato's ex. Asuka's escort on the Pacific fleet. Triple-agent for SEELE, NERV, and the Japanese government, depending on the day. Tends watermelons.",
+  },
+  {
+    id: "char_fuyutsuki",
+    kind: "character",
+    displayName: "Kozo Fuyutsuki",
+    shortcodes: ["fuyutsuki"],
+    role: "NERV Sub-Commander",
+    tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
+    notes:
+      "Yui Ikari's old metaphysical-biology professor. Pulled into GEHIRN, then NERV, as Gendo's reluctant second.",
+  },
+  {
+    id: "char_maya",
+    kind: "character",
+    displayName: "Maya Ibuki",
+    shortcodes: ["maya"],
+    role: "Bridge crew (sync ratio console)",
+    notes:
+      "Lt. Ibuki. Watches the sync-ratio readouts, adores Ritsuko, breaks down at the worst moments.",
+  },
+  {
+    id: "char_hyuga",
+    kind: "character",
+    displayName: "Makoto Hyuga",
+    shortcodes: ["hyuga"],
+    role: "Bridge crew (intel / sensors)",
+    notes:
+      "Lt. Hyuga. Bespectacled bridge analyst. Carries a quiet crush on Misato.",
+  },
+  {
+    id: "char_aoba",
+    kind: "character",
+    displayName: "Shigeru Aoba",
+    shortcodes: ["aoba"],
+    role: "Bridge crew (sensors / comms)",
+    notes:
+      "Lt. Aoba. Sensor officer with the longest hair on the bridge; plays guitar between angel attacks.",
+  },
+  {
+    id: "char_pen_pen",
+    kind: "character",
+    displayName: "Pen Pen",
+    shortcodes: ["penPen"],
+    role: "Hot-spring penguin / Misato's roommate",
+    revealedAt: { kind: "ep", episode: 2 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_02 --- 'first appearance of Pen Pen, Misato's warm water penguin'",
+    notes:
+      "Misato's hot-spring penguin. Lives in the second fridge, drinks beer, judges Shinji silently.",
+  },
+  {
+    id: "char_hikari",
+    kind: "character",
+    displayName: "Hikari Horaki",
+    shortcodes: ["hikari"],
+    role: "Class representative",
+    revealedAt: { kind: "ep", episode: 3 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_03 --- introduces the three classmates (Kensuke, Toji, Hikari)",
+    notes:
+      "2-A's class rep. Asuka's best friend. Has an obvious soft spot for Toji.",
+  },
+  {
+    id: "char_kensuke",
+    kind: "character",
+    displayName: "Kensuke Aida",
+    shortcodes: ["kensuke"],
+    role: "Classmate (military otaku)",
+    revealedAt: { kind: "ep", episode: 3 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_03 --- introduces the three classmates (Kensuke, Toji, Hikari)",
+    notes:
+      "Shinji's classmate. Camera glued to his hand; would trade a kidney to pilot an EVA.",
   },
 ];
 
@@ -164,6 +263,8 @@ const angels: AngelNode[] = [
     displayName: "Adam",
     shortcodes: ["adam"],
     revealedAt: { kind: "ep", episode: 21 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Adam --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Backstory / Ep. 21",
     notes:
       "First Angel. Source of the Second Impact. The embryo reveal is in the late teens.",
@@ -176,6 +277,8 @@ const angels: AngelNode[] = [
     displayName: "Lilith",
     shortcodes: ["lilith"],
     revealedAt: { kind: "ep", episode: 23 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Lilith --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Backstory / Ep. 23",
     notes:
       "Second Angel. Crucified at the bottom of NERV in Terminal Dogma. Late-series reveal.",
@@ -198,6 +301,8 @@ const angels: AngelNode[] = [
     displayName: "Shamshel",
     shortcodes: ["shamshel"],
     revealedAt: { kind: "ep", episode: 3 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Shamshel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 3",
     notes: "Tendril-whip angel. Defeated by Unit-01 in close combat.",
   },
@@ -209,6 +314,8 @@ const angels: AngelNode[] = [
     displayName: "Ramiel",
     shortcodes: ["ramiel"],
     revealedAt: { kind: "ep", episode: 5 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Ramiel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 5",
     notes:
       "Giant blue octahedron with a positron beam. The Operation Yashima sniper episode.",
@@ -221,6 +328,8 @@ const angels: AngelNode[] = [
     displayName: "Gaghiel",
     shortcodes: ["gaghiel"],
     revealedAt: { kind: "ep", episode: 8 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Gaghiel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 8",
     notes: "Underwater angel. The Pacific fleet engagement with Unit-02.",
   },
@@ -232,6 +341,8 @@ const angels: AngelNode[] = [
     displayName: "Israfel",
     shortcodes: ["israfel"],
     revealedAt: { kind: "ep", episode: 9 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Israfel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 9",
     notes:
       "Splits into two. Defeated by Shinji and Asuka in the choreographed dance.",
@@ -244,6 +355,8 @@ const angels: AngelNode[] = [
     displayName: "Sandalphon",
     shortcodes: ["sandalphon"],
     revealedAt: { kind: "ep", episode: 10 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Sandalphon --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 10",
     notes: "Embryonic angel pulled out of Mt. Asama by Unit-02.",
   },
@@ -255,6 +368,8 @@ const angels: AngelNode[] = [
     displayName: "Matarael",
     shortcodes: ["matarael"],
     revealedAt: { kind: "ep", episode: 11 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Matarael --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 11",
     notes: "Spider-shaped acid-rain angel. Defeated during the blackout.",
   },
@@ -266,6 +381,8 @@ const angels: AngelNode[] = [
     displayName: "Sahaquiel",
     shortcodes: ["sahaquiel"],
     revealedAt: { kind: "ep", episode: 12 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Sahaquiel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 12",
     notes: "Orbital angel that body-checks Tokyo-3. Caught by all three EVAs.",
   },
@@ -277,6 +394,8 @@ const angels: AngelNode[] = [
     displayName: "Iruel",
     shortcodes: ["iruel"],
     revealedAt: { kind: "ep", episode: 13 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Iruel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 13",
     notes:
       "Nano-machine angel that infiltrates the Magi system. Defeated by Ritsuko.",
@@ -289,6 +408,8 @@ const angels: AngelNode[] = [
     displayName: "Leliel",
     shortcodes: ["leliel"],
     revealedAt: { kind: "ep", episode: 16 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Leliel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 16",
     notes:
       "Shadow / Dirac sea angel. Swallows Unit-01. The introspective bottle episode.",
@@ -301,6 +422,8 @@ const angels: AngelNode[] = [
     displayName: "Bardiel",
     shortcodes: ["bardiel"],
     revealedAt: { kind: "ep", episode: 18 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Bardiel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 18",
     notes:
       "Possesses Unit-03 with Toji aboard. Forces Unit-01 into a brutal fight.",
@@ -313,6 +436,8 @@ const angels: AngelNode[] = [
     displayName: "Zeruel",
     shortcodes: ["zeruel"],
     revealedAt: { kind: "ep", episode: 19 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Zeruel --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 19",
     notes:
       "Paper-ribbon angel. Tears through Tokyo-3. Triggers Unit-01's berserk feeding.",
@@ -325,6 +450,8 @@ const angels: AngelNode[] = [
     displayName: "Arael",
     shortcodes: ["arael"],
     revealedAt: { kind: "ep", episode: 22 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Arael --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 22",
     notes:
       "Bird-of-light angel. Mind-attacks Asuka. Defeated by the Lance of Longinus.",
@@ -337,6 +464,8 @@ const angels: AngelNode[] = [
     displayName: "Armisael",
     shortcodes: ["armisael"],
     revealedAt: { kind: "ep", episode: 23 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Armisael --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 23",
     notes: "Helix angel that fuses with Unit-00. Forces Rei to self-destruct.",
   },
@@ -348,6 +477,8 @@ const angels: AngelNode[] = [
     displayName: "Tabris",
     shortcodes: ["tabris"],
     revealedAt: { kind: "ep", episode: 24 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Tabris --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 24",
     notes: "Seventeenth Angel. The final visible angel of the canonical chain.",
   },
@@ -359,6 +490,8 @@ const angels: AngelNode[] = [
     displayName: "Lilim",
     shortcodes: ["lilim"],
     revealedAt: { kind: "eoe" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Lilim --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "End of Evangelion",
     notes:
       "Humanity itself, the Eighteenth Angel. Revealed as the Instrumentality conclusion.",
@@ -406,6 +539,79 @@ const organizations: OrganizationNode[] = [
     notes:
       "UN special agency tasked with fighting the Angels and operating the Evangelions.",
   },
+  {
+    id: "org_seele",
+    kind: "organization",
+    name: "SEELE",
+    displayName: "SEELE",
+    shortcodes: ["seele"],
+    revealedAt: { kind: "ep", episode: 14 },
+    // Ep. 14 features the SEELE clip-show meeting and the first
+    // explicit naming of Keel Lorenz / the Dead Sea Scrolls scenario.
+    // (Earlier episodes have voice-only allusions but no on-screen
+    // committee.)
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_14 --- 'first mention of Seele's use of the Dead Sea Scrolls as a guide for their scenario' (Keel Lorenz on screen)",
+    notes:
+      "Numbered red-monolith committee operating above NERV. The hand behind the Human Instrumentality Project.",
+  },
+  {
+    id: "org_wille",
+    kind: "organization",
+    name: "WILLE",
+    displayName: "WILLE",
+    shortcodes: ["wille"],
+    revealedAt: { kind: "rebuild" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Wille --- WILLE is a Rebuild-only organization (Evangelion 3.0 onwards)",
+    notes:
+      "Anti-NERV organization formed in the Rebuild timeline. Operates the AAA Wunder under Misato.",
+  },
+  {
+    id: "org_gehirn",
+    kind: "organization",
+    name: "GEHIRN",
+    displayName: "GEHIRN",
+    shortcodes: ["gehirn"],
+    revealedAt: { kind: "ep", episode: 21 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_21 --- 'GEHIRN appears multiple times: Ritsuko joins Gehirn, Gehirn is disbanded' (Director's Cut backstory drop)",
+    notes:
+      "NERV's predecessor research body. Where Yui, Naoko, Gendo, and Fuyutsuki worked before NERV took over the Evangelion program.",
+  },
+  {
+    id: "org_jssdf",
+    kind: "organization",
+    name: "JSSDF",
+    displayName: "JSSDF",
+    shortcodes: ["jssdf"],
+    // Note: the JSSDF is technically present from Ep. 1 (UN forces firing
+    // N² mines at Sachiel), but the org as a hostile actor against NERV
+    // --- the only role it plays in this graph --- is exclusively End of
+    // Evangelion. The graph node represents that hostile-actor role, so
+    // we gate to EoE rather than Ep. 1.
+    revealedAt: { kind: "eoe" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/JSSDF --- present from Ep. 1 as UN forces, but the NERV-assault role gated to End of Evangelion",
+    notes:
+      "Japan Strategic Self Defense Force. Deployed by SEELE to seize NERV HQ in End of Evangelion.",
+  },
+  {
+    id: "org_marduk",
+    kind: "organization",
+    name: "Marduk Institute",
+    displayName: "Marduk Institute",
+    shortcodes: ["marduk"],
+    // Gendo first names the Marduk Institute in Ep. 4 ("the Fourth
+    // Children has yet to be selected by the Marduk Institute"). The
+    // 'paper tiger / 108 names' reveal lands later via Kaji's Ep. 15
+    // investigation, but the Institute itself is on screen from Ep. 4.
+    revealedAt: { kind: "ep", episode: 4 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_04 --- Gendo first references the Marduk Institute",
+    notes:
+      "Front organization that 'selects' the Children. Eventually revealed as a paper tiger --- 108 names, all empty.",
+  },
 ];
 
 const locations: LocationNode[] = [
@@ -420,6 +626,57 @@ const locations: LocationNode[] = [
     shortcodes: ["nervHq"],
     notes:
       "NERV's underground headquarters beneath Tokyo-3, set inside the Geofront cavity.",
+  },
+  {
+    id: "loc_tokyo3",
+    kind: "location",
+    name: "Tokyo-3",
+    displayName: "Tokyo-3 (Location)",
+    shortcodes: ["tokyo3"],
+    notes:
+      "Fortified replacement city built around the Geofront after Second Impact. Buildings retract underground when the alarm sounds.",
+  },
+  {
+    id: "loc_geofront",
+    kind: "location",
+    name: "Geofront",
+    displayName: "Geofront (Location)",
+    shortcodes: ["geofront"],
+    notes:
+      "Cavernous green-tinted void beneath Tokyo-3. Houses NERV HQ; revealed late as the upper hull of the Black Moon.",
+  },
+  {
+    id: "loc_terminal_dogma",
+    kind: "location",
+    name: "Terminal Dogma",
+    displayName: "Terminal Dogma (Location)",
+    shortcodes: ["terminalDogma"],
+    revealedAt: { kind: "ep", episode: 23 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Terminal_Dogma --- 'Inside Terminal Dogma (Episode 23)' first labeled appearance",
+    notes:
+      "Deepest level of NERV. Lilith hangs crucified above an LCL pool here; the Lance of Longinus rests against her.",
+  },
+  {
+    id: "loc_central_dogma",
+    kind: "location",
+    name: "Central Dogma",
+    displayName: "Central Dogma (Location)",
+    shortcodes: ["centralDogma"],
+    notes:
+      "NERV's command bridge. Misato calls the angel ops, the bridge bunnies man the consoles, the Magi vote.",
+  },
+  {
+    id: "loc_antarctica",
+    kind: "location",
+    name: "Antarctica",
+    displayName: "Antarctica (Location)",
+    shortcodes: ["antarctica"],
+    revealedAt: { kind: "ep", episode: 21 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_21 --- 'Antarctica (via flashbacks of the Katsuragi Expedition investigating Second Impact)'",
+    notes:
+      "Site of the Katsuragi Expedition's contact experiment with Adam --- the trigger of Second Impact. Now a frozen red sea.",
   },
 ];
 
@@ -449,6 +706,8 @@ const concepts: ConceptNode[] = [
     displayName: "Third Impact",
     shortcodes: ["thirdImpact"],
     revealedAt: { kind: "eoe" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Third_Impact --- 'unfolds across End of Evangelion (and abstractly in TV ep 25-26)'",
     notes:
       "Instrumentality. The pink-orange tang of dissolved humanity. Unfolds across End of Evangelion (and abstractly in TV ep 25-26).",
   },
@@ -487,6 +746,148 @@ const concepts: ConceptNode[] = [
     shortcodes: ["abandonment"],
     notes:
       "Parents who left, parents who are absent in the room. The through-line under every Ikari and Akagi mother arc.",
+  },
+  {
+    id: "concept_lance_of_longinus",
+    kind: "concept",
+    name: "Lance of Longinus",
+    displayName: "Lance of Longinus",
+    shortcodes: ["lanceOfLonginus"],
+    // First appears Ep. 12 under wraps on the aircraft carrier
+    // transporting it from Antarctica to NERV. First angel kill is
+    // Ep. 22 (Rei in Unit-00 throws it into Arael).
+    revealedAt: { kind: "ep", episode: 12 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Lance_of_Longinus --- 'The Spear first appears in the series in Episode 12 under wraps as it is transported from the Antarctic to Nerv on the flight deck of an aircraft carrier.'",
+    notes:
+      "Twin-helix golden spear. The only weapon that pierces an angel's AT field. Rei (Unit-00) throws it into Arael, then it's lost in lunar orbit.",
+  },
+  {
+    id: "concept_dummy_plug",
+    kind: "concept",
+    name: "Dummy Plug",
+    displayName: "Dummy Plug",
+    shortcodes: ["dummyPlug"],
+    revealedAt: { kind: "ep", episode: 18 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Dummy_Plug --- 'Nerv successfully uses it only once, when Gendo has it seize control of Eva-01 from Shinji in Episode 18'",
+    notes:
+      "Autopilot module that runs an EVA on a captive copy of someone's psyche. Crushes Unit-03 with Toji aboard --- the Bardiel kill.",
+  },
+  {
+    id: "concept_s2_engine",
+    kind: "concept",
+    name: "S² Engine",
+    displayName: "S² Engine",
+    shortcodes: ["s2Engine"],
+    // First intimated Ep. 5 during Shamshel's autopsy ("a mostly-intact
+    // S² Engine is obtained from the corpse of Shamshel"). The dramatic
+    // Unit-01-absorbs-Zeruel's-S² scene lands later (Ep. 19) but the
+    // organ itself is on screen far earlier.
+    revealedAt: { kind: "ep", episode: 5 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/S2_Engine --- 'the location of the S² Engine is strongly intimated in Episode 05 during Shamshel's autopsy'",
+    notes:
+      "Super Solenoid power organ --- the angels' inexhaustible energy core. Recovered from Shamshel's corpse; later, Unit-01 absorbs Zeruel's S² and goes off-grid.",
+  },
+  {
+    id: "concept_entry_plug",
+    kind: "concept",
+    name: "Entry Plug",
+    displayName: "Entry Plug",
+    shortcodes: ["entryPlug"],
+    notes:
+      "Cylindrical capsule a pilot rides in. Slots into the EVA's spine, floods with LCL, transmits the pilot's nerves to the unit's body.",
+  },
+  {
+    id: "concept_human_instrumentality",
+    kind: "concept",
+    name: "Human Instrumentality Project",
+    displayName: "Human Instrumentality Project",
+    shortcodes: ["humanInstrumentality"],
+    // Best-confirmed gate: Ep. 14 first features SEELE's "Human
+    // Instrumentality Committee" on screen. The wiki could not confirm
+    // the exact prior reference (Gendo/Fuyutsuki may name the project
+    // earlier in expository dialogue), so this is the safer gate ---
+    // the project as a *committee-driven plan* lands here.
+    revealedAt: { kind: "ep", episode: 14 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_14 --- 'a clip show presented to the Human Instrumentality Committee of Seele'; project as committee-driven plan first lands here",
+    notes:
+      "SEELE's endgame: collapse every AT field at once and merge all souls into a single being. Different actors, same Tang.",
+  },
+  {
+    id: "concept_progressive_knife",
+    kind: "concept",
+    name: "Progressive Knife",
+    displayName: "Progressive Knife",
+    shortcodes: ["progressiveKnife"],
+    notes:
+      "Vibrating monomolecular blade stowed in each EVA's shoulder pylon. The default angel-killing tool when the rifle and the lance are out of reach.",
+  },
+  {
+    id: "concept_black_moon",
+    kind: "concept",
+    name: "Black Moon",
+    displayName: "Black Moon",
+    shortcodes: ["blackMoon"],
+    // The Black Moon as a *named* concept emerges with Instrumentality
+    // in Episode 26' (End of Evangelion); the Geofront is hinted as its
+    // upper shell earlier but the terminology lands at the finale.
+    // Gating to EoE keeps the reveal honest.
+    revealedAt: { kind: "eoe" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Black_Moon --- 'In Episode 26', the Black Moon emerged out of the ground' (EoE)",
+    notes:
+      "The egg-shaped vessel buried under Tokyo-3. The Geofront is its hollow upper shell; Lilith was its passenger. Named in End of Evangelion.",
+  },
+  {
+    id: "concept_white_moon",
+    kind: "concept",
+    name: "White Moon",
+    displayName: "White Moon",
+    shortcodes: ["whiteMoon"],
+    // Director's Cut Ep. 21 expands the Katsuragi Expedition flashbacks
+    // and shows the embryonic Adam pulled from the White Moon. Naming
+    // is implicit but the visual lands here.
+    revealedAt: { kind: "ep", episode: 21 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_21 --- Antarctica + Katsuragi Expedition flashback; White Moon imagery lands here",
+    notes:
+      "Antarctic counterpart to the Black Moon. Adam's vessel; the Katsuragi Expedition cracked it open and triggered Second Impact.",
+  },
+];
+
+const events: EventNode[] = [
+  {
+    id: "event_first_impact",
+    kind: "event",
+    name: "First Impact",
+    displayName: "First Impact",
+    shortcodes: ["firstImpact"],
+    // First Impact is part of the Director's Cut backstory drop in
+    // Ep. 21 (the Giant Impact that formed the Moon, paired with the
+    // White Moon in Antarctica). Mentioned offhand earlier in some
+    // episodes but the canonical "what was First Impact" exposition
+    // lands here.
+    revealedAt: { kind: "ep", episode: 21 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_21 --- Director's Cut backstory drop covering First Impact / Katsuragi Expedition",
+    notes:
+      "Pre-history collision that formed the Moon and stranded the White Moon (Adam's vessel) in Antarctica. Backstory only; the show drips it out across the late-teens episodes.",
+  },
+  {
+    id: "event_second_impact",
+    kind: "event",
+    name: "Second Impact",
+    displayName: "Second Impact",
+    shortcodes: ["secondImpact"],
+    // Second Impact (the existence of) is mentioned from Ep. 1 onward as
+    // "the catastrophe fifteen years ago" --- visible from Ep. 1, hence
+    // no gate. The CAUSE (Adam contact) is gated separately on the Adam
+    // -> Second Impact 'caused' edge to ep 21.
+    notes:
+      "September 2000. The Katsuragi Expedition's contact experiment with Adam in Antarctica triggered a global cataclysm. Mentioned from Ep. 1 as 'the catastrophe fifteen years ago'; cause and details revealed late.",
   },
 ];
 
@@ -548,6 +949,8 @@ const evas: EvaNode[] = [
     displayName: "Unit-02",
     shortcodes: ["unit02"],
     revealedAt: { kind: "ep", episode: 8 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Evangelion_Unit-02 --- arrives with Asuka on the Pacific fleet in Ep. 8",
     notes:
       "Production type. Bright red body with orange shoulder pylons; arrives with the Pacific fleet.",
   },
@@ -559,6 +962,8 @@ const evas: EvaNode[] = [
     displayName: "Unit-03",
     shortcodes: ["unit03"],
     revealedAt: { kind: "ep", episode: 17 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Evangelion_Unit-03 --- ships from the US branch in Ep. 17 (the Fourth Child reveal episode), activated in Ep. 18",
     notes:
       "Black-bodied production EVA shipped from the US branch. Activated in Ep. 18.",
   },
@@ -570,6 +975,8 @@ const evas: EvaNode[] = [
     displayName: "Unit-04",
     shortcodes: ["unit04"],
     revealedAt: { kind: "ep", episode: 18 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Evangelion_Unit-04 --- the S² engine experiment / Nevada-branch loss is referenced in Ep. 18",
     notes:
       "Silver prototype. Lost with the Nevada branch in the S2 engine experiment.",
   },
@@ -582,6 +989,8 @@ const evas: EvaNode[] = [
     displayName: "Mass Production",
     shortcodes: ["massProduction"],
     revealedAt: { kind: "eoe" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/MP_Eva --- End of Evangelion-only series",
     notes:
       "End of Evangelion white-bodied series. Identical clones with rictus grins.",
   },
@@ -657,6 +1066,8 @@ function buildEdges(): Edge[] {
     kind: "identity_reveal",
     weight: idWeight,
     revealedAt: { kind: "ep", episode: 18 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Bardiel --- the possessed-Unit-03 reveal lands in Ep. 18",
     shortcodes: ["toji", "bardiel"],
     notes: "Toji is the Unit-03 pilot; Bardiel possesses Unit-03 (Ep. 18).",
   });
@@ -666,6 +1077,8 @@ function buildEdges(): Edge[] {
     kind: "identity_reveal",
     weight: idWeight,
     revealedAt: { kind: "ep", episode: 23 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Rei_Ayanami --- Rei's Yui-derived genetic origin lands in Ep. 23",
     shortcodes: ["rei", "yui"],
     notes: "Rei's origin traces back to Yui's salvaged genetic material.",
   });
@@ -675,6 +1088,8 @@ function buildEdges(): Edge[] {
     kind: "identity_reveal",
     weight: idWeight,
     revealedAt: { kind: "ep", episode: 24 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Tabris --- Kaworu = Tabris reveal lands in Ep. 24 ('The Final Messenger')",
     shortcodes: ["kaworu", "tabris"],
     notes: "Kaworu IS the Seventeenth Angel, Tabris (Ep. 24).",
   });
@@ -704,6 +1119,7 @@ function buildEdges(): Edge[] {
     kind: "pilots",
     weight: pilotsWeight,
     revealedAt: { kind: "ep", episode: 8 },
+    revealedAtSource: "Inherits Asuka and Unit-02 Ep. 8 first-appearance gates",
     shortcodes: ["asuka", "unit02"],
     notes: "Asuka pilots Unit-02 (arrives Ep. 8).",
   });
@@ -713,6 +1129,8 @@ function buildEdges(): Edge[] {
     kind: "pilots",
     weight: pilotsWeight,
     revealedAt: { kind: "ep", episode: 17 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Toji_Suzuhara --- the Fourth Child / Unit-03 pilot reveal lands in Ep. 17",
     shortcodes: ["toji", "unit03"],
     notes: "Toji is the Fourth Child / Unit-03 pilot (Ep. 17).",
   });
@@ -848,12 +1266,17 @@ function buildEdges(): Edge[] {
       notes: "Manual operation during the Tokyo-3 blackout --- Unit-01 lands the kill shot on Matarael's eye (Ep. 11).",
     },
     {
-      eva: "eva_unit01",
-      evaShortcode: "unit01",
+      // Correction (audited 2026-04-28 against EvaWiki):
+      //   prior data attributed the Sahaquiel kill to Unit-01.
+      //   wiki/Sahaquiel: Eva-02 'wielded prog knives to penetrate its
+      //   core, respectively' --- Unit-02 makes the kill, Unit-00 cut
+      //   the AT field, Unit-01 caught the body.
+      eva: "eva_unit02",
+      evaShortcode: "unit02",
       angel: "angel_10_sahaquiel",
       angelShortcode: "sahaquiel",
       episode: 12,
-      notes: "All three EVAs catch the falling Tenth Angel; Unit-01 drives the prog knife through its core (Ep. 12).",
+      notes: "All three EVAs catch the falling Tenth Angel; Unit-02 drives the prog knife through its core (Ep. 12).",
     },
     {
       eva: "eva_unit01",
@@ -880,12 +1303,19 @@ function buildEdges(): Edge[] {
       notes: "Unit-01 berserks again and consumes Zeruel's S2 organ (Ep. 19).",
     },
     {
-      eva: "eva_unit02",
-      evaShortcode: "unit02",
+      // Correction (audited 2026-04-28 against EvaWiki):
+      //   prior data attributed the Arael kill to Unit-02 / Asuka.
+      //   wiki/Arael: 'Eva-00 then returned to the surface, and hurled
+      //   the Spear of Longinus into the sky [...] pierced Arael's
+      //   A.T. Field and destroyed the Angel.' Asuka was incapacitated
+      //   by Arael's mind-attack; Rei retrieves the Lance from Terminal
+      //   Dogma and makes the kill.
+      eva: "eva_unit00",
+      evaShortcode: "unit00",
       angel: "angel_15_arael",
       angelShortcode: "arael",
       episode: 22,
-      notes: "Unit-02 hurls the Lance of Longinus into the bird-of-light Fifteenth Angel (Ep. 22).",
+      notes: "Rei retrieves the Lance from Terminal Dogma and Unit-00 hurls it into the bird-of-light Fifteenth Angel (Ep. 22).",
     },
     {
       eva: "eva_unit00",
@@ -905,12 +1335,17 @@ function buildEdges(): Edge[] {
     },
   ];
   for (const e of eliminations) {
+    // Each elimination cites the angel's EvaWiki page --- the canonical
+    // source that names the killing unit and the episode.
+    const angelName = e.angel.replace(/^angel_\d+_/, "");
+    const source = `https://wiki.evageeks.org/${angelName.charAt(0).toUpperCase()}${angelName.slice(1)}`;
     out.push({
       from: e.eva,
       to: e.angel,
       kind: "eliminated",
       weight: eliminatedWeight,
       revealedAt: { kind: "ep", episode: e.episode },
+      revealedAtSource: source,
       shortcodes: [e.evaShortcode, e.angelShortcode],
       notes: e.notes,
     });
@@ -942,6 +1377,267 @@ function buildEdges(): Edge[] {
     }
   }
 
+  // Org membership --- characters orbit their employer / cabal. NERV
+  // covers most of the cast; SEELE pulls Gendo (and Kaji, who triple-agents
+  // for them); GEHIRN groups the pre-NERV legacy researchers and is gated
+  // to the Ep. 21 backstory drop. Each edge inherits the org-node's gate
+  // through endpoint masking; a few are stamped with their own gate where
+  // the affiliation reveal is the spoiler (Gendo <-> SEELE).
+  const memberOfOrgWeight = EDGE_WEIGHT.member_of_org;
+  const orgEdges: Array<{
+    from: string;
+    to: string;
+    shortcodes: [string, string];
+    revealedAt?: import("./types").RevealedAt;
+    revealedAtSource?: string;
+    notes: string;
+  }> = [
+    // NERV staff (open from Ep. 1 unless the character itself is gated).
+    { from: "char_misato", to: "org_nerv", shortcodes: ["misato", "nerv"], notes: "Misato Katsuragi --- NERV Operations Director." },
+    { from: "char_gendo", to: "org_nerv", shortcodes: ["gendo", "nerv"], notes: "Gendo Ikari --- NERV Commander." },
+    { from: "char_ritsuko", to: "org_nerv", shortcodes: ["ritsuko", "nerv"], notes: "Ritsuko Akagi --- NERV Chief Scientist." },
+    { from: "char_fuyutsuki", to: "org_nerv", shortcodes: ["fuyutsuki", "nerv"], notes: "Kozo Fuyutsuki --- NERV Sub-Commander." },
+    { from: "char_maya", to: "org_nerv", shortcodes: ["maya", "nerv"], notes: "Maya Ibuki --- NERV bridge crew." },
+    { from: "char_hyuga", to: "org_nerv", shortcodes: ["hyuga", "nerv"], notes: "Makoto Hyuga --- NERV bridge crew." },
+    { from: "char_aoba", to: "org_nerv", shortcodes: ["aoba", "nerv"], notes: "Shigeru Aoba --- NERV bridge crew." },
+    {
+      from: "char_kaji",
+      to: "org_nerv",
+      shortcodes: ["kaji", "nerv"],
+      revealedAt: { kind: "ep", episode: 8 },
+      revealedAtSource: "Inherits Kaji's Ep. 8 first-appearance gate",
+      notes: "Ryoji Kaji --- NERV special inspector (overt cover).",
+    },
+
+    // SEELE allegiances (each gated independently of NERV).
+    {
+      from: "char_gendo",
+      to: "org_seele",
+      shortcodes: ["gendo", "seele"],
+      revealedAt: { kind: "ep", episode: 14 },
+      revealedAtSource:
+        "https://wiki.evageeks.org/Episode_14 --- SEELE committee + Keel Lorenz on screen for the first time, Gendo's chain-of-command made explicit",
+      notes: "Gendo answers to the SEELE committee until he doesn't.",
+    },
+    {
+      from: "char_kaji",
+      to: "org_seele",
+      shortcodes: ["kaji", "seele"],
+      revealedAt: { kind: "ep", episode: 21 },
+      revealedAtSource:
+        "https://wiki.evageeks.org/Episode_21 --- Director's Cut backstory drop names Kaji as a SEELE intelligence asset alongside the Yui/Naoko material",
+      notes: "Kaji's third allegiance --- intelligence asset for SEELE.",
+    },
+
+    // GEHIRN: NERV's predecessor body. Gated to the Ep. 21 backstory drop;
+    // every member also worked for NERV after the rebrand.
+    { from: "char_yui", to: "org_gehirn", shortcodes: ["yui", "gehirn"], notes: "Yui Ikari --- GEHIRN researcher; lost to Unit-01 during contact." },
+    { from: "char_naoko", to: "org_gehirn", shortcodes: ["naoko", "gehirn"], notes: "Naoko Akagi --- GEHIRN's Magi architect." },
+    { from: "char_gendo", to: "org_gehirn", shortcodes: ["gendo", "gehirn"], notes: "Gendo Ikari --- GEHIRN, then NERV." },
+    { from: "char_fuyutsuki", to: "org_gehirn", shortcodes: ["fuyutsuki", "gehirn"], notes: "Kozo Fuyutsuki --- GEHIRN, then NERV." },
+  ];
+  for (const e of orgEdges) {
+    out.push({
+      from: e.from,
+      to: e.to,
+      kind: "member_of_org",
+      weight: memberOfOrgWeight,
+      shortcodes: e.shortcodes,
+      ...(e.revealedAt ? { revealedAt: e.revealedAt } : {}),
+      ...(e.revealedAtSource ? { revealedAtSource: e.revealedAtSource } : {}),
+      notes: e.notes,
+    });
+  }
+
+  // Spatial nesting: a child place sits inside its parent. Tokyo-3 sits on
+  // top of the Geofront, NERV HQ sits inside the Geofront, and Terminal /
+  // Central Dogma both sit inside NERV HQ. Antarctica is geographically
+  // separate; it is NOT nested under Tokyo-3.
+  const locatedInWeight = EDGE_WEIGHT.located_in;
+  const locatedInEdges: Array<{
+    from: string;
+    to: string;
+    shortcodes: [string, string];
+    revealedAt?: import("./types").RevealedAt;
+    revealedAtSource?: string;
+    notes: string;
+  }> = [
+    { from: "loc_geofront", to: "loc_tokyo3", shortcodes: ["geofront", "tokyo3"], notes: "Geofront cavity sits beneath Tokyo-3." },
+    { from: "loc_nerv_hq", to: "loc_geofront", shortcodes: ["nervHq", "geofront"], notes: "NERV HQ is built inside the Geofront." },
+    { from: "loc_central_dogma", to: "loc_nerv_hq", shortcodes: ["centralDogma", "nervHq"], notes: "Central Dogma is the command bridge inside NERV HQ." },
+    {
+      from: "loc_terminal_dogma",
+      to: "loc_nerv_hq",
+      shortcodes: ["terminalDogma", "nervHq"],
+      revealedAt: { kind: "ep", episode: 23 },
+      revealedAtSource: "Inherits Terminal Dogma's Ep. 23 first-labeled gate",
+      notes: "Terminal Dogma is the deepest sublevel of NERV HQ.",
+    },
+    // Lilith's resting place inside Terminal Dogma --- gated to the late
+    // reveal (both endpoints carry their own gate; this stamps the edge).
+    {
+      from: "angel_02_lilith",
+      to: "loc_terminal_dogma",
+      shortcodes: ["lilith", "terminalDogma"],
+      revealedAt: { kind: "ep", episode: 23 },
+      revealedAtSource:
+        "https://wiki.evageeks.org/Lilith --- Lilith on the cross at the bottom of Terminal Dogma is the Ep. 23 reveal",
+      notes: "Lilith hangs crucified at the bottom of Terminal Dogma.",
+    },
+    // Adam's resting place / origin (the White Moon) sits in Antarctica.
+    // Both endpoints gate to the late backstory drop.
+    {
+      from: "concept_white_moon",
+      to: "loc_antarctica",
+      shortcodes: ["whiteMoon", "antarctica"],
+      revealedAt: { kind: "ep", episode: 21 },
+      revealedAtSource: "Inherits White Moon and Antarctica's Ep. 21 gates",
+      notes: "The White Moon sits buried under Antarctica.",
+    },
+    // The Black Moon hosts the Geofront cavity.
+    {
+      from: "concept_black_moon",
+      to: "loc_geofront",
+      shortcodes: ["blackMoon", "geofront"],
+      // Black Moon as a named entity lands in EoE (Ep. 26'); endpoint
+      // monotonicity demands at least an EoE gate on this edge.
+      revealedAt: { kind: "eoe" },
+      revealedAtSource: "Inherits Black Moon's EoE gate",
+      notes: "The Geofront is the Black Moon's hollow upper shell.",
+    },
+  ];
+  for (const e of locatedInEdges) {
+    out.push({
+      from: e.from,
+      to: e.to,
+      kind: "located_in",
+      weight: locatedInWeight,
+      shortcodes: e.shortcodes,
+      ...(e.revealedAt ? { revealedAt: e.revealedAt } : {}),
+      ...(e.revealedAtSource ? { revealedAtSource: e.revealedAtSource } : {}),
+      notes: e.notes,
+    });
+  }
+
+  // Causation: cause -> event/concept. The lance, S² engine, dummy plug,
+  // entry plug etc. are all *enabling* concepts, not events; the explicit
+  // causal arc is angel/expedition -> impact event.
+  const causedWeight = EDGE_WEIGHT.caused;
+  const causedEdges: Array<{
+    from: string;
+    to: string;
+    shortcodes: [string, string];
+    revealedAt?: import("./types").RevealedAt;
+    revealedAtSource?: string;
+    notes: string;
+  }> = [
+    {
+      from: "angel_01_adam",
+      to: "event_second_impact",
+      shortcodes: ["adam", "secondImpact"],
+      revealedAt: { kind: "ep", episode: 21 },
+      revealedAtSource:
+        "https://wiki.evageeks.org/Episode_21 --- Adam contact / Katsuragi Expedition revealed as the trigger of Second Impact",
+      notes: "Contact with Adam triggered Second Impact.",
+    },
+    {
+      from: "loc_antarctica",
+      to: "event_second_impact",
+      shortcodes: ["antarctica", "secondImpact"],
+      revealedAt: { kind: "ep", episode: 21 },
+      revealedAtSource:
+        "Inherits Antarctica's Ep. 21 gate; Second Impact location shown via flashbacks",
+      notes: "Second Impact unfolded in Antarctica during the Katsuragi Expedition.",
+    },
+    {
+      from: "concept_human_instrumentality",
+      to: "concept_third_impact",
+      shortcodes: ["humanInstrumentality", "thirdImpact"],
+      revealedAt: { kind: "eoe" },
+      revealedAtSource: "Inherits Third Impact's EoE gate",
+      notes: "Instrumentality is the program that drives Third Impact.",
+    },
+    {
+      from: "org_seele",
+      to: "concept_human_instrumentality",
+      shortcodes: ["seele", "humanInstrumentality"],
+      revealedAt: { kind: "ep", episode: 14 },
+      revealedAtSource:
+        "https://wiki.evageeks.org/Episode_14 --- SEELE's Human Instrumentality Committee meets on screen for the first time",
+      notes: "SEELE owns the Instrumentality Project blueprint.",
+    },
+    {
+      from: "org_jssdf",
+      to: "concept_third_impact",
+      shortcodes: ["jssdf", "thirdImpact"],
+      revealedAt: { kind: "eoe" },
+      revealedAtSource: "End of Evangelion --- JSSDF assault triggers Third Impact",
+      notes: "JSSDF assault on NERV HQ kicks off Third Impact in End of Evangelion.",
+    },
+  ];
+  for (const e of causedEdges) {
+    out.push({
+      from: e.from,
+      to: e.to,
+      kind: "caused",
+      weight: causedWeight,
+      shortcodes: e.shortcodes,
+      ...(e.revealedAt ? { revealedAt: e.revealedAt } : {}),
+      ...(e.revealedAtSource ? { revealedAtSource: e.revealedAtSource } : {}),
+      notes: e.notes,
+    });
+  }
+
+  // A few more typed connections that don't fit the kinds above:
+  //   - Pen Pen lives with Misato (generic --- household tie).
+  //   - Hikari is Asuka's best friend (generic --- close-friend tie).
+  //   - Kensuke is Shinji and Toji's classmate (generic --- school tie).
+  //   - Unit-02 wields the Lance of Longinus (generic --- weapon use).
+  //   - GEHIRN was succeeded by NERV (generic --- predecessor org).
+  //   - SEELE controls NERV (generic --- gated authority tie).
+  //   - WILLE opposes NERV (generic, Rebuild gate inherited from WILLE).
+  const supportEdges: Array<{
+    from: string;
+    to: string;
+    shortcodes: [string, string];
+    revealedAt?: import("./types").RevealedAt;
+    revealedAtSource?: string;
+    notes: string;
+  }> = [
+    { from: "char_pen_pen", to: "char_misato", shortcodes: ["penPen", "misato"], notes: "Pen Pen lives in Misato's apartment." },
+    { from: "char_hikari", to: "char_asuka", shortcodes: ["hikari", "asuka"], notes: "Class rep --- Asuka's best friend.", revealedAt: { kind: "ep", episode: 8 }, revealedAtSource: "Inherits Asuka's Ep. 8 first-appearance gate" },
+    { from: "char_hikari", to: "char_toji", shortcodes: ["hikari", "toji"], notes: "Class rep --- not-so-secret crush on Toji.", revealedAt: { kind: "ep", episode: 3 }, revealedAtSource: "Inherits Hikari + Toji Ep. 3 introduction" },
+    { from: "char_kensuke", to: "char_shinji", shortcodes: ["kensuke", "shinji"], notes: "Classmate. Camera glued to his hand." },
+    { from: "char_kensuke", to: "char_toji", shortcodes: ["kensuke", "toji"], notes: "Classmate.", revealedAt: { kind: "ep", episode: 3 }, revealedAtSource: "Inherits Kensuke + Toji Ep. 3 introduction" },
+    { from: "char_misato", to: "char_kaji", shortcodes: ["misato", "kaji"], notes: "Misato and Kaji --- exes from college.", revealedAt: { kind: "ep", episode: 8 }, revealedAtSource: "https://wiki.evageeks.org/Ryoji_Kaji --- Ep. 8 reintroduction reveals their college relationship" },
+    { from: "char_kaji", to: "char_asuka", shortcodes: ["kaji", "asuka"], notes: "Asuka's escort on the Pacific fleet.", revealedAt: { kind: "ep", episode: 8 }, revealedAtSource: "https://wiki.evageeks.org/Ryoji_Kaji --- 'accompanies Asuka from Germany to Tokyo-3 during Ep. 8'" },
+    { from: "char_fuyutsuki", to: "char_yui", shortcodes: ["fuyutsuki", "yui"], notes: "Yui Ikari was Fuyutsuki's metaphysical-biology student.", revealedAt: { kind: "ep", episode: 21 }, revealedAtSource: "https://wiki.evageeks.org/Episode_21 --- Director's Cut backstory drop establishes Fuyutsuki/Yui mentor-student relationship" },
+    { from: "eva_unit00", to: "concept_lance_of_longinus", shortcodes: ["unit00", "lanceOfLonginus"], notes: "Rei (Unit-00) retrieves the Lance from Terminal Dogma and hurls it into Arael.", revealedAt: { kind: "ep", episode: 22 }, revealedAtSource: "https://wiki.evageeks.org/Arael --- 'Eva-00 [...] hurled the Spear of Longinus into the sky [...] pierced Arael's A.T. Field and destroyed the Angel'" },
+    { from: "concept_lance_of_longinus", to: "loc_terminal_dogma", shortcodes: ["lanceOfLonginus", "terminalDogma"], notes: "The Lance rests against Lilith in Terminal Dogma.", revealedAt: { kind: "ep", episode: 23 }, revealedAtSource: "Inherits Terminal Dogma's Ep. 23 first-labeled gate; Lance shown alongside Lilith" },
+    { from: "org_gehirn", to: "org_nerv", shortcodes: ["gehirn", "nerv"], notes: "GEHIRN was the body that became NERV.", revealedAt: { kind: "ep", episode: 21 }, revealedAtSource: "Inherits GEHIRN's Ep. 21 gate" },
+    { from: "org_seele", to: "org_nerv", shortcodes: ["seele", "nerv"], notes: "SEELE is NERV's parent committee.", revealedAt: { kind: "ep", episode: 14 }, revealedAtSource: "Inherits SEELE's Ep. 14 gate" },
+    { from: "org_wille", to: "org_nerv", shortcodes: ["wille", "nerv"], notes: "WILLE breaks from NERV in the Rebuild timeline." },
+    { from: "org_jssdf", to: "loc_nerv_hq", shortcodes: ["jssdf", "nervHq"], notes: "JSSDF assault on NERV HQ kicks off End of Evangelion.", revealedAt: { kind: "eoe" }, revealedAtSource: "End of Evangelion --- JSSDF assault" },
+    { from: "org_marduk", to: "org_nerv", shortcodes: ["marduk", "nerv"], notes: "Marduk Institute --- NERV's Children-selection front. The 108-names paper-tiger reveal lands in Ep. 15 via Kaji's investigation.", revealedAt: { kind: "ep", episode: 15 }, revealedAtSource: "https://wiki.evageeks.org/Marduk_Institute --- 'Ryoji Kaji's investigations in Episode 15' reveal it's a dummy organization" },
+    { from: "concept_dummy_plug", to: "char_rei", shortcodes: ["dummyPlug", "rei"], notes: "The Dummy Plug runs on Rei-derived psyche copies.", revealedAt: { kind: "ep", episode: 20 }, revealedAtSource: "https://wiki.evageeks.org/Dummy_Plug --- the Rei-derived personality data is revealed mid-show; Ep. 20 marks the reveal of Yui-in-Unit-01 / Rei lineage" },
+    { from: "concept_dummy_plug", to: "eva_unit01", shortcodes: ["dummyPlug", "unit01"], notes: "Unit-01 under Dummy Plug control destroys the possessed Unit-03.", revealedAt: { kind: "ep", episode: 18 }, revealedAtSource: "Inherits Dummy Plug's Ep. 18 first-use gate" },
+    { from: "concept_s2_engine", to: "eva_unit01", shortcodes: ["s2Engine", "unit01"], notes: "Unit-01 absorbs Zeruel's S² and goes off-grid.", revealedAt: { kind: "ep", episode: 19 }, revealedAtSource: "https://wiki.evageeks.org/Zeruel --- Unit-01 berserks and absorbs Zeruel's S² in Ep. 19" },
+    { from: "concept_entry_plug", to: "concept_lcl", shortcodes: ["entryPlug", "lcl"], notes: "The entry plug floods with LCL on activation." },
+    { from: "concept_progressive_knife", to: "eva_unit01", shortcodes: ["progressiveKnife", "unit01"], notes: "Unit-01's prog knife stowed in the shoulder pylon." },
+  ];
+  for (const e of supportEdges) {
+    out.push({
+      from: e.from,
+      to: e.to,
+      kind: "generic",
+      weight: genericWeight,
+      shortcodes: e.shortcodes,
+      ...(e.revealedAt ? { revealedAt: e.revealedAt } : {}),
+      ...(e.revealedAtSource ? { revealedAtSource: e.revealedAtSource } : {}),
+      notes: e.notes,
+    });
+  }
+
   return out;
 }
 
@@ -958,6 +1654,7 @@ export const evangelion: EvangelionGraph = {
     ...concepts,
     ...families,
     ...evas,
+    ...events,
   ],
   edges: buildEdges(),
 };

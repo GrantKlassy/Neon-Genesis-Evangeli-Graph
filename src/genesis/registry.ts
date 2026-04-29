@@ -32,6 +32,7 @@ export const genesis = {
     secondary: ["#f5f5f0", "#7c98d6"],
     notes:
       "Pilot of Unit-01. Deep navy plug suit with white and light blue accents.",
+    evageeksSlug: "Shinji_Ikari",
   },
   asuka: {
     shortcode: "asuka",
@@ -48,6 +49,7 @@ export const genesis = {
     secondary: ["#ff7e00", "#fcd35d"],
     notes:
       "Pilot of Unit-02. Red plug suit, orange neural connectors, yellow A10 clips.",
+    evageeksSlug: "Asuka_Langley_Soryu",
   },
   rei: {
     shortcode: "rei",
@@ -64,6 +66,7 @@ export const genesis = {
     secondary: ["#ff003c", "#ffffff"],
     notes:
       "Pilot of Unit-00. Pale blue hair, red eyes, white plug suit with black trim.",
+    evageeksSlug: "Rei_Ayanami",
   },
   misato: {
     shortcode: "misato",
@@ -79,6 +82,7 @@ export const genesis = {
     secondary: ["#c8102e", "#1a1a1a"],
     notes:
       "NERV operations director. Purple hair, NERV jacket with red half-cross.",
+    evageeksSlug: "Misato_Katsuragi",
   },
   kaworu: {
     shortcode: "kaworu",
@@ -89,6 +93,7 @@ export const genesis = {
     secondary: ["#ff003c", "#1a1a1a"],
     notes:
       "Fifth Child / Tabris. Silver-gray hair, red eyes, light gray plug suit.",
+    evageeksSlug: "Kaworu_Nagisa",
   },
   gendo: {
     shortcode: "gendo",
@@ -98,6 +103,7 @@ export const genesis = {
     primary: "#2a2a2a",
     secondary: ["#ff6700", "#7a3719"],
     notes: "NERV commander. Dark suit, orange-tinted glasses, brown gloves.",
+    evageeksSlug: "Gendo_Ikari",
   },
   ritsuko: {
     shortcode: "ritsuko",
@@ -107,6 +113,7 @@ export const genesis = {
     primary: "#c2a878",
     secondary: ["#ffffff", "#4a3728"],
     notes: "NERV chief scientist. Blonde hair, lab coat, signature cigarette.",
+    evageeksSlug: "Ritsuko_Akagi",
   },
   mari: {
     shortcode: "mari",
@@ -122,6 +129,7 @@ export const genesis = {
     secondary: ["#7a4a3a", "#4a1a3d"],
     notes:
       "Rebuild-only pilot. Magenta plug suit, twin braids, round glasses.",
+    evageeksSlug: "Mari_Makinami_Illustrious",
   },
   toji: {
     shortcode: "toji",
@@ -138,6 +146,7 @@ export const genesis = {
     secondary: ["#1a1a1a", "#a8131e"],
     notes:
       "Shinji's classmate and the Fourth Child. Athletic, gruff, becomes the Unit-03 pilot.",
+    evageeksSlug: "Toji_Suzuhara",
   },
   yui: {
     shortcode: "yui",
@@ -148,6 +157,7 @@ export const genesis = {
     secondary: ["#5a2782", "#1f3a8a"],
     notes:
       "Shinji's mother. Lost to a contact experiment with Unit-01. Late-show reveal grounds the Ikari arc.",
+    evageeksSlug: "Yui_Ikari",
   },
   naoko: {
     shortcode: "naoko",
@@ -158,6 +168,95 @@ export const genesis = {
     secondary: ["#5cf5b6", "#1a1a1a"],
     notes:
       "Original Magi designer and Ritsuko's mother. Took her own life on the Magi launch day; her three personalities live on as Casper, Melchior, and Balthasar.",
+    evageeksSlug: "Naoko_Akagi",
+  },
+  kaji: {
+    shortcode: "kaji",
+    kind: "CHARACTERS",
+    displayName: "Ryoji Kaji",
+    aliases: ["Kaji", "Ryoji Kaji", "Kaji Ryoji"],
+    primary: "#5a7a3a",
+    secondary: ["#3a4a2a", "#a8a878"],
+    notes:
+      "Special inspector and triple agent. Misato's ex, Asuka's guardian on the Pacific fleet, intelligence asset for SEELE / NERV / the Japanese government. Tends watermelons in his off hours.",
+    evageeksSlug: "Ryoji_Kaji",
+  },
+  fuyutsuki: {
+    shortcode: "fuyutsuki",
+    kind: "CHARACTERS",
+    displayName: "Kozo Fuyutsuki",
+    aliases: ["Fuyutsuki", "Kozo Fuyutsuki", "Fuyutsuki Kozo", "Sub-Commander"],
+    primary: "#6a6a6a",
+    secondary: ["#3a3a3a", "#9a9a9a"],
+    notes:
+      "NERV Sub-Commander. Yui Ikari's former metaphysical biology professor. Recruited to the Artificial Evolution Lab and stays Gendo's reluctant conscience.",
+    evageeksSlug: "Kozo_Fuyutsuki",
+  },
+  maya: {
+    shortcode: "maya",
+    kind: "CHARACTERS",
+    displayName: "Maya Ibuki",
+    aliases: ["Maya", "Maya Ibuki", "Ibuki Maya"],
+    primary: "#ff8caa",
+    secondary: ["#c8506a", "#fcd35d"],
+    notes:
+      "First Lieutenant. Bridge crew, Ritsuko's protege, mans the sync-ratio console. Dependable softie of the bridge trio.",
+    evageeksSlug: "Maya_Ibuki",
+  },
+  hyuga: {
+    shortcode: "hyuga",
+    kind: "CHARACTERS",
+    displayName: "Makoto Hyuga",
+    aliases: ["Hyuga", "Makoto Hyuga", "Hyuga Makoto"],
+    primary: "#3a6acc",
+    secondary: ["#1f3a8a", "#7c98d6"],
+    notes:
+      "First Lieutenant. Bridge crew, intel analyst, glasses. Quiet crush on Misato.",
+    evageeksSlug: "Makoto_Hyuga",
+  },
+  aoba: {
+    shortcode: "aoba",
+    kind: "CHARACTERS",
+    displayName: "Shigeru Aoba",
+    aliases: ["Aoba", "Shigeru Aoba", "Aoba Shigeru"],
+    primary: "#3a8a8a",
+    secondary: ["#1a4a4a", "#8acaca"],
+    notes:
+      "First Lieutenant. Bridge crew, sensor officer, plays guitar between angel attacks. Long hair on the bridge.",
+    evageeksSlug: "Shigeru_Aoba",
+  },
+  penPen: {
+    shortcode: "penPen",
+    kind: "CHARACTERS",
+    displayName: "Pen Pen",
+    aliases: ["Pen Pen", "Pen-Pen", "PenPen"],
+    primary: "#ff7e2a",
+    secondary: ["#a85020", "#fcd35d"],
+    notes:
+      "Misato's hot-spring penguin. Lives in the second fridge, drinks beer, judges Shinji silently.",
+    evageeksSlug: "Pen_Pen",
+  },
+  hikari: {
+    shortcode: "hikari",
+    kind: "CHARACTERS",
+    displayName: "Hikari Horaki",
+    aliases: ["Hikari", "Hikari Horaki", "Horaki Hikari", "Class Rep"],
+    primary: "#d4a058",
+    secondary: ["#8a6028", "#fcd35d"],
+    notes:
+      "Class representative for 2-A. Asuka's best friend, has an obvious soft spot for Toji.",
+    evageeksSlug: "Hikari_Horaki",
+  },
+  kensuke: {
+    shortcode: "kensuke",
+    kind: "CHARACTERS",
+    displayName: "Kensuke Aida",
+    aliases: ["Kensuke", "Kensuke Aida", "Aida Kensuke"],
+    primary: "#7a8a3a",
+    secondary: ["#3a4a1a", "#caca7a"],
+    notes:
+      "Shinji's classmate, military otaku, camera glued to his hand. Desperately wants to pilot an EVA.",
+    evageeksSlug: "Kensuke_Aida",
   },
 
   // ---- CHARACTERS (family-name shortcodes) ----
@@ -242,6 +341,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "First Angel. Source of the Second Impact.",
+    evageeksSlug: "Adam",
   },
   lilith: {
     shortcode: "lilith",
@@ -251,6 +351,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "Second Angel. Crucified at the bottom of NERV in Terminal Dogma.",
+    evageeksSlug: "Lilith",
   },
   sachiel: {
     shortcode: "sachiel",
@@ -260,6 +361,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "First Angel encountered on screen. Defeated in Tokyo-3 by Unit-01.",
+    evageeksSlug: "Sachiel",
   },
   shamshel: {
     shortcode: "shamshel",
@@ -269,6 +371,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "Tendril-whip angel. Defeated by Unit-01 in close combat.",
+    evageeksSlug: "Shamshel",
   },
   ramiel: {
     shortcode: "ramiel",
@@ -279,6 +382,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Giant blue octahedron with a positron beam. The Operation Yashima sniper episode.",
+    evageeksSlug: "Ramiel",
   },
   gaghiel: {
     shortcode: "gaghiel",
@@ -288,6 +392,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "Underwater angel. The Pacific fleet engagement with Unit-02.",
+    evageeksSlug: "Gaghiel",
   },
   israfel: {
     shortcode: "israfel",
@@ -298,6 +403,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Splits into two. Defeated by Shinji and Asuka in the choreographed dance.",
+    evageeksSlug: "Israfel",
   },
   sandalphon: {
     shortcode: "sandalphon",
@@ -307,6 +413,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "Embryonic angel pulled out of Mt. Asama by Unit-02.",
+    evageeksSlug: "Sandalphon",
   },
   matarael: {
     shortcode: "matarael",
@@ -316,6 +423,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "Spider-shaped acid-rain angel. Defeated during the blackout.",
+    evageeksSlug: "Matarael",
   },
   sahaquiel: {
     shortcode: "sahaquiel",
@@ -325,6 +433,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "Orbital angel that body-checks Tokyo-3. Caught by all three EVAs.",
+    evageeksSlug: "Sahaquiel",
   },
   iruel: {
     shortcode: "iruel",
@@ -335,6 +444,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Nano-machine angel that infiltrates the Magi system. Defeated by Ritsuko.",
+    evageeksSlug: "Iruel",
   },
   leliel: {
     shortcode: "leliel",
@@ -345,6 +455,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Shadow / Dirac sea angel. Swallows Unit-01. The introspective bottle episode.",
+    evageeksSlug: "Leliel",
   },
   bardiel: {
     shortcode: "bardiel",
@@ -355,6 +466,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Possesses Unit-03 with Toji aboard. Forces Unit-01 into a brutal fight.",
+    evageeksSlug: "Bardiel",
   },
   zeruel: {
     shortcode: "zeruel",
@@ -365,6 +477,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Paper-ribbon angel. Tears through Tokyo-3. Triggers Unit-01's berserk feeding.",
+    evageeksSlug: "Zeruel",
   },
   arael: {
     shortcode: "arael",
@@ -375,6 +488,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Bird-of-light angel. Mind-attacks Asuka. Defeated by the Lance of Longinus.",
+    evageeksSlug: "Arael",
   },
   armisael: {
     shortcode: "armisael",
@@ -384,6 +498,7 @@ export const genesis = {
     primary: "#ff003c",
     secondary: ["#ffae00", "#ffffff"],
     notes: "Helix angel that fuses with Unit-00. Forces Rei to self-destruct.",
+    evageeksSlug: "Armisael",
   },
   tabris: {
     shortcode: "tabris",
@@ -394,6 +509,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Final visible angel. Identity reveal is a major spoiler --- gated until unlocked.",
+    evageeksSlug: "Tabris",
   },
   lilim: {
     shortcode: "lilim",
@@ -404,6 +520,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Humanity itself, the Eighteenth Angel. Revealed as the Instrumentality conclusion.",
+    evageeksSlug: "Lilim",
   },
 
   // ---- MAGI ----
@@ -416,6 +533,7 @@ export const genesis = {
     secondary: ["#00ff64", "#1a1a1a"],
     notes:
       "Magi node carrying Naoko Akagi's woman personality. Default terminal green.",
+    evageeksSlug: "Magi",
   },
   melchior: {
     shortcode: "melchior",
@@ -425,6 +543,7 @@ export const genesis = {
     primary: "#00d9ff",
     secondary: ["#0099cc", "#5cf590"],
     notes: "Magi node carrying Naoko Akagi's scientist personality.",
+    evageeksSlug: "Magi",
   },
   balthasar: {
     shortcode: "balthasar",
@@ -434,6 +553,7 @@ export const genesis = {
     primary: "#ffae00",
     secondary: ["#ff8500", "#fcd35d"],
     notes: "Magi node carrying Naoko Akagi's mother personality.",
+    evageeksSlug: "Magi",
   },
 
   // ---- EVA UNITS ----
@@ -446,6 +566,7 @@ export const genesis = {
     secondary: ["#d97706", "#ffffff"],
     notes:
       "Rei's prototype EVA. Originally orange, repainted blue after the activation incident.",
+    evageeksSlug: "Evangelion_Unit-00",
   },
   unit01: {
     shortcode: "unit01",
@@ -456,6 +577,7 @@ export const genesis = {
     secondary: ["#5cf590", "#f59e0b"],
     notes:
       "Shinji's EVA. Iconic purple body, green chest plate, single orange horn.",
+    evageeksSlug: "Evangelion_Unit-01",
   },
   unit02: {
     shortcode: "unit02",
@@ -466,6 +588,7 @@ export const genesis = {
     secondary: ["#ff6b00", "#1a1a1a"],
     notes:
       "Asuka's EVA. Bright red body with orange shoulder pylons and four eyes.",
+    evageeksSlug: "Evangelion_Unit-02",
   },
   unit03: {
     shortcode: "unit03",
@@ -476,6 +599,7 @@ export const genesis = {
     secondary: ["#5a3a3a", "#a8131e"],
     notes:
       "Toji's EVA. Black body, possessed by the 13th Angel Bardiel on activation.",
+    evageeksSlug: "Evangelion_Unit-03",
   },
   unit04: {
     shortcode: "unit04",
@@ -486,6 +610,7 @@ export const genesis = {
     secondary: ["#4b5563", "#e5e7eb"],
     notes:
       "Silver prototype. Lost with the Nevada branch in the S2 engine experiment.",
+    evageeksSlug: "Evangelion_Unit-04",
   },
   massProduction: {
     shortcode: "massProduction",
@@ -496,6 +621,7 @@ export const genesis = {
     secondary: ["#2e7cb8", "#1f1f1f"],
     notes:
       "End of Evangelion white-bodied series. Identical clones with rictus grins.",
+    evageeksSlug: "MP_Eva",
   },
 
   // ---- ORGANIZATIONS ----
@@ -508,6 +634,7 @@ export const genesis = {
     secondary: ["#1a1a1a", "#f5f5f0"],
     notes:
       "UN special agency. Iconic red half-leaf emblem on black background.",
+    evageeksSlug: "Nerv",
   },
   seele: {
     shortcode: "seele",
@@ -518,6 +645,7 @@ export const genesis = {
     secondary: ["#1a1a1a", "#ff6700"],
     notes:
       "Shadow committee. Numbered red triangular monoliths, Sound Only orange screens.",
+    evageeksSlug: "Seele",
   },
   wille: {
     shortcode: "wille",
@@ -528,6 +656,40 @@ export const genesis = {
     secondary: ["#f5f5f0", "#c8102e"],
     notes:
       "Anti-NERV organization (Rebuild). Military teal aesthetic on the AAA Wunder.",
+    evageeksSlug: "Wille",
+  },
+  gehirn: {
+    shortcode: "gehirn",
+    kind: "ORGANIZATIONS",
+    displayName: "GEHIRN",
+    aliases: ["GEHIRN", "Gehirn"],
+    primary: "#9a3a3a",
+    secondary: ["#5a1a1a", "#1a1a1a"],
+    notes:
+      "NERV's predecessor. UN-funded research body that became NERV after the Magi launched and the Evangelions moved into prototype. Yui, Naoko, Gendo, and Fuyutsuki all worked here.",
+    evageeksSlug: "Gehirn",
+  },
+  jssdf: {
+    shortcode: "jssdf",
+    kind: "ORGANIZATIONS",
+    displayName: "JSSDF",
+    aliases: ["JSSDF", "Strategic Self Defense Force"],
+    primary: "#5a6a3a",
+    secondary: ["#3a4a2a", "#1a1a1a"],
+    notes:
+      "Japan Strategic Self Defense Force. Deployed by SEELE to seize NERV HQ in End of Evangelion. The reason most NERV staff don't survive the finale.",
+    evageeksSlug: "JSSDF",
+  },
+  marduk: {
+    shortcode: "marduk",
+    kind: "ORGANIZATIONS",
+    displayName: "Marduk Institute",
+    aliases: ["Marduk Institute", "Marduk"],
+    primary: "#7a5a3a",
+    secondary: ["#3a2a1a", "#caa078"],
+    notes:
+      "Front organization that 'selects' the Children. Eventually revealed as a paper tiger --- 108 names, all empty, the real picks happen elsewhere.",
+    evageeksSlug: "Marduk_Institute",
   },
 
   // ---- LOCATIONS ----
@@ -535,11 +697,67 @@ export const genesis = {
     shortcode: "nervHq",
     kind: "LOCATIONS",
     displayName: "NERV HQ",
-    aliases: ["NERV HQ", "NERV Headquarters", "Geofront"],
+    aliases: ["NERV HQ", "NERV Headquarters"],
     primary: "#62b8ff",
     secondary: ["#3a8fff", "#0c0c10"],
     notes:
       "NERV's underground headquarters beneath Tokyo-3, set inside the Geofront cavity.",
+    evageeksSlug: "Nerv_HQ",
+  },
+  tokyo3: {
+    shortcode: "tokyo3",
+    kind: "LOCATIONS",
+    displayName: "Tokyo-3",
+    aliases: ["Tokyo-3", "Tokyo 3", "Tokyo3"],
+    primary: "#7cb8ff",
+    secondary: ["#3a8fff", "#1a1a2a"],
+    notes:
+      "The fortified replacement city built around the Geofront after Second Impact. Buildings retract underground when the alarm sounds.",
+    evageeksSlug: "Tokyo-3",
+  },
+  geofront: {
+    shortcode: "geofront",
+    kind: "LOCATIONS",
+    displayName: "Geofront",
+    aliases: ["Geofront", "Geo-Front"],
+    primary: "#5cf590",
+    secondary: ["#1a4a2a", "#3a8fff"],
+    notes:
+      "Cavernous green-tinted void beneath Tokyo-3. Houses NERV HQ; revealed late in the show to be the upper hull of the Black Moon.",
+    evageeksSlug: "Geofront",
+  },
+  terminalDogma: {
+    shortcode: "terminalDogma",
+    kind: "LOCATIONS",
+    displayName: "Terminal Dogma",
+    aliases: ["Terminal Dogma"],
+    primary: "#a8131e",
+    secondary: ["#1a0c10", "#ff003c"],
+    notes:
+      "The deepest level of NERV. Lilith hangs crucified on a giant cross above an LCL pool. Off-limits to almost everyone --- the Lance is here too.",
+    evageeksSlug: "Terminal_Dogma",
+  },
+  centralDogma: {
+    shortcode: "centralDogma",
+    kind: "LOCATIONS",
+    displayName: "Central Dogma",
+    aliases: ["Central Dogma", "Command Center"],
+    primary: "#ff2a3c",
+    secondary: ["#1a1a1a", "#62b8ff"],
+    notes:
+      "NERV's command bridge. Misato calls the angel ops, the bridge bunnies man the consoles, and the Magi vote on every tough call.",
+    evageeksSlug: "Central_Dogma",
+  },
+  antarctica: {
+    shortcode: "antarctica",
+    kind: "LOCATIONS",
+    displayName: "Antarctica",
+    aliases: ["Antarctica", "South Pole"],
+    primary: "#c8e8ff",
+    secondary: ["#62b8ff", "#1a1a2a"],
+    notes:
+      "Site of the Katsuragi Expedition's 2000 contact experiment with Adam --- the trigger of Second Impact. Now a frozen red sea.",
+    evageeksSlug: "Antarctica",
   },
 
   // ---- CONCEPTS ----
@@ -552,6 +770,7 @@ export const genesis = {
     secondary: ["#ffae00", "#ffffff"],
     notes:
       "Absolute Terror Field. Hexagonal red barrier projected by every soul.",
+    evageeksSlug: "A.T._Field",
   },
   lcl: {
     shortcode: "lcl",
@@ -561,6 +780,7 @@ export const genesis = {
     primary: "#ff8800",
     secondary: ["#ffae00", "#d97706"],
     notes: "Link Connect Liquid. Orange amniotic fluid filling the entry plug.",
+    evageeksSlug: "LCL",
   },
   thirdImpact: {
     shortcode: "thirdImpact",
@@ -570,6 +790,7 @@ export const genesis = {
     primary: "#ff6b8b",
     secondary: ["#ff8800", "#ffae00"],
     notes: "Instrumentality. Pink-orange tang of dissolved humanity.",
+    evageeksSlug: "Third_Impact",
   },
   hedgehogsDilemma: {
     shortcode: "hedgehogsDilemma",
@@ -610,6 +831,121 @@ export const genesis = {
     secondary: ["#1a2a3a", "#5a7a9a"],
     notes:
       "Parents who left, parents who are absent in the room --- the through-line under every Ikari and Akagi mother arc.",
+  },
+  lanceOfLonginus: {
+    shortcode: "lanceOfLonginus",
+    kind: "CONCEPTS",
+    displayName: "Lance of Longinus",
+    aliases: ["Lance of Longinus", "Lance"],
+    primary: "#e0b400",
+    secondary: ["#a08200", "#fcd35d"],
+    notes:
+      "Twin-helix golden spear. The only weapon that pierces an angel's AT field. Asuka throws it into Arael, then it's lost in lunar orbit.",
+    evageeksSlug: "Lance_of_Longinus",
+  },
+  dummyPlug: {
+    shortcode: "dummyPlug",
+    kind: "CONCEPTS",
+    displayName: "Dummy Plug",
+    aliases: ["Dummy Plug", "Dummy System"],
+    primary: "#3a8a6a",
+    secondary: ["#1a4a3a", "#7acaaa"],
+    notes:
+      "Autopilot module that runs an EVA on a captive copy of someone's psyche. Unit-01 under Dummy Plug control crushes Unit-03 with Toji aboard --- the Bardiel kill.",
+    evageeksSlug: "Dummy_Plug",
+  },
+  s2Engine: {
+    shortcode: "s2Engine",
+    kind: "CONCEPTS",
+    displayName: "S² Engine",
+    aliases: ["S² Engine", "S2 Engine", "Super Solenoid Engine"],
+    primary: "#d51a73",
+    secondary: ["#7a0a3d", "#ff80c0"],
+    notes:
+      "Super Solenoid power organ --- the angels' inexhaustible energy core. Unit-01 absorbs Zeruel's S² and goes off-grid: an EVA that no longer needs an umbilical.",
+    evageeksSlug: "S2_Engine",
+  },
+  entryPlug: {
+    shortcode: "entryPlug",
+    kind: "CONCEPTS",
+    displayName: "Entry Plug",
+    aliases: ["Entry Plug"],
+    primary: "#ff8800",
+    secondary: ["#a85000", "#ffcc7a"],
+    notes:
+      "The cylindrical capsule a pilot rides in. Slots into the EVA's spine, floods with LCL, transmits the pilot's nerves to the unit's giant body.",
+    evageeksSlug: "Entry_Plug",
+  },
+  humanInstrumentality: {
+    shortcode: "humanInstrumentality",
+    kind: "CONCEPTS",
+    displayName: "Human Instrumentality Project",
+    aliases: ["Human Instrumentality Project", "Instrumentality Project", "HIP"],
+    primary: "#8a2be2",
+    secondary: ["#4a0a82", "#c47afa"],
+    notes:
+      "SEELE's endgame --- collapse every AT field at once and merge all souls into a single being. Different actors have different motives; the result is the same Tang.",
+    evageeksSlug: "Human_Instrumentality_Project",
+  },
+  progressiveKnife: {
+    shortcode: "progressiveKnife",
+    kind: "CONCEPTS",
+    displayName: "Progressive Knife",
+    aliases: ["Progressive Knife", "Prog Knife"],
+    primary: "#c8c8c8",
+    secondary: ["#8a8a8a", "#ff003c"],
+    notes:
+      "Vibrating monomolecular blade stowed in each EVA's shoulder pylon. The default angel-killing tool when the rifle and the lance are out of reach.",
+    evageeksSlug: "Progressive_Knife",
+  },
+  blackMoon: {
+    shortcode: "blackMoon",
+    kind: "CONCEPTS",
+    displayName: "Black Moon",
+    aliases: ["Black Moon"],
+    primary: "#1a1a1a",
+    secondary: ["#3a3a3a", "#5cf590"],
+    notes:
+      "The egg-shaped vessel buried under Tokyo-3. The Geofront is its hollow upper shell; Lilith was its passenger.",
+    evageeksSlug: "Black_Moon",
+  },
+  whiteMoon: {
+    shortcode: "whiteMoon",
+    kind: "CONCEPTS",
+    displayName: "White Moon",
+    aliases: ["White Moon"],
+    primary: "#f0f0e8",
+    secondary: ["#a8a890", "#1a1a1a"],
+    notes:
+      "The Antarctic counterpart to the Black Moon. Adam's vessel; the Katsuragi Expedition cracked it open and triggered Second Impact.",
+    evageeksSlug: "White_Moon",
+  },
+
+  // ---- EVENTS ----
+  // Backstory and on-screen flashpoints. Tied to the `event` graph node
+  // kind; each entry has at most a single canonical wiki article on the
+  // EvaWiki.
+  firstImpact: {
+    shortcode: "firstImpact",
+    kind: "EVENTS",
+    displayName: "First Impact",
+    aliases: ["First Impact", "Giant Impact"],
+    primary: "#1a1a3a",
+    secondary: ["#0a0a1a", "#62b8ff"],
+    notes:
+      "Pre-history collision that formed the Moon and stranded the White Moon (Adam's vessel) in Antarctica. Backstory only; the show drips it out across the late-teens episodes.",
+    evageeksSlug: "First_Impact",
+  },
+  secondImpact: {
+    shortcode: "secondImpact",
+    kind: "EVENTS",
+    displayName: "Second Impact",
+    aliases: ["Second Impact"],
+    primary: "#ff5a1a",
+    secondary: ["#a83a0a", "#fcd35d"],
+    notes:
+      "September 2000. The Katsuragi Expedition's contact experiment with Adam in Antarctica triggered a global cataclysm --- billions dead, sea levels reshaped, the seasons gone. The show's pre-cause for everything.",
+    evageeksSlug: "Second_Impact",
   },
 } as const satisfies GenesisRegistry;
 

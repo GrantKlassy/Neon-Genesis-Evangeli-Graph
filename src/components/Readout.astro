@@ -2,6 +2,7 @@
 import {
   ANGEL_UNIFORM_COLOR,
   CONCEPT_UNIFORM_COLOR,
+  EVENT_UNIFORM_COLOR,
   FAMILY_UNIFORM_COLOR,
   LOCATION_UNIFORM_COLOR,
   MAGI_UNIFORM_COLOR,
@@ -11,12 +12,13 @@ import {
   isCharacter,
   isConcept,
   isEva,
+  isEvent,
   isFamily,
   isLocation,
   isMagi,
   isOrganization,
 } from "../graph";
-import { colorOf } from "../genesis";
+import { colorOf, evageeksUrlOf } from "../genesis";
 import G from "./G.astro";
 
 interface CharacterCard {
@@ -25,6 +27,7 @@ interface CharacterCard {
   role: string;
   color: string;
   shortcodes: string[];
+  evageeksUrl: string | null;
 }
 
 interface EvaCard {
@@ -32,6 +35,7 @@ interface EvaCard {
   displayName: string;
   color: string;
   shortcodes: string[];
+  evageeksUrl: string | null;
 }
 
 interface FamilyCard {
@@ -39,6 +43,20 @@ interface FamilyCard {
   displayName: string;
   shortcodes: string[];
   notes: string;
+  evageeksUrl: string | null;
+}
+
+/**
+ * Resolve the EvaWiki URL for a node by walking its shortcodes in order.
+ * Most graph nodes have a single shortcode; the helper still tolerates
+ * aliases-first ordering so future multi-shortcode nodes keep working.
+ */
+function evageeksUrlForNode(shortcodes: readonly string[]): string | null {
+  for (const code of shortcodes) {
+    const url = evageeksUrlOf(code);
+    if (url) return url;
+  }
+  return null;
 }
 
 const characters: CharacterCard[] = evangelion.nodes
@@ -49,21 +67,39 @@ const characters: CharacterCard[] = evangelion.nodes
     role: c.role,
     color: colorOf(c.shortcodes[0] ?? ""),
     shortcodes: c.shortcodes,
+    evageeksUrl: evageeksUrlForNode(c.shortcodes),
   }));
 
 const angels = evangelion.nodes
   .filter(isAngel)
-  .sort((a, b) => a.number - b.number);
+  .sort((a, b) => a.number - b.number)
+  .map((a) => ({
+    ...a,
+    evageeksUrl: evageeksUrlForNode(a.shortcodes),
+  }));
 
-const magi = evangelion.nodes.filter(isMagi);
-const organizations = evangelion.nodes.filter(isOrganization);
-const locations = evangelion.nodes.filter(isLocation);
-const concepts = evangelion.nodes.filter(isConcept);
+const magi = evangelion.nodes.filter(isMagi).map((m) => ({
+  ...m,
+  evageeksUrl: evageeksUrlForNode(m.shortcodes),
+}));
+const organizations = evangelion.nodes.filter(isOrganization).map((o) => ({
+  ...o,
+  evageeksUrl: evageeksUrlForNode(o.shortcodes),
+}));
+const locations = evangelion.nodes.filter(isLocation).map((l) => ({
+  ...l,
+  evageeksUrl: evageeksUrlForNode(l.shortcodes),
+}));
+const concepts = evangelion.nodes.filter(isConcept).map((c) => ({
+  ...c,
+  evageeksUrl: evageeksUrlForNode(c.shortcodes),
+}));
 const families: FamilyCard[] = evangelion.nodes.filter(isFamily).map((f) => ({
   id: f.id,
   displayName: f.displayName,
   shortcodes: f.shortcodes,
   notes: f.notes,
+  evageeksUrl: evageeksUrlForNode(f.shortcodes),
 }));
 const evas: EvaCard[] = evangelion.nodes
   .filter(isEva)
@@ -73,7 +109,12 @@ const evas: EvaCard[] = evangelion.nodes
     displayName: e.displayName,
     color: colorOf(e.shortcodes[0] ?? ""),
     shortcodes: e.shortcodes,
+    evageeksUrl: evageeksUrlForNode(e.shortcodes),
   }));
+const events = evangelion.nodes.filter(isEvent).map((e) => ({
+  ...e,
+  evageeksUrl: evageeksUrlForNode(e.shortcodes),
+}));
 ---
 
 <section
@@ -128,6 +169,19 @@ const evas: EvaCard[] = evangelion.nodes
               <p class="mt-1 font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
                 shortcodes &middot; {c.shortcodes.join(" / ")}
               </p>
+              {
+                c.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={c.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${c.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
             </div>
           </li>
         ))
@@ -172,6 +226,19 @@ const evas: EvaCard[] = evangelion.nodes
             <span class="truncate text-sm font-bold text-[color:var(--color-text)]">
               <G text={a.name} />
             </span>
+            {
+              a.evageeksUrl && (
+                <a
+                  class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                  href={a.evageeksUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid={`evageeks-link-${a.id}`}
+                >
+                  evageeks
+                </a>
+              )
+            }
             <span class="ml-auto font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)] uppercase">
               {a.introducedEpisode}
             </span>
@@ -216,6 +283,19 @@ const evas: EvaCard[] = evangelion.nodes
               <p class="font-mono text-[0.65rem] tracking-wider text-[color:var(--color-magi-green)] uppercase">
                 {m.personality}
               </p>
+              {
+                m.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={m.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${m.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
             </div>
           </li>
         ))
@@ -258,6 +338,19 @@ const evas: EvaCard[] = evangelion.nodes
               <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
                 shortcodes &middot; {e.shortcodes.join(" / ")}
               </p>
+              {
+                e.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={e.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${e.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
             </div>
           </li>
         ))
@@ -312,6 +405,19 @@ const evas: EvaCard[] = evangelion.nodes
               <p class="mt-1 text-[0.7rem] leading-snug text-[color:var(--color-text-dim)]">
                 {f.notes}
               </p>
+              {
+                f.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={f.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${f.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
             </div>
           </li>
         ))
@@ -345,6 +451,19 @@ const evas: EvaCard[] = evangelion.nodes
               <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
                 <G text={o.name} />
               </p>
+              {
+                o.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={o.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${o.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
             </div>
           </li>
         ))
@@ -381,6 +500,19 @@ const evas: EvaCard[] = evangelion.nodes
               >
                 {l.displayName}
               </p>
+              {
+                l.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={l.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${l.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
             </div>
           </li>
         ))
@@ -424,6 +556,78 @@ const evas: EvaCard[] = evangelion.nodes
               <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
                 shortcode &middot; {c.shortcodes.join(" / ")}
               </p>
+              {
+                c.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={c.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${c.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-seele-purple)]/30 bg-[color:var(--color-panel)] p-4"
+    style={`border-color:${EVENT_UNIFORM_COLOR}55`}
+    data-testid="ngg-section-events"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] uppercase sm:text-sm"
+      style={`color:${EVENT_UNIFORM_COLOR}`}
+    >
+      Events
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      The flashpoints. <G text="First Impact" /> formed the Moon and stranded
+      Adam's vessel; <G text="Second Impact" /> blew open Antarctica when the
+      Katsuragi Expedition made contact with Adam in 2000. Backstory in the
+      early run, cause-and-effect spelled out in the Ep. 21 director's-cut
+      drop.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {
+        events.map((ev) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`event-${ev.id}`}
+            data-shortcodes={ev.shortcodes.join(",")}
+            data-revealed-at={ev.revealedAt ? ev.revealedAt.kind : "open"}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${EVENT_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={ev.name} />
+              </p>
+              <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
+                shortcode &middot; {ev.shortcodes.join(" / ")}
+              </p>
+              {
+                ev.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={ev.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${ev.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
             </div>
           </li>
         ))

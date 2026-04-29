@@ -48,17 +48,16 @@ test.describe("WebGL launches", () => {
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
     const handle = await getGraphHandle(page);
-    // 11 chars + 18 angels + 3 magi + 1 org + 1 loc + 7 concepts + 2 families + 6 evas = 49
-    expect(handle!.nodeCount).toBe(49);
-    // 3 magi + 17 angel-sequence + 3 identity-reveal + 4 pilots + 5 member_of_family
-    //   + 10 generic (K5 mesh between Unit-00..Unit-04) + 15 eliminated = 57
-    // Eliminated breakdown: Unit-01 takes 10 kills (Sachiel, Shamshel, Ramiel,
-    //   Israfel-co, Matarael, Sahaquiel, Leliel, Bardiel, Zeruel, Tabris),
-    //   Unit-02 takes 4 (Gaghiel, Israfel-co, Sandalphon, Arael), Unit-00
-    //   takes 1 (Armisael self-destruct).
-    expect(handle!.edgeCount).toBe(57);
+    // 19 chars + 18 angels + 3 magi + 6 orgs + 6 locations + 15 concepts
+    //   + 2 families + 6 evas + 2 events = 77.
+    expect(handle!.nodeCount).toBe(77);
+    // 3 magi + 17 angel-sequence + 3 identity-reveal + 4 pilots
+    //   + 5 member_of_family + 13 member_of_org + 7 located_in + 5 caused
+    //   + 10 EVA generic-mesh + 20 supporting generic ties + 15 eliminated
+    //   + 1 (Lance->Terminal Dogma) = 103.
+    expect(handle!.edgeCount).toBe(103);
     const root = rootEl(page);
-    await expect(root).toHaveAttribute("data-node-count", "49");
+    await expect(root).toHaveAttribute("data-node-count", "77");
   });
 
   test("canvas shows non-background pixels (something is drawn)", async ({

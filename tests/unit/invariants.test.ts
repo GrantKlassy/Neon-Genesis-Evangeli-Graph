@@ -140,7 +140,7 @@ describe("Invariant: tag schema", () => {
         ...evangelion,
         nodes: evangelion.nodes.map((n) => (n.id === target.id ? broken : n)),
       }),
-    ).toThrow(/positive number/);
+    ).toThrow(/episode must be 1\.\.26/);
   });
 });
 
@@ -308,8 +308,9 @@ describe("Invariant: visibleTags spoiler logic", () => {
         if (t.id === "dies-by-end-of-series") visibleDeaths++;
       }
     }
-    // We tag Asuka, Rei, Misato, Kaworu, Gendo, Ritsuko --- 6 deaths.
-    expect(visibleDeaths).toBe(6);
+    // Tagged: Asuka, Rei, Misato, Kaworu, Gendo, Ritsuko, Kaji, Fuyutsuki
+    // --- 8 deaths.
+    expect(visibleDeaths).toBe(8);
   });
 
   it("a viewer at Ep 25+ unlocks dies-by-end-of-series tags WITHOUT eoe flag (TV finale covers Instrumentality)", () => {

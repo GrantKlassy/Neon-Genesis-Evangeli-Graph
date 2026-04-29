@@ -26,18 +26,20 @@ test.describe("smoke", () => {
     await expect(readout).toBeVisible();
   });
 
-  test("stat counters reflect the canon seed (11 chars / 18 angels / 3 magi)", async ({
+  test("stat counters reflect the canon seed (19 chars / 18 angels / 3 magi)", async ({
     page,
   }) => {
     await page.goto("/");
-    // 11 = 10 main cast + Naoko Akagi (Magi designer, mother of Ritsuko).
-    await expect(page.getByTestId("stat-characters")).toHaveText("11");
+    // 19 = 11 core cast (10 + Naoko) plus 8 supporting (Kaji, Fuyutsuki,
+    // bridge trio, Pen Pen, Hikari, Kensuke).
+    await expect(page.getByTestId("stat-characters")).toHaveText("19");
     await expect(page.getByTestId("stat-angels")).toHaveText("18");
     await expect(page.getByTestId("stat-magi")).toHaveText("3");
     const edgesText = await page.getByTestId("stat-edges").innerText();
     const edges = Number(edgesText);
-    // 3 magi + 17 angel-sequence + 3 identity-reveal + 4 pilots + 5 family = 32.
-    expect(edges).toBeGreaterThanOrEqual(28);
+    // 100+ edges once member_of_org / located_in / caused / generic
+    // supporting ties join the original five kinds.
+    expect(edges).toBeGreaterThanOrEqual(80);
   });
 
   test("graph host element reaches a terminal state", async ({ page }) => {
