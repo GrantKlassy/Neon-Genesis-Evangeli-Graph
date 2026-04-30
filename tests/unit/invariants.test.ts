@@ -330,3 +330,39 @@ describe("Invariant: visibleTags spoiler logic", () => {
     expect(visibleTags([], SPOILER_PROGRESS_FULL)).toEqual([]);
   });
 });
+
+/**
+ * Rebuild content lives in src/graph/rebuild.ts and is spread into
+ * evangelion.ts at the bottom. The module is the single landing pad for
+ * Rebuild-only nodes/edges --- this invariant keeps the contract honest:
+ * if anything in rebuild.ts forgets its rebuild gate, future Rebuild
+ * additions risk leaking into the TV+EoE canon view.
+ */
+describe("Invariant: Rebuild module entries all carry a rebuild gate", () => {
+  it("every node in rebuild.ts has revealedAt={kind:'rebuild'}", async () => {
+    const { rebuildCharacters, rebuildOrganizations } = await import(
+      "../../src/graph/rebuild"
+    );
+    const all = [...rebuildCharacters, ...rebuildOrganizations];
+    expect(all.length).toBeGreaterThan(0);
+    for (const n of all) {
+      expect(n.revealedAt).toEqual({ kind: "rebuild" });
+      expect(n.revealedAtSource).toBeTruthy();
+    }
+  });
+
+  it("every edge in rebuild.ts has revealedAt={kind:'rebuild'}", async () => {
+    const { rebuildEdges } = await import("../../src/graph/rebuild");
+    expect(rebuildEdges.length).toBeGreaterThan(0);
+    for (const e of rebuildEdges) {
+      expect(e.revealedAt).toEqual({ kind: "rebuild" });
+      expect(e.revealedAtSource).toBeTruthy();
+    }
+  });
+
+  it("the merged evangelion seed includes Mari and WILLE", () => {
+    const ids = new Set(evangelion.nodes.map((n) => n.id));
+    expect(ids.has("char_mari")).toBe(true);
+    expect(ids.has("org_wille")).toBe(true);
+  });
+});

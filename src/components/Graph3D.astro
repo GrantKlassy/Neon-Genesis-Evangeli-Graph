@@ -1,6 +1,7 @@
 ---
 import {
   ANGEL_UNIFORM_COLOR,
+  AUDIENCE_UNIFORM_COLOR,
   CONCEPT_UNIFORM_COLOR,
   EDGE_COLORS,
   EVA_UNIFORM_COLOR,
@@ -59,6 +60,13 @@ const nodeLegend = [
     id: "event",
     label: "Events",
     color: EVENT_UNIFORM_COLOR,
+  },
+  // Singular audience node --- gated to End of Evangelion. Sits last in the
+  // legend so the eye reads it as the punchline after the canon roster.
+  {
+    id: "audience",
+    label: "You (post-EoE)",
+    color: AUDIENCE_UNIFORM_COLOR,
   },
 ] as const;
 
@@ -182,6 +190,22 @@ const edgeLegend = [
         >
           <span data-rotate-label>rotating</span>
         </button>
+        <!--
+          View Show: walks the spoiler gate from ep 0 -> ep 26 -> +EoE while
+          the orb keeps rotating. Bypasses the gate persistence (the user's
+          saved tier is preserved across the playthrough); click again
+          during playback to abort and snap back to the persisted tier.
+        -->
+        <button
+          id="ngg-play-timeline"
+          type="button"
+          class="border border-[color:var(--color-magi-green)]/40 bg-[color:var(--color-panel)]/85 px-3 py-1 font-mono text-[0.65rem] tracking-[0.2em] text-[color:var(--color-magi-green)] uppercase backdrop-blur-sm transition-colors hover:bg-[color:var(--color-panel-2)] sm:text-xs"
+          data-testid="ngg-play-timeline"
+          data-state="idle"
+          aria-label="View show timeline (animate spoiler gate ep 0 -> EoE)"
+        >
+          <span data-timeline-label>view show</span>
+        </button>
         <button
           id="ngg-clear-selection"
           type="button"
@@ -237,6 +261,20 @@ const edgeLegend = [
         >
           view on evageeks &rarr;
         </a>
+        <!--
+          Dies-by-end-of-series readout badge. Only renders when the
+          selected node carries the tag AND the user has revealed TV
+          ep 26 + EoE (the show-complete gate). The badge is the closing
+          roll-call --- we deliberately do NOT show it pre-completion,
+          since the dies tag is itself a finale-grade spoiler.
+        -->
+        <p
+          id="ngg-selected-death"
+          class="mt-2 hidden font-mono text-[0.65rem] font-bold tracking-[0.25em] text-[color:var(--color-nerv-red)] uppercase sm:text-xs"
+          data-testid="ngg-selected-death"
+        >
+          dies by end of series
+        </p>
       </aside>
 
       <!-- Scroll cue (bottom-center). Fades as the user advances through the runway. -->
@@ -270,9 +308,12 @@ const edgeLegend = [
 <script>
   import { initGraph3D } from "../scripts/graph3d";
   import {
+    SPOILER_EVENT_NAME,
+    SPOILER_PROGRESS_DEFAULT,
     evangelion,
     gateLabel,
     isAngel,
+    isAudience,
     isCharacter,
     isConcept,
     isEva,
@@ -281,7 +322,9 @@ const edgeLegend = [
     isLocation,
     isMagi,
     isOrganization,
+    isShowComplete,
     maskLabel,
+    parseSpoilerProgress,
   } from "../graph";
   import { evageeksUrlOf } from "../genesis";
   import type { GraphHandle } from "../scripts/graph3d";
@@ -323,6 +366,9 @@ const edgeLegend = [
     const evageeksEl = panel.querySelector(
       '[data-testid="ngg-selected-evageeks"]',
     ) as HTMLAnchorElement | null;
+    const deathEl = panel.querySelector(
+      '[data-testid="ngg-selected-death"]',
+    ) as HTMLElement | null;
 
     let activeHandle: GraphHandle | null = null;
     let lastSelected: GraphNode | null = null;
@@ -337,6 +383,7 @@ const edgeLegend = [
           evageeksEl.classList.add("hidden");
           evageeksEl.removeAttribute("href");
         }
+        if (deathEl) deathEl.classList.add("hidden");
         return;
       }
       panel.classList.remove("hidden");
@@ -345,6 +392,24 @@ const edgeLegend = [
       const masked = activeHandle?.isNodeMasked(node.id) ?? false;
       panel.dataset.masked = masked ? "true" : "false";
       const mask = (s: string) => (masked ? maskLabel(s) : s);
+
+      // Dies-by-end-of-series badge: surfaces only when the show is
+      // complete AND this node carries the tag. The tag itself is a
+      // finale-grade spoiler, so we deliberately gate the badge stricter
+      // than the tag's own visibility (which unlocks at ep 25+ via the
+      // EoE-equivalent rule). Closing roll-call, not a live spoiler.
+      if (deathEl) {
+        const showComplete =
+          activeHandle != null && isShowComplete(activeHandle.progress);
+        const hasTag =
+          !masked &&
+          node.tags?.some((t) => t.id === "dies-by-end-of-series") === true;
+        if (showComplete && hasTag) {
+          deathEl.classList.remove("hidden");
+        } else {
+          deathEl.classList.add("hidden");
+        }
+      }
 
       // Surface the evageeks URL whenever the node resolves one AND is not
       // masked. Hidden nodes don't leak their wiki link --- the slug itself
@@ -381,6 +446,8 @@ const edgeLegend = [
           kindEl.textContent = `eva ${node.id}`;
         } else if (isFamily(node)) {
           kindEl.textContent = `family ${node.id}`;
+        } else if (isAudience(node)) {
+          kindEl.textContent = "audience --- 18th angel";
         }
       }
       if (titleEl) {
@@ -396,6 +463,7 @@ const edgeLegend = [
         else if (isConcept(node)) titleEl.textContent = mask(node.name);
         else if (isEva(node)) titleEl.textContent = mask(node.name);
         else if (isFamily(node)) titleEl.textContent = mask(node.displayName);
+        else if (isAudience(node)) titleEl.textContent = mask(node.name);
       }
       if (metaEl) {
         metaEl.innerHTML = "";
@@ -432,6 +500,10 @@ const edgeLegend = [
           rows.push(["gate", gateLabel(node.revealedAt)]);
         } else if (isFamily(node)) {
           rows.push(["family", mask(node.name)]);
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isAudience(node)) {
+          rows.push(["role", "the 18th angel"]);
           rows.push(["shortcodes", codes]);
           rows.push(["gate", gateLabel(node.revealedAt)]);
         }
@@ -486,6 +558,113 @@ const edgeLegend = [
     const clearBtn = document.getElementById("ngg-clear-selection");
     clearBtn?.addEventListener("click", () => {
       handle.selectNodeById(null);
+    });
+
+    // ---- View Show timeline ----
+    //
+    // Walks the spoiler gate from ep 0 -> ep 26 -> +EoE in slow steps
+    // while the orb keeps rotating, and the readout panel restats live
+    // with each step. Runs ENTIRELY through handle.applyProgress so the
+    // gate's localStorage tier is untouched; aborts if the user reopens
+    // the gate and reveals during playback.
+    //
+    // Cadence: 1.8s per TV episode (47s for the 26-step climb), 4s for
+    // the EoE beat. Slow enough to feel like a ceremony, short enough
+    // to not hold a user hostage. Rebuild is intentionally NOT walked
+    // --- it's a parallel timeline, not part of the canonical run.
+    const TIMELINE_STEP_MS = 1800;
+    const TIMELINE_EOE_MS = 4000;
+    const playBtn = document.getElementById(
+      "ngg-play-timeline",
+    ) as HTMLButtonElement | null;
+    const playLabel = playBtn?.querySelector(
+      "[data-timeline-label]",
+    ) as HTMLElement | null;
+
+    let timelineHandle: number | null = null;
+
+    function setTimelineLabel(text: string) {
+      if (playLabel) playLabel.textContent = text;
+    }
+
+    function setTimelineState(state: "idle" | "playing") {
+      if (playBtn) playBtn.dataset.state = state;
+    }
+
+    function loadPersistedProgress() {
+      try {
+        const raw = localStorage.getItem("ngg-spoiler-progress");
+        if (raw === null) return { ...SPOILER_PROGRESS_DEFAULT };
+        return parseSpoilerProgress(raw);
+      } catch {
+        return { ...SPOILER_PROGRESS_DEFAULT };
+      }
+    }
+
+    function startTimeline() {
+      if (timelineHandle !== null) return;
+      setTimelineState("playing");
+      let step = 0; // 0..26 = TV episodes, 27 = EoE beat, 28 = done
+      const tick = () => {
+        if (step <= 26) {
+          handle.applyProgress({
+            episode: step,
+            eoe: false,
+            rebuild: false,
+          });
+          setTimelineLabel(`ep ${step}/26`);
+          step += 1;
+          timelineHandle = window.setTimeout(tick, TIMELINE_STEP_MS);
+        } else if (step === 27) {
+          handle.applyProgress({
+            episode: 26,
+            eoe: true,
+            rebuild: false,
+          });
+          setTimelineLabel("+ EoE");
+          step += 1;
+          timelineHandle = window.setTimeout(tick, TIMELINE_EOE_MS);
+        } else {
+          // Natural completion --- leave the graph at ep 26 + EoE so the
+          // viewer can dwell on the fully-revealed scene. The user's
+          // persisted tier is unchanged; a reload returns them to it.
+          timelineHandle = null;
+          setTimelineState("idle");
+          setTimelineLabel("view show");
+        }
+      };
+      tick();
+    }
+
+    function abortTimeline() {
+      if (timelineHandle === null) return;
+      clearTimeout(timelineHandle);
+      timelineHandle = null;
+      handle.applyProgress(loadPersistedProgress());
+      setTimelineState("idle");
+      setTimelineLabel("view show");
+    }
+
+    playBtn?.addEventListener("click", () => {
+      if (timelineHandle !== null) {
+        abortTimeline();
+      } else {
+        startTimeline();
+      }
+    });
+
+    // If the user reopens the gate and reveals (or ejects) during
+    // playback, the gate broadcasts a new tier --- abort the timeline
+    // so the user's intentional choice wins. The renderer's own
+    // SPOILER_EVENT_NAME listener applies the gate progress on top of
+    // whatever step the timeline last set.
+    window.addEventListener(SPOILER_EVENT_NAME, () => {
+      if (timelineHandle !== null) {
+        clearTimeout(timelineHandle);
+        timelineHandle = null;
+        setTimelineState("idle");
+        setTimelineLabel("view show");
+      }
     });
 
     // Fade the scroll cue once the user has begun advancing through the

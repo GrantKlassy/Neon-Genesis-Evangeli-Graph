@@ -12,6 +12,9 @@
  *   - eva: EVA units (Unit-00 through Mass Production).
  *   - family: family/lineage roll-up nodes (Ikari, Akagi). Characters point
  *     at their family via member_of_family edges.
+ *   - audience: the viewer-as-Lilim node. Tabris names humanity itself the
+ *     18th Angel; the audience IS Lilim. Singular --- only one node of this
+ *     kind exists in the graph (id "audience_you"), gated to EoE.
  *
  * Genesis linkage: every node carries a single-entry `shortcodes` array
  * pointing to its canonical identity in src/genesis. "Shinji Ikari" /
@@ -52,7 +55,8 @@ export type NodeKind =
   | "location"
   | "concept"
   | "eva"
-  | "family";
+  | "family"
+  | "audience";
 
 export type RevealedAt =
   | { kind: "ep"; episode: number }
@@ -190,6 +194,19 @@ export interface FamilyNode extends NodeBase {
   name: string;
 }
 
+/**
+ * The viewer-as-Lilim node. There is exactly one node of this kind
+ * ("audience_you"), gated to End of Evangelion. Tabris speaks the line
+ * "Lilim" once and the show flinches; the audience is named as the 18th
+ * Angel. The node connects to angel_18_lilim with an identity_reveal
+ * edge so the graph reads "you ARE Lilim" once the late-show reveal lands.
+ */
+export interface AudienceNode extends NodeBase {
+  kind: "audience";
+  /** Display name --- always "You" in the canon node. */
+  name: string;
+}
+
 export type GraphNode =
   | CharacterNode
   | AngelNode
@@ -199,7 +216,8 @@ export type GraphNode =
   | LocationNode
   | ConceptNode
   | EvaNode
-  | FamilyNode;
+  | FamilyNode
+  | AudienceNode;
 
 export interface Edge {
   from: string;

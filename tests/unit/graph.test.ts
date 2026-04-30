@@ -13,6 +13,7 @@ import {
   colorFor,
   evangelion,
   isAngel,
+  isAudience,
   isCharacter,
   isConcept,
   isEva,
@@ -46,6 +47,8 @@ describe("evangelion graph", () => {
     expect(evangelion.nodes.filter(isConcept).length).toBeGreaterThanOrEqual(3);
     expect(evangelion.nodes.filter(isEva).length).toBeGreaterThanOrEqual(4);
     expect(evangelion.nodes.filter(isFamily)).toHaveLength(2);
+    // Singular YOU=Lilim audience node, gated to EoE.
+    expect(evangelion.nodes.filter(isAudience)).toHaveLength(1);
     // Sum of all kinds covers every node in the graph (no leftover kinds).
     expect(evangelion.nodes).toHaveLength(
       evangelion.nodes.filter(isCharacter).length +
@@ -56,7 +59,8 @@ describe("evangelion graph", () => {
         evangelion.nodes.filter(isLocation).length +
         evangelion.nodes.filter(isConcept).length +
         evangelion.nodes.filter(isEva).length +
-        evangelion.nodes.filter(isFamily).length,
+        evangelion.nodes.filter(isFamily).length +
+        evangelion.nodes.filter(isAudience).length,
     );
   });
 

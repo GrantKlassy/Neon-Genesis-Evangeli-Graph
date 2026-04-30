@@ -964,6 +964,27 @@ export const genesis = {
       "September 2000. The Katsuragi Expedition's contact experiment with Adam in Antarctica triggered a global cataclysm --- billions dead, sea levels reshaped, the seasons gone. The show's pre-cause for everything.",
     evageeksSlug: "Second_Impact",
   },
+
+  // ---- AUDIENCE ----
+  // The viewer-as-Lilim. Singular registry entry; backs the audience_you
+  // graph node added at EoE. No EvaWiki slug --- the wiki does not have
+  // an article about the reader. Pure white primary so the YOU node reads
+  // as "everything and nothing" against the OLED-black background, the
+  // canonical Tabris reading of humanity-as-Lilim.
+  //
+  // Aliases pointedly avoid the literal pronoun "you" --- the highlighter
+  // is case-insensitive and "you" appears constantly in body copy. We use
+  // multi-word phrases that the show's note text never uses verbatim.
+  you: {
+    shortcode: "you",
+    kind: "CONCEPTS",
+    displayName: "You",
+    aliases: ["the viewer", "audience-as-Lilim"],
+    primary: "#ffffff",
+    secondary: ["#f5f5f5", "#cccccc"],
+    notes:
+      "The viewer. Tabris names humanity itself the 18th Angel; the audience IS Lilim. Surfaces only after End of Evangelion.",
+  },
 } as const satisfies GenesisRegistry;
 
 export type GenesisShortcode = keyof typeof genesis;

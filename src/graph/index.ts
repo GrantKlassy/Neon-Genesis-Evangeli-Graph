@@ -1,5 +1,6 @@
 import type {
   AngelNode,
+  AudienceNode,
   CharacterNode,
   ConceptNode,
   Edge,
@@ -33,6 +34,7 @@ import {
 
 export type {
   AngelNode,
+  AudienceNode,
   CharacterNode,
   ConceptNode,
   Edge,
@@ -93,6 +95,25 @@ export function isFamily(node: GraphNode): node is FamilyNode {
   return node.kind === "family";
 }
 
+export function isAudience(node: GraphNode): node is AudienceNode {
+  return node.kind === "audience";
+}
+
+/**
+ * "Show complete" gate: the entire TV run plus End of Evangelion. Stricter
+ * than the EoE-visible gate (`progress.eoe || progress.episode >= 25`)
+ * because some surfaces only want to fire after the user has explicitly
+ * acknowledged finishing both the TV finale AND the film. Used by the
+ * dies-by-end-of-series readout badge: the badge is meant as a closing
+ * roll-call after every spoiler has fallen, not a live spoiler itself.
+ *
+ * Rebuild is intentionally not part of this --- it's a parallel timeline,
+ * not a continuation.
+ */
+export function isShowComplete(progress: SpoilerProgress): boolean {
+  return progress.eoe && progress.episode >= 26;
+}
+
 export function nodeIndex(graph: EvangelionGraph): Map<string, GraphNode> {
   return new Map(graph.nodes.map((n) => [n.id, n]));
 }
@@ -140,6 +161,14 @@ export const FAMILY_UNIFORM_COLOR = "#c8a4ff";
  * from the genesis registry so Unit-00 reads blue, Unit-01 purple, etc.
  */
 export const EVA_UNIFORM_COLOR = "#ffae00";
+
+/**
+ * Pure white --- the audience node. The viewer-as-Lilim is the absence at
+ * the centre of the graph; pure white reads as both "everything" and
+ * "nothing" against the OLED-black background, which is the canonical
+ * Tabris reading of humanity-as-Lilim.
+ */
+export const AUDIENCE_UNIFORM_COLOR = "#ffffff";
 
 /** Per-edge-kind line colors. */
 export const EDGE_COLORS: Record<EdgeKind, string> = {
@@ -450,11 +479,12 @@ const EDGE_ENDPOINT_SHAPES: Partial<
     //   Rei <-> Yui            (character <-> character)
     //   Yui <-> Unit-01        (character <-> eva, Ep. 20)
     //   Magi-X <-> Naoko       (magi    <-> character, Ep. 13)
-    // Both sides span character / angel / eva / magi --- the shape
-    // captures the dramatic "this entity is really a fragment of that
-    // entity" pattern across the canonical reveal beats.
-    from: ["character", "angel", "eva", "magi"],
-    to: ["character", "angel", "eva", "magi"],
+    //   You <-> Lilim          (audience <-> angel, EoE)
+    // Both sides span character / angel / eva / magi / audience --- the
+    // shape captures the dramatic "this entity is really a fragment of
+    // that entity" pattern across the canonical reveal beats.
+    from: ["character", "angel", "eva", "magi", "audience"],
+    to: ["character", "angel", "eva", "magi", "audience"],
     symmetric: true,
   },
   // generic intentionally absent --- no shape constraint, that's the
@@ -757,6 +787,7 @@ export function nodeRadius(node: GraphNode): number {
   if (isConcept(node)) return 0.5;
   if (isEva(node)) return 0.6; // EVA units sit beside their pilots
   if (isFamily(node)) return 0.65; // families are roll-up anchors
+  if (isAudience(node)) return 0.7; // YOU sits a touch larger than any character
   return 0.42; // magi
 }
 
@@ -777,6 +808,7 @@ export function colorFor(node: GraphNode): string {
   if (isLocation(node)) return LOCATION_UNIFORM_COLOR;
   if (isConcept(node)) return CONCEPT_UNIFORM_COLOR;
   if (isFamily(node)) return FAMILY_UNIFORM_COLOR;
+  if (isAudience(node)) return AUDIENCE_UNIFORM_COLOR;
   // character / eva: look up genesis by primary shortcode (the first entry).
   const primaryCode = node.shortcodes[0];
   if (!primaryCode) {

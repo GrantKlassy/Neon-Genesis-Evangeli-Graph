@@ -186,6 +186,20 @@
   .ngg-graph-root[data-state="error"] .ngg-fallback {
     display: flex;
   }
+
+  /*
+   * dies-by-end-of-series badge. Hidden until the SpoilerGate flips
+   * body[data-spoilers-show-death="true"] (only after TV ep 26 + EoE).
+   * Pure CSS gate so the SSR-rendered markup survives without client-side
+   * templating --- the no-WebGL fallback path still gets the badge once
+   * the show is complete.
+   */
+  .ngg-death-badge {
+    display: none;
+  }
+  body[data-spoilers-show-death="true"] .ngg-death-badge {
+    display: block;
+  }
   .ngg-graph-root[data-state="ready"] .ngg-fallback,
   .ngg-graph-root[data-state="init"] .ngg-fallback {
     display: none;

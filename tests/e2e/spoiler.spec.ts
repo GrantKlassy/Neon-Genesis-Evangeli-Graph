@@ -6,34 +6,12 @@ import {
   waitForGraphState,
 } from "./_helpers";
 
-test.describe("spoiler gate --- always shown", () => {
-  test("opens the gate on every page load", async ({ page }) => {
+test.describe("spoiler gate --- first-visit prompt", () => {
+  test("opens the gate on first page load", async ({ page }) => {
     await page.goto("/");
     const gate = page.getByTestId("ngg-spoiler-gate");
     await expect(gate).toBeVisible();
     await expect(gate).toHaveAttribute("data-state", "visible");
-  });
-
-  test("opens again on a second visit (no persistence)", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("ngg-spoiler-reveal").click();
-    await expect(page.getByTestId("ngg-spoiler-gate")).toBeHidden();
-
-    // Reload the same page --- the gate must come back even though the user
-    // just dismissed it.
-    await page.reload();
-    await expect(page.getByTestId("ngg-spoiler-gate")).toBeVisible();
-  });
-
-  test("does NOT write to localStorage on reveal", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("ngg-spoiler-reveal").click();
-    await expect(page.getByTestId("ngg-spoiler-gate")).toBeHidden();
-
-    const stored = await page.evaluate(() =>
-      localStorage.getItem("ngg-spoiler-progress"),
-    );
-    expect(stored).toBeNull();
   });
 
   test("revealing closes the gate", async ({ page }) => {
@@ -56,6 +34,118 @@ test.describe("spoiler gate --- always shown", () => {
     await page.getByTestId("ngg-spoiler-reveal").click();
     await expect(page.getByTestId("ngg-spoiler-gate")).toBeHidden();
     await page.getByTestId("ngg-spoiler-reopen").click();
+    await expect(page.getByTestId("ngg-spoiler-gate")).toBeVisible();
+  });
+});
+
+test.describe("spoiler gate --- persistence + force eject", () => {
+  test("revealing writes the progress to localStorage", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("12");
+    await page.getByTestId("ngg-spoiler-reveal").click();
+
+    const stored = await page.evaluate(() =>
+      localStorage.getItem("ngg-spoiler-progress"),
+    );
+    expect(stored).not.toBeNull();
+    const parsed = JSON.parse(stored!);
+    expect(parsed.episode).toBe(12);
+  });
+
+  test("returning visit skips the gate and broadcasts persisted tier", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("8");
+    await page.getByTestId("ngg-spoiler-reveal").click();
+
+    // Reload --- the gate should NOT prompt this time. The renderer should
+    // have received ep=8 via the bootstrap broadcast.
+    await page.reload();
+    const gate = page.getByTestId("ngg-spoiler-gate");
+    await expect(gate).toBeHidden();
+    const root = page.getByTestId("ngg-graph-root");
+    await expect(root).toHaveAttribute("data-spoiler-episode", "8");
+  });
+
+  test("force-eject row is hidden on first visit (nothing to eject)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const ejectRow = page.getByTestId("ngg-spoiler-eject-row");
+    await expect(ejectRow).toBeHidden();
+  });
+
+  test("force-eject row appears once a tier is persisted", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-reveal").click();
+    // Reopen so we can SEE the eject row inside the gate.
+    await page.getByTestId("ngg-spoiler-reopen").click();
+    const ejectRow = page.getByTestId("ngg-spoiler-eject-row");
+    await expect(ejectRow).toBeVisible();
+  });
+
+  test("dies-by-end-of-series badge stays hidden pre-show-complete", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    // Reveal at ep 25 + no EoE --- the EoE-equivalent visibility rule
+    // would unmask the tag (eoe-or-ep25), but the show-complete rule
+    // is stricter (eoe AND ep>=26), so the badge must NOT show.
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("25");
+    await page.getByTestId("ngg-spoiler-reveal").click();
+
+    const showDeath = await page.evaluate(
+      () => document.body.dataset.spoilersShowDeath,
+    );
+    expect(showDeath).toBe("false");
+    // Misato carries the death tag in the SSR character cards; her badge
+    // should be in markup but hidden by CSS.
+    const badge = page.getByTestId("ngg-death-badge-char_misato");
+    await expect(badge).toBeHidden();
+  });
+
+  test("dies-by-end-of-series badge shows when show is complete", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-preset-all").click();
+    await page.getByTestId("ngg-spoiler-eoe").check();
+    await page.getByTestId("ngg-spoiler-reveal").click();
+
+    const showDeath = await page.evaluate(
+      () => document.body.dataset.spoilersShowDeath,
+    );
+    expect(showDeath).toBe("true");
+    // The Readout DOM badges are below the graph pin --- scroll into
+    // view first so the visibility check is meaningful.
+    const badge = page.getByTestId("ngg-death-badge-char_misato");
+    await badge.scrollIntoViewIfNeeded();
+    await expect(badge).toBeVisible();
+    await expect(badge).toContainText(/dies by end of series/i);
+  });
+
+  test("force eject clears localStorage and re-prompts on reload", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("ngg-spoiler-ep-slider").fill("20");
+    await page.getByTestId("ngg-spoiler-reveal").click();
+
+    // Reopen, eject. The gate stays open and the slider snaps back to 0.
+    await page.getByTestId("ngg-spoiler-reopen").click();
+    await page.getByTestId("ngg-spoiler-eject").click();
+    const stored = await page.evaluate(() =>
+      localStorage.getItem("ngg-spoiler-progress"),
+    );
+    expect(stored).toBeNull();
+    const readout = page.getByTestId("ngg-spoiler-ep-readout");
+    await expect(readout).toHaveText("0");
+    // Eject row hides itself once localStorage is empty again.
+    await expect(page.getByTestId("ngg-spoiler-eject-row")).toBeHidden();
+
+    // And after a reload the user gets the first-visit prompt again.
+    await page.reload();
     await expect(page.getByTestId("ngg-spoiler-gate")).toBeVisible();
   });
 });

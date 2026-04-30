@@ -1,12 +1,14 @@
 ---
 /**
- * Spoiler gate overlay. The gate prompts on EVERY page load --- nothing is
- * persisted. The user's choice is broadcast to the renderer via a
- * CustomEvent on `window` and lives only for the current page session.
+ * Spoiler gate overlay. On first visit the gate prompts and the user picks
+ * their canon-knowledge tier; clicking REVEAL persists that tier to
+ * localStorage and the gate stays closed on subsequent visits. The user's
+ * choice is broadcast to the renderer via a CustomEvent on `window`.
  *
  * The renderer (src/scripts/graph3d.ts) initializes with everything masked
  * and only un-masks once the gate fires its first event. A small "spoilers"
- * pill in the corner re-opens the gate so the user can adjust at any time.
+ * pill in the corner re-opens the gate. A FORCE EJECT button inside the gate
+ * flushes the persisted state for users who want a fresh prompt.
  */
 ---
 
@@ -140,6 +142,36 @@
         Reveal graph
       </button>
     </div>
+
+    <!--
+      Force-eject row. Hidden by default; the bootstrap script un-hides it
+      whenever localStorage holds a persisted progress (i.e. only after the
+      user has actually saved a tier). Sits below the reveal row, separated
+      by a hairline rule, so the destructive action reads as a deliberate
+      override --- not a competing primary action.
+    -->
+    <div
+      id="ngg-spoiler-eject-row"
+      data-testid="ngg-spoiler-eject-row"
+      class="ngg-spoiler-eject-row mt-4 hidden border-t border-[color:var(--color-nerv-red)]/20 pt-3"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <p
+          class="ngg-bracket-red font-mono text-[0.55rem] tracking-[0.3em] text-[color:var(--color-text-dim)] uppercase"
+        >
+          sync log persisted
+        </p>
+        <button
+          type="button"
+          id="ngg-spoiler-eject"
+          data-testid="ngg-spoiler-eject"
+          class="border border-[color:var(--color-nerv-red)]/60 bg-transparent px-3 py-1 font-mono text-[0.65rem] tracking-[0.25em] text-[color:var(--color-nerv-red)] uppercase transition-colors hover:bg-[color:var(--color-nerv-red)]/15"
+          aria-label="Force eject (purge saved sync log)"
+        >
+          force eject
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -220,8 +252,51 @@
     SPOILER_EVENT_NAME,
     SPOILER_PROGRESS_DEFAULT,
     SPOILER_PROGRESS_FULL,
+    isShowComplete,
+    parseSpoilerProgress,
   } from "../graph";
   import type { SpoilerProgress } from "../graph";
+
+  /**
+   * Key under which the user's spoiler tier is persisted. The shape stored
+   * is the raw SpoilerProgress JSON; parseSpoilerProgress (graph/index.ts)
+   * tolerates corrupt values and falls back to default.
+   */
+  const STORAGE_KEY = "ngg-spoiler-progress";
+
+  function saveProgress(p: SpoilerProgress) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+    } catch {
+      /* localStorage unavailable; non-fatal --- session-only fallback. */
+    }
+  }
+
+  function clearProgress() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  function loadProgress(): SpoilerProgress | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw === null) return null;
+      return parseSpoilerProgress(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function hasPersistedProgress(): boolean {
+    try {
+      return localStorage.getItem(STORAGE_KEY) !== null;
+    } catch {
+      return false;
+    }
+  }
 
   type GateEls = {
     overlay: HTMLElement;
@@ -237,6 +312,8 @@
     resetBtn: HTMLButtonElement;
     presetAllBtn: HTMLButtonElement;
     reopenBtn: HTMLButtonElement;
+    ejectBtn: HTMLButtonElement;
+    ejectRow: HTMLElement;
   };
 
   function getEls(): GateEls | null {
@@ -277,6 +354,10 @@
     const reopenBtn = document.getElementById(
       "ngg-spoiler-reopen",
     ) as HTMLButtonElement | null;
+    const ejectBtn = document.getElementById(
+      "ngg-spoiler-eject",
+    ) as HTMLButtonElement | null;
+    const ejectRow = document.getElementById("ngg-spoiler-eject-row");
     if (
       !overlay ||
       !slider ||
@@ -290,7 +371,9 @@
       !revealBtn ||
       !resetBtn ||
       !presetAllBtn ||
-      !reopenBtn
+      !reopenBtn ||
+      !ejectBtn ||
+      !ejectRow
     ) {
       return null;
     }
@@ -308,7 +391,20 @@
       resetBtn,
       presetAllBtn,
       reopenBtn,
+      ejectBtn,
+      ejectRow,
     };
+  }
+
+  /**
+   * Show or hide the force-eject row based on whether the user has a
+   * persisted spoiler tier. The row is destructive --- it's only meaningful
+   * when there's something TO eject --- so we keep it hidden the rest of
+   * the time so first-time users aren't confused by a "purge" affordance
+   * with nothing behind it.
+   */
+  function syncEjectVisibility(els: GateEls) {
+    els.ejectRow.classList.toggle("hidden", !hasPersistedProgress());
   }
 
   function applyToControls(els: GateEls, p: SpoilerProgress) {
@@ -377,16 +473,39 @@
     window.dispatchEvent(
       new CustomEvent<SpoilerProgress>(SPOILER_EVENT_NAME, { detail: p }),
     );
+    // Body-level "show death" flag drives the dies-by-end-of-series badge
+    // in Readout.astro via pure CSS (see global.css). Set on every
+    // broadcast so live changes (gate reopen + reveal at a higher tier)
+    // flip the badge in real time.
+    document.body.dataset.spoilersShowDeath = isShowComplete(p)
+      ? "true"
+      : "false";
   }
 
   function bootstrap() {
     const els = getEls();
     if (!els) return;
 
-    // No persistence --- every page load starts at zero progress and the
-    // gate is shown. The user must reveal before the graph un-masks.
-    applyToControls(els, SPOILER_PROGRESS_DEFAULT);
-    showGate(els);
+    // First-visit vs returning-visit branch:
+    //
+    //   - localStorage holds a saved tier --> skip the gate, broadcast the
+    //     stored tier to the renderer, and pre-fill the form so the reopen
+    //     pill shows the user their own state when they re-enter.
+    //   - localStorage empty --> show the gate, start at default. The user
+    //     must reveal to advance.
+    //
+    // Eject visibility tracks the localStorage state on every gate open
+    // (here on bootstrap and again from the reopen handler).
+    const persisted = loadProgress();
+    if (persisted) {
+      applyToControls(els, persisted);
+      broadcast(persisted);
+      // Gate stays hidden; the user already revealed in a prior session.
+    } else {
+      applyToControls(els, SPOILER_PROGRESS_DEFAULT);
+      showGate(els);
+    }
+    syncEjectVisibility(els);
 
     els.slider.addEventListener("input", () => {
       els.epReadout.textContent = els.slider.value;
@@ -422,12 +541,25 @@
 
     els.revealBtn.addEventListener("click", () => {
       const p = readControls(els);
+      saveProgress(p);
       broadcast(p);
       hideGate(els);
+      syncEjectVisibility(els);
     });
 
     els.reopenBtn.addEventListener("click", () => {
       showGate(els);
+      syncEjectVisibility(els);
+    });
+
+    // Force eject: flush the persisted tier and reset the form to default.
+    // The gate STAYS open --- the user has just dropped the plug, so the
+    // next thing they should be doing is picking a fresh tier and revealing
+    // again. The button hides itself once localStorage is empty.
+    els.ejectBtn.addEventListener("click", () => {
+      clearProgress();
+      applyToControls(els, SPOILER_PROGRESS_DEFAULT);
+      syncEjectVisibility(els);
     });
   }
 

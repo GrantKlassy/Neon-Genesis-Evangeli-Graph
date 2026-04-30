@@ -50,16 +50,16 @@ test.describe("WebGL launches", () => {
     const handle = await getGraphHandle(page);
     // 19 chars + 18 angels + 3 magi + 7 orgs (NERV/SEELE/WILLE/GEHIRN/
     // JSSDF/Marduk/JapanGov) + 6 locations + 15 concepts + 2 families
-    // + 6 evas + 2 events = 78.
-    expect(handle!.nodeCount).toBe(78);
-    // 3 magi-link + 17 angel-sequence + 7 identity-reveal (Toji-Bardiel,
-    // Rei-Yui, Kaworu-Tabris, Yui-Unit01, 3x Magi-Naoko) + 4 pilots
-    // + 5 member_of_family + 15 member_of_org + 7 located_in + 5 caused
-    // + 30 generic (10 EVA mesh + 20 supporting) + 17 eliminated
-    // = 110.
-    expect(handle!.edgeCount).toBe(110);
+    // + 6 evas + 2 events + 1 audience (YOU=Lilim) = 79.
+    expect(handle!.nodeCount).toBe(79);
+    // 3 magi-link + 17 angel-sequence + 8 identity-reveal (Toji-Bardiel,
+    // Rei-Yui, Kaworu-Tabris, Yui-Unit01, 3x Magi-Naoko, You-Lilim)
+    // + 4 pilots + 5 member_of_family + 15 member_of_org + 7 located_in
+    // + 5 caused + 30 generic (10 EVA mesh + 20 supporting) + 17 eliminated
+    // = 111.
+    expect(handle!.edgeCount).toBe(111);
     const root = rootEl(page);
-    await expect(root).toHaveAttribute("data-node-count", "78");
+    await expect(root).toHaveAttribute("data-node-count", "79");
   });
 
   test("canvas shows non-background pixels (something is drawn)", async ({

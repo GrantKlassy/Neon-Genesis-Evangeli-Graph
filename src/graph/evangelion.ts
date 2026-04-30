@@ -1,5 +1,6 @@
 import type {
   AngelNode,
+  AudienceNode,
   CharacterNode,
   ConceptNode,
   Edge,
@@ -12,6 +13,11 @@ import type {
   OrganizationNode,
 } from "./types";
 import { EDGE_WEIGHT } from "./layoutTuning";
+import {
+  rebuildCharacters,
+  rebuildEdges,
+  rebuildOrganizations,
+} from "./rebuild";
 
 /**
  * Seed for the Neon Genesis Evangeli-Graph. Top-level kinds:
@@ -132,18 +138,8 @@ const characters: CharacterNode[] = [
     notes:
       "NERV Chief Scientist. Lead engineer on the Evangelions and operator of the Magi system. Lab coat, blonde hair, ever-present cigarette. The only person on the bridge who can tell the Commander a number is wrong --- and the one who has to live with what the numbers say.",
   },
-  {
-    id: "char_mari",
-    kind: "character",
-    displayName: "Mari Makinami Illustrious",
-    shortcodes: ["mari"],
-    role: "Pilot (Rebuild)",
-    revealedAt: { kind: "rebuild" },
-    revealedAtSource:
-      "https://wiki.evageeks.org/Mari_Makinami_Illustrious --- Rebuild-only pilot, no TV-canon presence",
-    notes:
-      "Rebuild-only pilot, no TV-canon presence. Magenta plug suit, twin braids, round glasses. Excitable, opportunistic, hums and sings inside the entry plug. Slips into Unit-02 (and later other units) as casually as borrowing a coat --- the first cast member who seems to actually enjoy being inside a giant robot.",
-  },
+  // Mari Makinami lives in src/graph/rebuild.ts --- Rebuild-only pilots are
+  // appended to the character list below via rebuildCharacters.
   {
     id: "char_toji",
     kind: "character",
@@ -606,18 +602,8 @@ const organizations: OrganizationNode[] = [
     notes:
       "Numbered red-monolith committee operating above NERV. The hand behind the Human Instrumentality Project.",
   },
-  {
-    id: "org_wille",
-    kind: "organization",
-    name: "WILLE",
-    displayName: "WILLE",
-    shortcodes: ["wille"],
-    revealedAt: { kind: "rebuild" },
-    revealedAtSource:
-      "https://wiki.evageeks.org/Wille --- WILLE is a Rebuild-only organization (Evangelion 3.0 onwards)",
-    notes:
-      "Anti-NERV organization formed in the Rebuild timeline. Operates the AAA Wunder under Misato.",
-  },
+  // WILLE lives in src/graph/rebuild.ts --- Rebuild-only organizations are
+  // appended to this list below via rebuildOrganizations.
   {
     id: "org_gehirn",
     kind: "organization",
@@ -960,6 +946,29 @@ const events: EventNode[] = [
   },
 ];
 
+/**
+ * Audience nodes. Singular --- the viewer-as-Lilim. Tabris names humanity
+ * itself the 18th Angel in Ep. 24, and End of Evangelion makes the reading
+ * literal: the audience IS Lilim. The node is gated to EoE (mirroring
+ * angel_18_lilim's gate) and connects to Lilim with an identity_reveal
+ * edge of the same gate. Pre-EoE the user sees nothing; post-EoE a pure
+ * white node sits beside Lilim with the line "you ARE Lilim" implied.
+ */
+const audience: AudienceNode[] = [
+  {
+    id: "audience_you",
+    kind: "audience",
+    name: "You",
+    displayName: "You",
+    shortcodes: ["you"],
+    revealedAt: { kind: "eoe" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Lilim --- Tabris names humanity itself the 18th Angel in Ep. 24; End of Evangelion makes the reading literal (the audience IS Lilim).",
+    notes:
+      "The eighteenth angel. Tabris speaks the word once and the show flinches. Every face in the audience is one. You are watching this. You are one.",
+  },
+];
+
 const families: FamilyNode[] = [
   {
     id: "family_ikari",
@@ -1201,6 +1210,24 @@ function buildEdges(): Edge[] {
       notes: `${f.magi.replace(/^magi_/, "").replace(/^./, (c) => c.toUpperCase())} carries Naoko's ${f.aspect} aspect (Ep. 13).`,
     });
   }
+
+  // The viewer is Lilim. Tabris speaks the line in Ep. 24 ("Lilim --- so
+  // that's what you call yourselves"); End of Evangelion makes the reading
+  // literal. Edge gated to EoE so the relationship lands at the same time
+  // both endpoints become visible. The endpoint masking layer hides the
+  // line until then anyway, but the explicit gate keeps the citation
+  // attached for the test suite + future audit trail.
+  out.push({
+    from: "audience_you",
+    to: "angel_18_lilim",
+    kind: "identity_reveal",
+    weight: idWeight,
+    revealedAt: { kind: "eoe" },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Lilim --- the 'humanity is the Eighteenth Angel' reading lands in End of Evangelion",
+    shortcodes: ["you", "lilim"],
+    notes: "Tabris's reading: humanity is the 18th angel. The viewer IS Lilim.",
+  });
 
   // Pilots --- character -> EVA unit. Each edge inherits the unit's gate
   // unless the pilot reveal is itself a spoiler (Toji as the Fourth Child).
@@ -1754,7 +1781,8 @@ function buildEdges(): Edge[] {
     { from: "concept_lance_of_longinus", to: "loc_terminal_dogma", shortcodes: ["lanceOfLonginus", "terminalDogma"], notes: "The Lance rests against Lilith in Terminal Dogma.", revealedAt: { kind: "ep", episode: 23 }, revealedAtSource: "Inherits Terminal Dogma's Ep. 23 first-labeled gate; Lance shown alongside Lilith" },
     { from: "org_gehirn", to: "org_nerv", shortcodes: ["gehirn", "nerv"], notes: "GEHIRN was the body that became NERV.", revealedAt: { kind: "ep", episode: 21 }, revealedAtSource: "Inherits GEHIRN's Ep. 21 gate" },
     { from: "org_seele", to: "org_nerv", shortcodes: ["seele", "nerv"], notes: "SEELE is NERV's parent committee.", revealedAt: { kind: "ep", episode: 14 }, revealedAtSource: "Inherits SEELE's Ep. 14 gate" },
-    { from: "org_wille", to: "org_nerv", shortcodes: ["wille", "nerv"], notes: "WILLE breaks from NERV in the Rebuild timeline." },
+    // The WILLE -> NERV edge lives in src/graph/rebuild.ts. Rebuild-only
+    // edges are appended below via rebuildEdges.
     { from: "org_jssdf", to: "loc_nerv_hq", shortcodes: ["jssdf", "nervHq"], notes: "JSSDF assault on NERV HQ kicks off End of Evangelion.", revealedAt: { kind: "eoe" }, revealedAtSource: "End of Evangelion --- JSSDF assault" },
     { from: "org_marduk", to: "org_nerv", shortcodes: ["marduk", "nerv"], notes: "Marduk Institute --- NERV's Children-selection front. The 108-names paper-tiger reveal lands in Ep. 15 via Kaji's investigation.", revealedAt: { kind: "ep", episode: 15 }, revealedAtSource: "https://wiki.evageeks.org/Marduk_Institute --- 'Ryoji Kaji's investigations in Episode 15' reveal it's a dummy organization" },
     { from: "concept_dummy_plug", to: "char_rei", shortcodes: ["dummyPlug", "rei"], notes: "The Dummy Plug runs on Rei-derived psyche copies.", revealedAt: { kind: "ep", episode: 20 }, revealedAtSource: "https://wiki.evageeks.org/Dummy_Plug --- the Rei-derived personality data is revealed mid-show; Ep. 20 marks the reveal of Yui-in-Unit-01 / Rei lineage" },
@@ -1776,6 +1804,12 @@ function buildEdges(): Edge[] {
     });
   }
 
+  // Rebuild-only edges. These live in their own module so the user can
+  // grow Rebuild content over time without touching this file. Endpoint
+  // masking + the per-edge rebuild gate keep them invisible until the
+  // user explicitly checks the Rebuild box in the spoiler gate.
+  out.push(...rebuildEdges);
+
   return out;
 }
 
@@ -1785,14 +1819,17 @@ export const evangelion: EvangelionGraph = {
   source: "Neon Genesis Evangelion (TV) + End of Evangelion",
   nodes: [
     ...characters,
+    ...rebuildCharacters,
     ...angels,
     ...magi,
     ...organizations,
+    ...rebuildOrganizations,
     ...locations,
     ...concepts,
     ...families,
     ...evas,
     ...events,
+    ...audience,
   ],
   edges: buildEdges(),
 };

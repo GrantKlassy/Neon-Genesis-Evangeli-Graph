@@ -28,6 +28,15 @@ interface CharacterCard {
   color: string;
   shortcodes: string[];
   evageeksUrl: string | null;
+  /**
+   * Whether this character carries the dies-by-end-of-series tag. Markup
+   * for the badge is only emitted when this is true; CSS in
+   * src/styles/global.css then keeps the badge hidden until the user
+   * has revealed everything (body[data-spoilers-show-death="true"]).
+   * The flag itself is a static fact derived at build time from the
+   * graph data; the *visibility* is the runtime spoiler-tier check.
+   */
+  diesByEndOfSeries: boolean;
 }
 
 interface EvaCard {
@@ -68,6 +77,8 @@ const characters: CharacterCard[] = evangelion.nodes
     color: colorOf(c.shortcodes[0] ?? ""),
     shortcodes: c.shortcodes,
     evageeksUrl: evageeksUrlForNode(c.shortcodes),
+    diesByEndOfSeries:
+      c.tags?.some((t) => t.id === "dies-by-end-of-series") ?? false,
   }));
 
 const angels = evangelion.nodes
@@ -180,6 +191,25 @@ const events = evangelion.nodes.filter(isEvent).map((e) => ({
                   >
                     evageeks &rarr;
                   </a>
+                )
+              }
+              {
+                /*
+                 * Dies-by-end-of-series badge. Only emitted for characters
+                 * who carry the tag; visibility is gated globally by a
+                 * body-level data attribute (set by SpoilerGate.astro
+                 * once the user has revealed TV ep 26 + EoE). The static
+                 * SSR includes the markup so the no-WebGL fallback path
+                 * still surfaces the death roll-call --- pure CSS, no
+                 * client-side templating.
+                 */
+                c.diesByEndOfSeries && (
+                  <p
+                    class="ngg-death-badge mt-1 font-mono text-[0.6rem] font-bold tracking-[0.25em] text-[color:var(--color-nerv-red)] uppercase"
+                    data-testid={`ngg-death-badge-${c.id}`}
+                  >
+                    dies by end of series
+                  </p>
                 )
               }
             </div>

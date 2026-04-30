@@ -19,6 +19,7 @@ import {
   adjacency,
   colorFor,
   evangelion,
+  parseSpoilerProgress,
   isAngel,
   isCharacter,
   isConcept,
@@ -176,19 +177,6 @@ function makeLabelTexture(
   return tex;
 }
 
-function detectWebGL(): { ok: boolean; version: 1 | 2 | null } {
-  try {
-    const c = document.createElement("canvas");
-    if (c.getContext("webgl2")) return { ok: true, version: 2 };
-    if (c.getContext("webgl") || c.getContext("experimental-webgl")) {
-      return { ok: true, version: 1 };
-    }
-  } catch {
-    // fallthrough
-  }
-  return { ok: false, version: null };
-}
-
 export interface InitOptions {
   /** Element receiving state via data-state, hosting the canvas. */
   root: HTMLElement;
@@ -226,21 +214,24 @@ export function initGraph3D(options: InitOptions): GraphHandle {
 
   validateGraph(evangelion);
 
-  const webgl = detectWebGL();
-  if (!webgl.ok) {
-    handle.state = "no-webgl";
-    root.dataset.state = "no-webgl";
-    root.dataset.webglVersion = "0";
-    return handle;
-  }
-  handle.webglVersion = webgl.version;
-  root.dataset.webglVersion = String(webgl.version);
-
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
   root.dataset.reducedMotion = reducedMotion ? "true" : "false";
 
+  // Three.js's WebGLRenderer constructor probes the canvas for a context and
+  // throws on failure --- we catch that and surface the no-webgl fallback.
+  // We deliberately do not run a separate pre-flight detection: a probe
+  // canvas allocates its own WebGL context that mobile browsers (iOS Safari
+  // especially) don't reclaim promptly, and the live-context cap is often
+  // 4-8. The probe was tipping real phones into "context limit reached"
+  // when the actual renderer tried to construct.
+  //
+  // preserveDrawingBuffer is gated to automation only --- the
+  // canvas-pixel-readback test in tests/e2e/_helpers.ts needs it to read
+  // back rendered pixels via drawImage, but on iOS Safari the same flag
+  // makes context creation flaky under memory pressure. navigator.webdriver
+  // is true under Playwright / CDP automation and false for real users.
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({
@@ -248,16 +239,17 @@ export function initGraph3D(options: InitOptions): GraphHandle {
       antialias: window.devicePixelRatio < 2,
       alpha: false,
       powerPreference: "low-power",
-      // Keep the framebuffer readable after present() so screenshot/pixel-readback
-      // tests can verify rendering. Modest perf cost on integrated GPUs.
-      preserveDrawingBuffer: true,
+      preserveDrawingBuffer: navigator.webdriver === true,
     });
   } catch (err) {
     console.error("[ngg] WebGL renderer init failed:", err);
-    handle.state = "error";
-    root.dataset.state = "error";
+    handle.state = "no-webgl";
+    root.dataset.state = "no-webgl";
+    root.dataset.webglVersion = "0";
     return handle;
   }
+  handle.webglVersion = renderer.capabilities.isWebGL2 ? 2 : 1;
+  root.dataset.webglVersion = String(handle.webglVersion);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(BG_COLOR, 1);
 
@@ -944,11 +936,22 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   };
   raf = requestAnimationFrame(tick);
 
-  // Apply initial spoiler progress before flipping to ready, so the first
-  // frame the user sees is fully masked. The SpoilerGate overlay sits on
-  // top and the user must reveal before they see anything --- the gate's
-  // first broadcast then drops the mask to whatever they picked.
-  applyProgress({ ...SPOILER_PROGRESS_DEFAULT });
+  // Initial spoiler progress: prefer the localStorage tier (set by a prior
+  // reveal in SpoilerGate.astro) if present, otherwise default to fully
+  // masked. The renderer is a co-equal reader of the same storage as the
+  // gate --- this avoids a script-order race where the gate broadcasts
+  // before the renderer has registered its listener. On a returning visit
+  // the gate keeps itself closed; on a first visit the gate sits on top
+  // and the user must reveal before this default is overridden.
+  const STORAGE_KEY = "ngg-spoiler-progress";
+  let initialProgress: SpoilerProgress = { ...SPOILER_PROGRESS_DEFAULT };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw !== null) initialProgress = parseSpoilerProgress(raw);
+  } catch {
+    /* localStorage unavailable; fall back to default. */
+  }
+  applyProgress(initialProgress);
 
   // Listen for the gate's change event (fired by SpoilerGate.astro).
   const onSpoilerEvent = (e: Event) => {
