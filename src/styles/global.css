@@ -32,6 +32,15 @@
     background-color: var(--color-bg);
     color: var(--color-text);
     font-size: 100%;
+    /*
+     * Scroll-snap docks the page at two natural rest points: the start of
+     * the graph pin section (graph view fully in the viewport) and the
+     * start of the readout section. Proximity (not mandatory) means the
+     * browser only snaps when the user is already close --- never traps
+     * mid-scroll. Combined with the bumped pin runway below, the user
+     * has to put real effort into scrolling past the graph.
+     */
+    scroll-snap-type: y proximity;
   }
 
   body {
@@ -68,6 +77,11 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+    html {
+      /* No scroll-snap when motion is reduced --- the lock effect requires
+       * the same scroll-driven theatre we're disabling. */
+      scroll-snap-type: none;
     }
   }
 }
@@ -194,18 +208,39 @@
    * fills the viewport. As the user scrolls, the WebGL stage stays pinned to
    * the top of the viewport for the runway height (outer height minus stage
    * height), then releases as the next section scrolls into view.
+   *
+   * The runway is intentionally generous --- 100vh stage plus 300vh of pin
+   * --- so a casual scroll cannot accidentally cut off the top of the
+   * graph. Combined with scroll-snap-align below, the section docks at the
+   * start whenever the user is near it; escaping into the readout requires
+   * deliberate effort.
    */
   .ngg-pin {
-    /* 100vh stage + 100vh runway. Anything taller feels like a hijack. */
-    min-height: 200vh;
+    min-height: 400vh;
+    scroll-snap-align: start;
+  }
+  /*
+   * The readout section docks at the top of the viewport once the user has
+   * worked their way through the runway. Together with the .ngg-pin snap
+   * point, the page has two rest positions: graph and readout. Proximity
+   * snapping (set on html) keeps this from feeling forced.
+   */
+  [data-testid="ngg-readout"] {
+    scroll-snap-align: start;
   }
   @media (prefers-reduced-motion: reduce) {
     /*
      * Honor the user's preference: collapse the runway so the page reads as
-     * a conventional, non-pinned layout without scroll-driven theatre.
+     * a conventional, non-pinned layout without scroll-driven theatre. Snap
+     * is also disabled --- snapping is part of the lock-the-graph effect,
+     * not an accessibility-neutral default.
      */
     .ngg-pin {
       min-height: 100vh;
+      scroll-snap-align: none;
+    }
+    [data-testid="ngg-readout"] {
+      scroll-snap-align: none;
     }
   }
 }

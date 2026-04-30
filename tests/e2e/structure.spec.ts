@@ -114,7 +114,7 @@ test.describe("graph structure visible in the DOM", () => {
     }
   });
 
-  test("organizations section now includes SEELE, WILLE, GEHIRN, JSSDF, Marduk", async ({
+  test("organizations section includes SEELE, WILLE, GEHIRN, JSSDF, Marduk, Japanese Government", async ({
     page,
   }) => {
     await page.goto("/");
@@ -126,6 +126,7 @@ test.describe("graph structure visible in the DOM", () => {
       "org_gehirn",
       "org_jssdf",
       "org_marduk",
+      "org_japan_gov",
     ]) {
       await expect(
         section.locator(`[data-testid="organization-${id}"]`),

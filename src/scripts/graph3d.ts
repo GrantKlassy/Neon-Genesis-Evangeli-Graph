@@ -101,6 +101,22 @@ interface EdgeLineData {
   material: THREE.LineBasicMaterial;
   baseOpacity: number;
   masked: boolean;
+  /**
+   * The opacity the mask + highlight pipeline most recently INTENDED.
+   * The render-loop reads this and writes it through to material.opacity,
+   * adding the pulse animation for eliminated edges on top. This indirection
+   * lets the pulse layer cleanly without fighting whatever applyEdgeMask /
+   * applyHighlight last set.
+   */
+  targetOpacity: number;
+  /**
+   * Eliminated-edge "kill chain" effect: additive blending plus a slow
+   * sine pulse on opacity. The bond between an EVA and an angel it
+   * destroyed is the most aggressive tie on the graph; this flag enables
+   * the per-frame pulse so the line literally throbs against the dark
+   * background while every other edge sits flat.
+   */
+  isKillChain: boolean;
 }
 
 const BG_COLOR = new THREE.Color("#050507");
@@ -404,19 +420,68 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     nodeMeshById.set(node.id, data);
   }
 
+  // Per-edge-kind base opacity. THREE.LineBasicMaterial.linewidth is
+  // ignored on most platforms (stuck at 1px), so opacity is the only
+  // dimension we have for visual weight. The ranking is canonical-meaning,
+  // not edge count: a connection formed on elimination outranks one
+  // formed on family --- the EVA <-> angel-it-killed bond is the single
+  // most aggressive tie on the graph.
+  //
+  //   magi_link        0.95  the 3-in-1 triangle (always-on highlight)
+  //   eliminated       0.85  the kill chain --- top ungated bond class
+  //   identity_reveal  0.80  late-show 'X is really Y' plot beats
+  //   pilots           0.75  pilot <-> EVA continuous identity
+  //   caused           0.60  cause -> event arcs (Adam -> Second Impact)
+  //   angel_sequence   0.55  canonical ordering chain
+  //   member_of_family 0.45  lineage roll-up --- below eliminated by
+  //                          design (per-user thesis)
+  //   member_of_org    0.40  org-membership chrome
+  //   located_in       0.40  spatial nesting chrome
+  //   generic          0.32  background structural ties
+  const EDGE_OPACITY: Record<typeof evangelion.edges[number]["kind"], number> = {
+    magi_link: 0.95,
+    eliminated: 0.85,
+    identity_reveal: 0.8,
+    pilots: 0.75,
+    caused: 0.6,
+    angel_sequence: 0.55,
+    member_of_family: 0.45,
+    member_of_org: 0.4,
+    located_in: 0.4,
+    generic: 0.32,
+  };
+
   // Build edges.
   const edgeLines: EdgeLineData[] = [];
   const edgesByNode = new Map<string, EdgeLineData[]>();
+  // Additional "halo" lines per eliminated edge, drawn slightly fatter at
+  // lower opacity with additive blending --- gives the kill-chain edge
+  // a luminous body the eye reads as a thicker stroke even though
+  // THREE.LineBasicMaterial.linewidth is stuck at 1px on every desktop GPU.
+  // Halos pulse together with their parent line; mask / highlight state
+  // is mirrored from the parent.
+  interface KillChainHalo {
+    parent: EdgeLineData;
+    material: THREE.LineBasicMaterial;
+  }
+  const killChainHalos: KillChainHalo[] = [];
   for (const edge of evangelion.edges) {
     const a = layout.positions.get(edge.from);
     const b = layout.positions.get(edge.to);
     if (!a || !b) continue;
     const colorHex = EDGE_COLORS[edge.kind];
-    const opacity = edge.kind === "magi_link" ? 0.95 : 0.5;
+    const opacity = EDGE_OPACITY[edge.kind];
+    const isKillChain = edge.kind === "eliminated";
     const mat = new THREE.LineBasicMaterial({
       color: new THREE.Color(colorHex),
       transparent: true,
       opacity,
+      // Additive blending makes the kill-chain edge glow against the
+      // OLED-black background --- the EVA <-> angel bond literally
+      // brightens what's behind it, the way a NERV alert lights up
+      // the bridge.
+      blending: isKillChain ? THREE.AdditiveBlending : THREE.NormalBlending,
+      depthWrite: isKillChain ? false : true,
     });
     materials.push(mat);
     const geo = new THREE.BufferGeometry().setFromPoints([
@@ -426,6 +491,12 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     geometries.push(geo);
     const line = new THREE.Line(geo, mat);
     line.userData = { edge };
+    if (isKillChain) {
+      // Render the kill chain ON TOP of every other edge --- the EVA's
+      // strike against the angel should read first, before the
+      // structural blue family lines or the gray generic chrome.
+      line.renderOrder = 5;
+    }
     sceneGroup.add(line);
     const data: EdgeLineData = {
       edge,
@@ -434,12 +505,39 @@ export function initGraph3D(options: InitOptions): GraphHandle {
       material: mat,
       baseOpacity: opacity,
       masked: false,
+      targetOpacity: opacity,
+      isKillChain,
     };
     edgeLines.push(data);
     for (const id of [edge.from, edge.to]) {
       const list = edgesByNode.get(id) ?? [];
       list.push(data);
       edgesByNode.set(id, list);
+    }
+
+    // For eliminated edges: stack two more lines on the same geometry,
+    // each with additive blending and lower opacity. Together they
+    // bloom into a fuzzy red bar of light --- the EVA's overcoming of
+    // the angel made literal in pixel space. Halos share geometry with
+    // the parent so they stay in lockstep through every mask, highlight,
+    // and pulse update.
+    if (isKillChain) {
+      const haloOpacities = [0.45, 0.22];
+      for (const haloOpacity of haloOpacities) {
+        const haloMat = new THREE.LineBasicMaterial({
+          color: new THREE.Color(colorHex),
+          transparent: true,
+          opacity: haloOpacity,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        materials.push(haloMat);
+        const haloLine = new THREE.Line(geo, haloMat);
+        haloLine.renderOrder = 4;
+        haloLine.userData = { killChainHalo: true };
+        sceneGroup.add(haloLine);
+        killChainHalos.push({ parent: data, material: haloMat });
+      }
     }
   }
 
@@ -485,7 +583,14 @@ export function initGraph3D(options: InitOptions): GraphHandle {
 
   function applyEdgeMask(data: EdgeLineData, masked: boolean) {
     data.masked = masked;
-    data.material.opacity = masked ? 0 : data.baseOpacity;
+    data.targetOpacity = masked ? 0 : data.baseOpacity;
+    // Non-kill-chain edges get the value flushed straight through ---
+    // they don't pulse, so the tick loop has no work to do for them.
+    // Kill-chain edges defer to the tick loop, which mixes targetOpacity
+    // with the per-frame sine pulse.
+    if (!data.isKillChain) {
+      data.material.opacity = data.targetOpacity;
+    }
   }
 
   function applyProgress(progress: SpoilerProgress) {
@@ -521,12 +626,19 @@ export function initGraph3D(options: InitOptions): GraphHandle {
    * Masked edges always stay at opacity 0 regardless of highlight.
    */
   function applyHighlight(highlightId: string | null) {
+    // Helper: write through to material if not a pulsing kill chain;
+    // kill-chain edges only update their target and let the tick loop
+    // re-render with the active pulse on top.
+    const setOpacity = (e: EdgeLineData, v: number) => {
+      e.targetOpacity = v;
+      if (!e.isKillChain) e.material.opacity = v;
+    };
     if (!highlightId) {
       for (const e of edgeLines) {
         if (e.masked) {
-          e.material.opacity = 0;
+          setOpacity(e, 0);
         } else {
-          e.material.opacity = e.baseOpacity;
+          setOpacity(e, e.baseOpacity);
         }
       }
       root.dataset.highlightedNode = "";
@@ -536,13 +648,13 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     const touchedSet = new Set(touched);
     for (const e of edgeLines) {
       if (e.masked) {
-        e.material.opacity = 0;
+        setOpacity(e, 0);
         continue;
       }
       if (touchedSet.has(e)) {
-        e.material.opacity = Math.min(1, e.baseOpacity * 2.5 + 0.05);
+        setOpacity(e, Math.min(1, e.baseOpacity * 2.5 + 0.05));
       } else {
-        e.material.opacity = Math.max(0.04, e.baseOpacity * 0.18);
+        setOpacity(e, Math.max(0.04, e.baseOpacity * 0.18));
       }
     }
     root.dataset.highlightedNode = highlightId;
@@ -735,10 +847,15 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   // ---- Animation loop ----
   let raf = 0;
   let lastTs = performance.now();
-  const autoRotateSpeed = reducedMotion ? 0 : 0.13;
-  handle.autoRotate = !reducedMotion;
+  // Auto-rotation is the graph's resting state --- the slow drift is a
+  // feature, not chrome. We don't tie it to prefers-reduced-motion: the
+  // pause/play toggle is the user-facing way to stop it. (The kill-chain
+  // pulse below still respects reducedMotion, since that one is flashier
+  // and primarily decorative.)
+  const autoRotateSpeed = 0.13;
+  handle.autoRotate = true;
   handle.setAutoRotate = (on: boolean) => {
-    handle.autoRotate = on && !reducedMotion;
+    handle.autoRotate = on;
     root.dataset.autoRotate = handle.autoRotate ? "on" : "off";
   };
   root.dataset.autoRotate = handle.autoRotate ? "on" : "off";
@@ -774,6 +891,51 @@ export function initGraph3D(options: InitOptions): GraphHandle {
       const cur = m.mesh.scale.x;
       const next = cur + (m.baseScale - cur) * Math.min(1, dt * 12);
       m.mesh.scale.setScalar(next);
+    }
+
+    // Kill-chain pulse: every eliminated edge throbs at ~0.5 Hz so the
+    // EVA's strike against the angel reads as a live, ongoing assertion
+    // instead of a static line. Two-thirds bias toward the upper half of
+    // the wave keeps the line visible at its dimmest moment; the
+    // remaining third sweeps the line up to and slightly past full
+    // opacity for the bloom. prefers-reduced-motion freezes the wave at
+    // its mean so the visual still pops without animating.
+    //
+    //   pulseScale = reducedMotion ? 1.0 : 0.78 + 0.32 * sin(...)
+    //   range:       reducedMotion ? 1.0  : [0.46, 1.10]
+    //
+    // The halo lines (additive blended, fatter perceived stroke) ride
+    // the same scalar at proportional opacity so the bloom breathes
+    // around the spine line.
+    const pulsePhase = reducedMotion
+      ? 1.0
+      : 0.78 + 0.32 * Math.sin(ts * 0.0031);
+    for (const e of edgeLines) {
+      if (!e.isKillChain) continue;
+      // Multiply the pulse against whatever the mask + highlight
+      // pipeline last requested, so a masked kill-chain stays at 0
+      // and a dimmed-by-highlight kill-chain still pulses (just at
+      // a lower amplitude relative to its dimmed target).
+      e.material.opacity = Math.min(1, e.targetOpacity * pulsePhase);
+    }
+    for (const h of killChainHalos) {
+      // Halo opacity is independent of the spine target --- it carries
+      // its own creation-time opacity (set when the halo material was
+      // built). When the parent is masked we drop the halo to zero so
+      // it doesn't bloom over a hidden edge; otherwise the halo rides
+      // its own base * pulse.
+      if (h.parent.masked) {
+        h.material.opacity = 0;
+        continue;
+      }
+      // Halo's "base" opacity is whatever it was constructed with;
+      // multiplying by the pulse keeps the bloom in lockstep with the
+      // spine line. We capture the base on first read since
+      // material.opacity gets overwritten each frame.
+      const baseHalo = (h.material as unknown as { __baseHalo?: number })
+        .__baseHalo ?? h.material.opacity;
+      (h.material as unknown as { __baseHalo?: number }).__baseHalo = baseHalo;
+      h.material.opacity = Math.min(1, baseHalo * pulsePhase);
     }
 
     renderer.render(scene, camera);

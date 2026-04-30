@@ -81,4 +81,41 @@ test.describe("interaction --- selecting a node updates the readout", () => {
     expect(title.length).toBeGreaterThan(0);
     expect(title).not.toBe("---");
   });
+
+  test("selecting Shinji surfaces an evageeks link in the WebGL panel", async ({
+    page,
+  }) => {
+    // Drive selection programmatically to a node we know has an EvaWiki
+    // slug. The DOM readout has its own per-card link; this test covers the
+    // separate "view source" link inside the floating WebGL panel.
+    await page.evaluate(() => {
+      type H = { selectNodeById: (id: string) => void };
+      const h = (window as unknown as { __nggGraph?: H }).__nggGraph;
+      h?.selectNodeById("char_shinji");
+    });
+
+    const link = page.locator('[data-testid="ngg-selected-evageeks"]');
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute(
+      "href",
+      "https://wiki.evageeks.org/Shinji_Ikari",
+    );
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute("rel", /noopener/);
+  });
+
+  test("selecting an unindexed concept (Trauma) hides the WebGL evageeks link", async ({
+    page,
+  }) => {
+    // Trauma has no evageeksSlug in the registry --- the link must stay
+    // hidden so we don't ship dead anchors.
+    await page.evaluate(() => {
+      type H = { selectNodeById: (id: string) => void };
+      const h = (window as unknown as { __nggGraph?: H }).__nggGraph;
+      h?.selectNodeById("concept_trauma");
+    });
+
+    const link = page.locator('[data-testid="ngg-selected-evageeks"]');
+    await expect(link).toBeHidden();
+  });
 });

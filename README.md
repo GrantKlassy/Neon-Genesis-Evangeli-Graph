@@ -2,7 +2,7 @@
 
 # [Neon Genesis Evangeli-Graph](https://neongenesisevangeligraph.com/)
 
-Code last updated @ [2026-04-28](https://github.com/GrantKlassy/Neon-Genesis-Evangeli-Graph/commits/main)
+Code last updated @ [2026-04-29](https://github.com/GrantKlassy/Neon-Genesis-Evangeli-Graph/commits/main)
 
 A 3D WebGL visualization of *Neon Genesis Evangelion* canon, rendered as an interactive force-directed graph in the browser. The basic seed contains the eight main cast members, the eighteen canonical Angels (Adam through Lilim, numbered 1 through 18), and the three Magi nodes drawn together as a tight triangle --- the show's "three-in-one" design made literal in the layout.
 

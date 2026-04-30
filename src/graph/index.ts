@@ -444,11 +444,17 @@ const EDGE_ENDPOINT_SHAPES: Partial<
     symmetric: false,
   },
   identity_reveal: {
-    // Late-show "X is really Y" reveals: character <-> angel (Toji <->
-    // Bardiel, Kaworu <-> Tabris) or character <-> character (Rei <->
-    // Yui). Keep both sides broad over those two kinds.
-    from: ["character", "angel"],
-    to: ["character", "angel"],
+    // Late-show "X is really Y" reveals. Canon cases:
+    //   Toji <-> Bardiel       (character <-> angel)
+    //   Kaworu <-> Tabris      (character <-> angel)
+    //   Rei <-> Yui            (character <-> character)
+    //   Yui <-> Unit-01        (character <-> eva, Ep. 20)
+    //   Magi-X <-> Naoko       (magi    <-> character, Ep. 13)
+    // Both sides span character / angel / eva / magi --- the shape
+    // captures the dramatic "this entity is really a fragment of that
+    // entity" pattern across the canonical reveal beats.
+    from: ["character", "angel", "eva", "magi"],
+    to: ["character", "angel", "eva", "magi"],
     symmetric: true,
   },
   // generic intentionally absent --- no shape constraint, that's the

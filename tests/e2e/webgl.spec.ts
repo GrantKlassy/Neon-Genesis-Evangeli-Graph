@@ -48,16 +48,18 @@ test.describe("WebGL launches", () => {
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
     const handle = await getGraphHandle(page);
-    // 19 chars + 18 angels + 3 magi + 6 orgs + 6 locations + 15 concepts
-    //   + 2 families + 6 evas + 2 events = 77.
-    expect(handle!.nodeCount).toBe(77);
-    // 3 magi + 17 angel-sequence + 3 identity-reveal + 4 pilots
-    //   + 5 member_of_family + 13 member_of_org + 7 located_in + 5 caused
-    //   + 10 EVA generic-mesh + 20 supporting generic ties + 15 eliminated
-    //   + 1 (Lance->Terminal Dogma) = 103.
-    expect(handle!.edgeCount).toBe(103);
+    // 19 chars + 18 angels + 3 magi + 7 orgs (NERV/SEELE/WILLE/GEHIRN/
+    // JSSDF/Marduk/JapanGov) + 6 locations + 15 concepts + 2 families
+    // + 6 evas + 2 events = 78.
+    expect(handle!.nodeCount).toBe(78);
+    // 3 magi-link + 17 angel-sequence + 7 identity-reveal (Toji-Bardiel,
+    // Rei-Yui, Kaworu-Tabris, Yui-Unit01, 3x Magi-Naoko) + 4 pilots
+    // + 5 member_of_family + 15 member_of_org + 7 located_in + 5 caused
+    // + 30 generic (10 EVA mesh + 20 supporting) + 17 eliminated
+    // = 110.
+    expect(handle!.edgeCount).toBe(110);
     const root = rootEl(page);
-    await expect(root).toHaveAttribute("data-node-count", "77");
+    await expect(root).toHaveAttribute("data-node-count", "78");
   });
 
   test("canvas shows non-background pixels (something is drawn)", async ({

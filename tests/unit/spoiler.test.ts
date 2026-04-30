@@ -363,8 +363,10 @@ describe("evangelion graph spoiler invariants", () => {
     const visible = evangelion.nodes.filter(
       (n) => !isNodeMasked(n, SPOILER_PROGRESS_DEFAULT),
     );
-    // Ep1-open nodes: Shinji, Rei, Misato, Gendo, Ritsuko (5 chars), Sachiel
-    // (1 angel intro'd ep 1), Magi triangle (3) = 9 visible.
+    // Ep1-open nodes: Shinji, Rei, Misato, Gendo, Ritsuko (5 chars),
+    // Sachiel (1 angel intro'd ep 1). Magi triangle is gated to Ep. 13
+    // (Ritsuko's personality-fragment exposition during the Iruel
+    // attack), so the three Magi nodes do NOT appear at progress=ep0.
     const visibleIds = new Set(visible.map((n) => n.id));
     expect(visibleIds.has("char_shinji")).toBe(true);
     expect(visibleIds.has("char_rei")).toBe(true);
@@ -372,17 +374,19 @@ describe("evangelion graph spoiler invariants", () => {
     expect(visibleIds.has("char_gendo")).toBe(true);
     expect(visibleIds.has("char_ritsuko")).toBe(true);
     expect(visibleIds.has("angel_03_sachiel")).toBe(true);
-    expect(visibleIds.has("magi_casper")).toBe(true);
-    expect(visibleIds.has("magi_melchior")).toBe(true);
-    expect(visibleIds.has("magi_balthasar")).toBe(true);
 
+    expect(visibleIds.has("magi_casper")).toBe(false);
+    expect(visibleIds.has("magi_melchior")).toBe(false);
+    expect(visibleIds.has("magi_balthasar")).toBe(false);
     expect(visibleIds.has("char_kaworu")).toBe(false);
     expect(visibleIds.has("char_yui")).toBe(false);
+    expect(visibleIds.has("char_naoko")).toBe(false);
     expect(visibleIds.has("char_toji")).toBe(false);
     expect(visibleIds.has("char_asuka")).toBe(false);
     expect(visibleIds.has("char_mari")).toBe(false);
     expect(visibleIds.has("angel_17_tabris")).toBe(false);
     expect(visibleIds.has("angel_18_lilim")).toBe(false);
     expect(visibleIds.has("event_third_impact")).toBe(false);
+    expect(visibleIds.has("org_japan_gov")).toBe(false);
   });
 });

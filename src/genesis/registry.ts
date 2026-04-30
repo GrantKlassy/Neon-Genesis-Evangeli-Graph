@@ -688,8 +688,25 @@ export const genesis = {
     primary: "#7a5a3a",
     secondary: ["#3a2a1a", "#caa078"],
     notes:
-      "Front organization that 'selects' the Children. Eventually revealed as a paper tiger --- 108 names, all empty, the real picks happen elsewhere.",
+      "The committee that 'selects' the Children for the EVA program.",
     evageeksSlug: "Marduk_Institute",
+  },
+  japanGov: {
+    shortcode: "japanGov",
+    kind: "ORGANIZATIONS",
+    displayName: "Japanese Government",
+    aliases: [
+      "Japanese Government",
+      "Government of Japan",
+      "Department of Home Affairs",
+    ],
+    // Sober institutional grey-blue --- distinct from NERV's red, SEELE's
+    // monolith purple, JSSDF's olive military green.
+    primary: "#5a7aa0",
+    secondary: ["#2a3a55", "#a0b8d0"],
+    notes:
+      "Civilian government of Japan. Quietly investigating NERV behind the UN cover; runs Kaji as an intelligence asset.",
+    evageeksSlug: "Japanese_Government",
   },
 
   // ---- LOCATIONS ----

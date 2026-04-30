@@ -507,16 +507,21 @@ describe("evangelion graph", () => {
   describe("eliminated edges (EVA -> angel kills)", () => {
     const eliminated = evangelion.edges.filter((e) => e.kind === "eliminated");
 
-    it("encodes 15 canon kills across the TV chain", () => {
-      // Audited 2026-04-28 against EvaWiki:
-      //   Unit-01: Sachiel, Shamshel, Ramiel, Israfel (co), Matarael,
-      //     Leliel, Bardiel, Zeruel, Tabris = 9
-      //   Unit-02: Gaghiel, Israfel (co), Sandalphon, Sahaquiel = 4
-      //   Unit-00: Arael (Lance throw, Ep. 22), Armisael (self-destruct,
-      //     Ep. 23) = 2
+    it("encodes 17 canon kill credits across the TV chain", () => {
+      // Audited 2026-04-29 against EvaWiki:
+      //   Unit-01: Sachiel, Shamshel, Ramiel, Israfel (co), Sahaquiel
+      //     (catch), Matarael, Leliel, Bardiel, Zeruel, Tabris = 10
+      //   Unit-02: Gaghiel, Israfel (co), Sandalphon, Sahaquiel (kill)
+      //     = 4
+      //   Unit-00: Sahaquiel (AT-field cut), Arael (Lance throw, Ep. 22),
+      //     Armisael (self-destruct, Ep. 23) = 3
       //   Adam, Lilith, Iruel, Lilim have no canonical EVA killer ->
       //   excluded.
-      expect(eliminated).toHaveLength(15);
+      // Sahaquiel is canonically a three-EVA team-up (Unit-00 cut the
+      // AT field, Unit-01 caught the body, Unit-02 made the kill) ---
+      // each participant earns a separate eliminated edge so the most
+      // aggressive bond class on the graph (per user thesis) reads.
+      expect(eliminated).toHaveLength(17);
     });
 
     it("Unit-01 takes the canonical first three kills (Sachiel, Shamshel, Ramiel)", () => {
@@ -549,17 +554,28 @@ describe("evangelion graph", () => {
       }
     });
 
-    it("Unit-00 takes both Arael (Ep. 22, Lance) and Armisael (Ep. 23, self-destruct)", () => {
-      // Audited 2026-04-28 against wiki/Arael: 'Eva-00 then returned to
-      // the surface, and hurled the Spear of Longinus into the sky [...]
-      // pierced Arael's A.T. Field and destroyed the Angel.' Asuka was
-      // incapacitated by Arael's mind-attack; Rei retrieves the Lance
-      // from Terminal Dogma and makes the kill.
+    it("Unit-00 takes Sahaquiel (Ep. 12, AT-field cut), Arael (Ep. 22, Lance), Armisael (Ep. 23, self-destruct)", () => {
+      // Audited 2026-04-29 against EvaWiki:
+      //   wiki/Sahaquiel: Eva-00 'exposes Sahaquiel's core with her
+      //     Progressive Knife' --- Unit-00 is one of three EVAs sharing
+      //     the kill credit.
+      //   wiki/Arael: 'Eva-00 then returned to the surface, and hurled
+      //     the Spear of Longinus into the sky [...] pierced Arael's
+      //     A.T. Field and destroyed the Angel.' Rei retrieves the
+      //     Lance from Terminal Dogma and makes the kill.
+      //   wiki/Armisael: Rei self-destructs Unit-00 to take the helix
+      //     Sixteenth Angel with her.
       const unit00Kills = eliminated.filter((e) => e.from === "eva_unit00");
       const targets = new Set(unit00Kills.map((e) => e.to));
       expect(targets).toEqual(
-        new Set(["angel_15_arael", "angel_16_armisael"]),
+        new Set([
+          "angel_10_sahaquiel",
+          "angel_15_arael",
+          "angel_16_armisael",
+        ]),
       );
+      const sahaquiel = unit00Kills.find((e) => e.to === "angel_10_sahaquiel")!;
+      expect(sahaquiel.revealedAt).toEqual({ kind: "ep", episode: 12 });
       const arael = unit00Kills.find((e) => e.to === "angel_15_arael")!;
       expect(arael.revealedAt).toEqual({ kind: "ep", episode: 22 });
       const armisael = unit00Kills.find((e) => e.to === "angel_16_armisael")!;

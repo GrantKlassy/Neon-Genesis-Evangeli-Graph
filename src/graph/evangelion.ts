@@ -44,7 +44,8 @@ const characters: CharacterNode[] = [
     shortcodes: ["shinji"],
     role: "Third Child / Pilot of Unit-01",
     tags: [{ id: "child" }],
-    notes: "The protagonist. Reluctant pilot of Evangelion Unit-01.",
+    notes:
+      "The protagonist. Fourteen, summoned to Tokyo-3 by the father who abandoned him after his mother died. Pilots Unit-01 because saying yes hurts less than saying no, and saying no means Rei gets wheeled back into the broken plug. Believes the only way to be loved is to be useful.",
   },
   {
     id: "char_asuka",
@@ -59,7 +60,8 @@ const characters: CharacterNode[] = [
       { id: "child" },
       { id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } },
     ],
-    notes: "Hot-headed German-American pilot of Evangelion Unit-02.",
+    notes:
+      "Pilot of Unit-02. Born in Germany to mixed Japanese-American-German parentage, college-graduated at fourteen, fluent in three languages. Arrives on the Pacific fleet from Berlin with Unit-02 in Ep. 8 ('Asuka Strikes'). The EVA program's golden child --- and convinced that being the best is the only thing keeping her safe.",
   },
   {
     id: "char_rei",
@@ -72,7 +74,7 @@ const characters: CharacterNode[] = [
       { id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } },
     ],
     notes:
-      "Quiet pilot of Unit-00. Lives alone, speaks rarely, follows orders precisely.",
+      "First Child, pilot of Unit-00. Pale-blue hair, red eyes, nearly affectless. Lives alone in a barren apartment off-base, speaks rarely, follows orders precisely. Wakes from injuries the show never quite explains and walks back into the entry plug as if it's the only place she belongs.",
   },
   {
     id: "char_misato",
@@ -81,7 +83,8 @@ const characters: CharacterNode[] = [
     shortcodes: ["misato"],
     role: "NERV Operations Director",
     tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
-    notes: "Tactical commander during angel attacks. Shinji's guardian.",
+    notes:
+      "NERV Captain (later Major) and Operations Director. The voice on the comms during every angel battle --- the calm one, by training, while the city above her is being torn apart. Picks Shinji up the day he arrives in Tokyo-3 and takes him in. Drinks Yebisu like water; the apartment is too quiet otherwise.",
   },
   {
     id: "char_kaworu",
@@ -94,10 +97,16 @@ const characters: CharacterNode[] = [
       "https://wiki.evageeks.org/Kaworu_Nagisa --- arrives in Ep. 24 ('The Final Messenger') as the Fifth Child / Tabris",
     tags: [
       { id: "child" },
+      // The 'dies-by-end-of-series' tag is canonically EoE-gated as a
+      // finale-prep flag (see TAGS registry --- the tag describes 'all
+      // your friends are dead by the closing scene', not a per-character
+      // timing). Kaworu's actual on-screen death is Ep. 24; the EVA <->
+      // angel eliminated edge captures that beat without leaking the
+      // 'dies' label outside the finale window.
       { id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } },
     ],
     notes:
-      "The Fifth Child. Walks into the show with quiet, cosmic significance.",
+      "The Fifth Child. Silver-grey hair, red eyes, calm voice. Arrives in Ep. 24 already knowing things he should not, plays Beethoven from memory, takes a bath with Shinji. The first person to tell Shinji he is loved. Crushed in Unit-01's grip on his own request before the credits roll.",
   },
   {
     id: "char_gendo",
@@ -106,7 +115,8 @@ const characters: CharacterNode[] = [
     shortcodes: ["gendo"],
     role: "NERV Commander",
     tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
-    notes: "Shinji's estranged father. Runs NERV with his own agenda.",
+    notes:
+      "NERV Commander. Tinted glasses, gloved hands, immobile face. Summoned Shinji to Tokyo-3 the day NERV needed a Unit-01 pilot --- the first time he had addressed his son in years. Runs the angel war from the bridge, the Children from arm's length, and his own scenario from somewhere underneath both.",
   },
   {
     id: "char_ritsuko",
@@ -115,8 +125,12 @@ const characters: CharacterNode[] = [
     shortcodes: ["ritsuko"],
     role: "NERV Chief Scientist",
     tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
+    // The 'Naoko's daughter' relationship is the Ep. 13 exposition;
+    // mentioning Naoko on a node visible from Ep. 1 would leak. The
+    // Ritsuko -> Akagi family edge plus the family member roll-up
+    // surfaces the lineage once Naoko unlocks at Ep. 13.
     notes:
-      "Lead engineer on the Evangelions and the Magi. Daughter of Naoko Akagi.",
+      "NERV Chief Scientist. Lead engineer on the Evangelions and operator of the Magi system. Lab coat, blonde hair, ever-present cigarette. The only person on the bridge who can tell the Commander a number is wrong --- and the one who has to live with what the numbers say.",
   },
   {
     id: "char_mari",
@@ -127,7 +141,8 @@ const characters: CharacterNode[] = [
     revealedAt: { kind: "rebuild" },
     revealedAtSource:
       "https://wiki.evageeks.org/Mari_Makinami_Illustrious --- Rebuild-only pilot, no TV-canon presence",
-    notes: "Rebuild-only pilot. Excitable, opportunistic, sings in combat.",
+    notes:
+      "Rebuild-only pilot, no TV-canon presence. Magenta plug suit, twin braids, round glasses. Excitable, opportunistic, hums and sings inside the entry plug. Slips into Unit-02 (and later other units) as casually as borrowing a coat --- the first cast member who seems to actually enjoy being inside a giant robot.",
   },
   {
     id: "char_toji",
@@ -140,7 +155,7 @@ const characters: CharacterNode[] = [
       "https://wiki.evageeks.org/Episode_03 --- introduces the three classmates (Toji, Kensuke, Hikari)",
     tags: [{ id: "child", revealedAt: { kind: "ep", episode: 17 } }],
     notes:
-      "Shinji's classmate. Athletic, gruff, fiercely loyal to those close to him.",
+      "Shinji's classmate. Athletic, gruff, fiercely loyal once you're in. His little sister was hospitalized when Sachiel went down on Tokyo-3 --- he punches Shinji for it on the morning they meet, and reverses the moment Unit-01 puts itself between Shamshel and the rooftop he's standing on.",
   },
   {
     id: "char_yui",
@@ -152,7 +167,7 @@ const characters: CharacterNode[] = [
     revealedAtSource:
       "https://wiki.evageeks.org/Yui_Ikari --- Director's Cut Ep. 20 ('Weaving a Story 2: oral stage') drops the Yui-in-Unit-01 backstory",
     notes:
-      "Shinji's mother. Lost during a contact experiment with Unit-01.",
+      "Shinji's mother. Metaphysical-biology researcher under Fuyutsuki at Kyoto, married into the Ikari family, volunteered for the 2004 Unit-01 contact experiment. The unit took her whole. Shinji was four and watched it happen. Her soul is what makes Unit-01 fight.",
   },
   {
     id: "char_naoko",
@@ -160,24 +175,37 @@ const characters: CharacterNode[] = [
     displayName: "Naoko Akagi",
     shortcodes: ["naoko"],
     role: "Magi designer (lost)",
-    revealedAt: { kind: "ep", episode: 21 },
+    // First named in Ep. 13 ("Lilliputian Hitcher" / Iruel attack), where
+    // Ritsuko delivers the Magi-personality exposition: Casper / Melchior /
+    // Balthasar carry her mother's three personalities (Woman, Scientist,
+    // Mother). The Director's Cut Ep. 21 backstory drop ADDS the
+    // Gendo-affair / strangling-Rei / suicide details, but the character
+    // herself first lands at Ep. 13 by name and role.
+    revealedAt: { kind: "ep", episode: 13 },
     revealedAtSource:
-      "https://wiki.evageeks.org/Naoko_Akagi --- Director's Cut Ep. 21 backstory drop introduces Naoko alongside Yui at GEHIRN",
+      "https://wiki.evageeks.org/Episode_13 --- Ritsuko's Magi-personality exposition names her late mother as the Magi architect",
     notes:
-      "Original architect of the Magi system. Ritsuko's mother. Took her own life on the Magi launch day; her three personalities became Casper, Melchior, and Balthasar.",
+      "Original architect of the Magi system. Ritsuko's late mother. Split her own psyche into three personality fragments --- Woman, Scientist, Mother --- and burned them into Casper, Melchior, and Balthasar respectively. The three Magi still vote on every NERV operation in her voice.",
   },
   {
     id: "char_kaji",
     kind: "character",
     displayName: "Ryoji Kaji",
     shortcodes: ["kaji"],
-    role: "NERV special inspector / triple agent",
+    // Public-facing role only --- the triple-agent fact emerges from
+    // his three org affiliations (NERV / Japanese Government / SEELE),
+    // each gated to its own reveal episode (Ep. 8 / Ep. 15 / Ep. 21).
+    role: "NERV special inspector",
     revealedAt: { kind: "ep", episode: 8 },
     revealedAtSource:
       "https://wiki.evageeks.org/Ryoji_Kaji --- 'Kaji's first appearance in the series is in episode 8' (with Asuka on the Pacific fleet)",
+    // The 'dies-by-end-of-series' tag is canonically EoE-gated as a
+    // finale-prep flag (see TAGS registry); Kaji's actual offscreen
+    // death lands at the end of Ep. 21 and is implied by the SEELE
+    // edge gate, but the death TAG stays behind the EoE wall.
     tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
     notes:
-      "Misato's ex. Asuka's escort on the Pacific fleet. Triple-agent for SEELE, NERV, and the Japanese government, depending on the day. Tends watermelons.",
+      "NERV special inspector and Misato's college ex. Escorts Asuka and Unit-02 from Germany on the Pacific fleet in Ep. 8. Carries himself like a man running three jobs and only admitting to one. Tends watermelons in his off hours --- a hobby for someone who wants something that grows back.",
   },
   {
     id: "char_fuyutsuki",
@@ -186,8 +214,11 @@ const characters: CharacterNode[] = [
     shortcodes: ["fuyutsuki"],
     role: "NERV Sub-Commander",
     tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
+    // The 'Yui's metaphysical-biology professor' backstory is the Ep. 21
+    // Director's Cut drop and lives on the Fuyutsuki <-> Yui edge, not
+    // here.
     notes:
-      "Yui Ikari's old metaphysical-biology professor. Pulled into GEHIRN, then NERV, as Gendo's reluctant second.",
+      "NERV Sub-Commander. Stands at Gendo's shoulder on every bridge scene --- the only person in the building who has known him long enough to disagree out loud. Carries the kind of patience that comes from outliving most of the people who knew you when.",
   },
   {
     id: "char_maya",
@@ -267,7 +298,7 @@ const angels: AngelNode[] = [
       "https://wiki.evageeks.org/Adam --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Backstory / Ep. 21",
     notes:
-      "First Angel. Source of the Second Impact. The embryo reveal is in the late teens.",
+      "First Angel. Recovered as an embryo from the White Moon in Antarctica. The trigger of Second Impact via the Katsuragi Expedition's contact experiment.",
   },
   {
     id: "angel_02_lilith",
@@ -281,7 +312,7 @@ const angels: AngelNode[] = [
       "https://wiki.evageeks.org/Lilith --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Backstory / Ep. 23",
     notes:
-      "Second Angel. Crucified at the bottom of NERV in Terminal Dogma. Late-series reveal.",
+      "Second Angel. Crucified at the bottom of NERV's Terminal Dogma, with the Lance of Longinus pinning her to the wall.",
   },
   {
     id: "angel_03_sachiel",
@@ -291,7 +322,8 @@ const angels: AngelNode[] = [
     displayName: "Sachiel",
     shortcodes: ["sachiel"],
     introducedEpisode: "Ep. 1",
-    notes: "First Angel encountered on screen. Defeated in Tokyo-3 by Unit-01.",
+    notes:
+      "First Angel encountered on screen --- bone-mask face, beaked head, broken wings. Walks out of Tokyo Bay onto Tokyo-3 in Ep. 1, the cold open of the entire series. Defeated in Tokyo-3 by Unit-01.",
   },
   {
     id: "angel_04_shamshel",
@@ -454,7 +486,7 @@ const angels: AngelNode[] = [
       "https://wiki.evageeks.org/Arael --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 22",
     notes:
-      "Bird-of-light angel. Mind-attacks Asuka. Defeated by the Lance of Longinus.",
+      "Bird-of-light angel. Attacks from orbit by piercing Asuka's mind --- the assault that breaks her sync ratio for the rest of the show. Rei retrieves the Lance of Longinus from Terminal Dogma and hurls it skyward from Unit-00; the Lance pierces Arael's AT field and ends it.",
   },
   {
     id: "angel_16_armisael",
@@ -480,7 +512,8 @@ const angels: AngelNode[] = [
     revealedAtSource:
       "https://wiki.evageeks.org/Tabris --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "Ep. 24",
-    notes: "Seventeenth Angel. The final visible angel of the canonical chain.",
+    notes:
+      "Seventeenth Angel --- the last to walk among the Lilim. Wears Kaworu Nagisa's face for one episode: learns piano, takes a bath with Shinji, asks to be ended. Crushed in Unit-01's grip on Shinji's command, Ep. 24.",
   },
   {
     id: "angel_18_lilim",
@@ -494,10 +527,20 @@ const angels: AngelNode[] = [
       "https://wiki.evageeks.org/Lilim --- canonical first-appearance per the angel\'s EvaWiki page",
     introducedEpisode: "End of Evangelion",
     notes:
-      "Humanity itself, the Eighteenth Angel. Revealed as the Instrumentality conclusion.",
+      "Humanity itself --- the Eighteenth Angel. Tabris speaks the word once and the show flinches. Every face in the audience is one. Recognized in End of Evangelion as the species that killed every one of its older siblings to inherit the Earth.",
   },
 ];
 
+/**
+ * Magi nodes. The three supercomputers exist on screen as voting overlays
+ * from earlier episodes (Ep. 11 'In the Still Darkness' features the
+ * three-way vote during the Tokyo-3 blackout), but the nature of each as a
+ * personality fragment of Naoko Akagi --- the data this graph encodes
+ * directly in the `personality` field and `notes` body --- is the Ep. 13
+ * exposition. Gating the nodes to Ep. 13 keeps the personality split
+ * spoiler-clean; pre-Ep-13 the user sees three masked black blobs in a
+ * tight triangle.
+ */
 const magi: MagiNode[] = [
   {
     id: "magi_casper",
@@ -506,8 +549,10 @@ const magi: MagiNode[] = [
     displayName: "Casper-3",
     personality: "Woman",
     shortcodes: ["casper"],
-    notes:
-      "Naoko Akagi's woman fragment. The terminal-green default Magi node.",
+    revealedAt: { kind: "ep", episode: 13 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_13 --- Ritsuko's Iruel-attack monologue exposes the three personality fragments (Woman / Scientist / Mother)",
+    notes: "Carries the Woman aspect. The terminal-green default Magi node.",
   },
   {
     id: "magi_melchior",
@@ -516,7 +561,10 @@ const magi: MagiNode[] = [
     displayName: "Melchior-1",
     personality: "Scientist",
     shortcodes: ["melchior"],
-    notes: "Naoko Akagi's scientist fragment. Lead vote on cold logic.",
+    revealedAt: { kind: "ep", episode: 13 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_13 --- Ritsuko's Iruel-attack monologue exposes the three personality fragments (Woman / Scientist / Mother)",
+    notes: "Carries the Scientist aspect. Lead vote on cold logic.",
   },
   {
     id: "magi_balthasar",
@@ -525,7 +573,10 @@ const magi: MagiNode[] = [
     displayName: "Balthasar-2",
     personality: "Mother",
     shortcodes: ["balthasar"],
-    notes: "Naoko Akagi's mother fragment. Tiebreaker on protective calls.",
+    revealedAt: { kind: "ep", episode: 13 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_13 --- Ritsuko's Iruel-attack monologue exposes the three personality fragments (Woman / Scientist / Mother)",
+    notes: "Carries the Mother aspect. Tiebreaker on protective calls.",
   },
 ];
 
@@ -597,6 +648,22 @@ const organizations: OrganizationNode[] = [
       "Japan Strategic Self Defense Force. Deployed by SEELE to seize NERV HQ in End of Evangelion.",
   },
   {
+    id: "org_japan_gov",
+    kind: "organization",
+    name: "Japanese Government",
+    displayName: "Japanese Government",
+    shortcodes: ["japanGov"],
+    // Misato confronts Kaji at Terminal Dogma in Ep. 15 and asks whether
+    // he works for NERV or 'as an agent for the Japanese Department of
+    // Home Affairs' --- Kaji's double-agent status is exposed on screen
+    // here. (His third allegiance to SEELE lands separately in Ep. 21.)
+    revealedAt: { kind: "ep", episode: 15 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_15 --- Misato exposes Kaji's Department of Home Affairs allegiance at Terminal Dogma",
+    notes:
+      "Civilian government of Japan. Quietly investigating NERV behind the UN cover; runs Kaji as an intelligence asset.",
+  },
+  {
     id: "org_marduk",
     kind: "organization",
     name: "Marduk Institute",
@@ -605,12 +672,12 @@ const organizations: OrganizationNode[] = [
     // Gendo first names the Marduk Institute in Ep. 4 ("the Fourth
     // Children has yet to be selected by the Marduk Institute"). The
     // 'paper tiger / 108 names' reveal lands later via Kaji's Ep. 15
-    // investigation, but the Institute itself is on screen from Ep. 4.
+    // investigation; that fact lives on the Marduk -> NERV edge gate,
+    // not in this node's notes.
     revealedAt: { kind: "ep", episode: 4 },
     revealedAtSource:
       "https://wiki.evageeks.org/Episode_04 --- Gendo first references the Marduk Institute",
-    notes:
-      "Front organization that 'selects' the Children. Eventually revealed as a paper tiger --- 108 names, all empty.",
+    notes: "The committee that 'selects' the Children for the EVA program.",
   },
 ];
 
@@ -642,8 +709,10 @@ const locations: LocationNode[] = [
     name: "Geofront",
     displayName: "Geofront (Location)",
     shortcodes: ["geofront"],
-    notes:
-      "Cavernous green-tinted void beneath Tokyo-3. Houses NERV HQ; revealed late as the upper hull of the Black Moon.",
+    // The 'upper hull of the Black Moon' reveal is EoE-only and lives on
+    // the Black Moon -> Geofront located_in edge gate, not here. The
+    // cavity itself is on screen from the early eps as NERV's setting.
+    notes: "Cavernous green-tinted void beneath Tokyo-3. Houses NERV HQ.",
   },
   {
     id: "loc_terminal_dogma",
@@ -688,7 +757,7 @@ const concepts: ConceptNode[] = [
     displayName: "AT Field",
     shortcodes: ["atField"],
     notes:
-      "Absolute Terror Field. Hexagonal red barrier projected by every soul. Every angel has one; pilots punch through with their EVA's.",
+      "Absolute Terror Field. The wall between self and other. Angels project them as visible hexagonal red shields; EVAs neutralize an angel's field with their own and punch through. Late in the show the term widens to mean the same wall every person builds against every other person.",
   },
   {
     id: "concept_lcl",
@@ -939,7 +1008,8 @@ const evas: EvaNode[] = [
     number: 1,
     displayName: "Unit-01",
     shortcodes: ["unit01"],
-    notes: "Test type. Iconic purple body with a green chest plate.",
+    notes:
+      "Test type. Iconic violet body, green chest plate, single orange horn. The temperamental one --- it sometimes moves without input from the bridge. Shinji's unit.",
   },
   {
     id: "eva_unit02",
@@ -952,7 +1022,7 @@ const evas: EvaNode[] = [
     revealedAtSource:
       "https://wiki.evageeks.org/Evangelion_Unit-02 --- arrives with Asuka on the Pacific fleet in Ep. 8",
     notes:
-      "Production type. Bright red body with orange shoulder pylons; arrives with the Pacific fleet.",
+      "The first true production-spec EVA. Bright red body, four-eyed visor, twin orange shoulder pylons. Asuka's unit. Arrives on the Pacific fleet from Berlin in Ep. 8 and immediately drops underwater to pry Gaghiel's jaws open.",
   },
   {
     id: "eva_unit03",
@@ -965,7 +1035,7 @@ const evas: EvaNode[] = [
     revealedAtSource:
       "https://wiki.evageeks.org/Evangelion_Unit-03 --- ships from the US branch in Ep. 17 (the Fourth Child reveal episode), activated in Ep. 18",
     notes:
-      "Black-bodied production EVA shipped from the US branch. Activated in Ep. 18.",
+      "Black-bodied production EVA shipped from the NERV-2 (US) branch in Ep. 17. Activated inside a Matsushiro test cage in Ep. 18 --- the activation goes wrong from the first second and Unit-01 is sent in to handle it.",
   },
   {
     id: "eva_unit04",
@@ -1093,6 +1163,44 @@ function buildEdges(): Edge[] {
     shortcodes: ["kaworu", "tabris"],
     notes: "Kaworu IS the Seventeenth Angel, Tabris (Ep. 24).",
   });
+  // Yui Ikari is fused inside Unit-01 --- the contact-experiment reveal
+  // is the heart of the Ep. 20 backstory drop ('Weaving a Story 2: oral
+  // stage'). The character node and the EVA node both render from earlier
+  // episodes, but the line connecting them is the late-show plot beat.
+  out.push({
+    from: "char_yui",
+    to: "eva_unit01",
+    kind: "identity_reveal",
+    weight: idWeight,
+    revealedAt: { kind: "ep", episode: 20 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Yui_Ikari --- Director's Cut Ep. 20 establishes Yui's soul fused into Unit-01 during the contact experiment",
+    shortcodes: ["yui", "unit01"],
+    notes: "Yui's soul is what makes Unit-01 tick (Ep. 20 contact-experiment reveal).",
+  });
+  // The three Magi each carry one of Naoko's three personality fragments
+  // (Casper = Woman, Melchior = Scientist, Balthasar = Mother) ---
+  // Ritsuko's Ep. 13 Iruel-attack monologue exposes the split. Both
+  // endpoints (Magi nodes and Naoko) are gated to Ep. 13; the edges stamp
+  // the relationship explicitly.
+  const magiFragments: Array<{ magi: string; magiCode: string; aspect: string }> = [
+    { magi: "magi_casper", magiCode: "casper", aspect: "Woman" },
+    { magi: "magi_melchior", magiCode: "melchior", aspect: "Scientist" },
+    { magi: "magi_balthasar", magiCode: "balthasar", aspect: "Mother" },
+  ];
+  for (const f of magiFragments) {
+    out.push({
+      from: f.magi,
+      to: "char_naoko",
+      kind: "identity_reveal",
+      weight: idWeight,
+      revealedAt: { kind: "ep", episode: 13 },
+      revealedAtSource:
+        "https://wiki.evageeks.org/Episode_13 --- Ritsuko's Magi-personality exposition splits Naoko into Woman, Scientist, Mother",
+      shortcodes: [f.magiCode, "naoko"],
+      notes: `${f.magi.replace(/^magi_/, "").replace(/^./, (c) => c.toUpperCase())} carries Naoko's ${f.aspect} aspect (Ep. 13).`,
+    });
+  }
 
   // Pilots --- character -> EVA unit. Each edge inherits the unit's gate
   // unless the pilot reveal is itself a spoiler (Toji as the Fourth Child).
@@ -1266,17 +1374,38 @@ function buildEdges(): Edge[] {
       notes: "Manual operation during the Tokyo-3 blackout --- Unit-01 lands the kill shot on Matarael's eye (Ep. 11).",
     },
     {
-      // Correction (audited 2026-04-28 against EvaWiki):
-      //   prior data attributed the Sahaquiel kill to Unit-01.
-      //   wiki/Sahaquiel: Eva-02 'wielded prog knives to penetrate its
-      //   core, respectively' --- Unit-02 makes the kill, Unit-00 cut
-      //   the AT field, Unit-01 caught the body.
+      // Sahaquiel was a three-EVA kill (audited against EvaWiki):
+      //   Unit-00 (Rei) exposes the core with a progressive knife cut
+      //     through the AT field.
+      //   Unit-02 (Asuka) drives the killing strike into the exposed
+      //     core --- the angel self-destructs.
+      //   Unit-01 (Shinji) holds the falling body up so the other two
+      //     can land their hits.
+      // All three earn an eliminated edge --- per-user guidance:
+      // elimination is the most aggressive bond on the graph and
+      // every participant should read.
+      eva: "eva_unit00",
+      evaShortcode: "unit00",
+      angel: "angel_10_sahaquiel",
+      angelShortcode: "sahaquiel",
+      episode: 12,
+      notes: "Unit-00 (Rei) exposes Sahaquiel's core with a prog knife through the AT field (Ep. 12).",
+    },
+    {
+      eva: "eva_unit01",
+      evaShortcode: "unit01",
+      angel: "angel_10_sahaquiel",
+      angelShortcode: "sahaquiel",
+      episode: 12,
+      notes: "Unit-01 (Shinji) holds the falling Tenth Angel up so the others can land the kill (Ep. 12).",
+    },
+    {
       eva: "eva_unit02",
       evaShortcode: "unit02",
       angel: "angel_10_sahaquiel",
       angelShortcode: "sahaquiel",
       episode: 12,
-      notes: "All three EVAs catch the falling Tenth Angel; Unit-02 drives the prog knife through its core (Ep. 12).",
+      notes: "Unit-02 (Asuka) drives the prog knife into Sahaquiel's exposed core --- the angel self-destructs (Ep. 12).",
     },
     {
       eva: "eva_unit01",
@@ -1421,12 +1550,21 @@ function buildEdges(): Edge[] {
     },
     {
       from: "char_kaji",
+      to: "org_japan_gov",
+      shortcodes: ["kaji", "japanGov"],
+      revealedAt: { kind: "ep", episode: 15 },
+      revealedAtSource:
+        "https://wiki.evageeks.org/Episode_15 --- Misato confronts Kaji at Terminal Dogma about working for the Department of Home Affairs",
+      notes: "Kaji's second allegiance --- intelligence asset for the Japanese government (Ep. 15 reveal).",
+    },
+    {
+      from: "char_kaji",
       to: "org_seele",
       shortcodes: ["kaji", "seele"],
       revealedAt: { kind: "ep", episode: 21 },
       revealedAtSource:
         "https://wiki.evageeks.org/Episode_21 --- Director's Cut backstory drop names Kaji as a SEELE intelligence asset alongside the Yui/Naoko material",
-      notes: "Kaji's third allegiance --- intelligence asset for SEELE.",
+      notes: "Kaji's third allegiance --- intelligence asset for SEELE (Ep. 21 reveal).",
     },
 
     // GEHIRN: NERV's predecessor body. Gated to the Ep. 21 backstory drop;

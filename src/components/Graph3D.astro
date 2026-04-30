@@ -220,6 +220,23 @@ const edgeLegend = [
           data-testid="ngg-selected-notes"
         >
         </p>
+        <!--
+          Evageeks "view source" link. The panel itself is pointer-events-none
+          (so the canvas under it stays clickable for drag/select), so the
+          link individually opts back in via pointer-events-auto. Hidden by
+          default, populated by the renderer when the selected node has a
+          resolvable EvaWiki slug.
+        -->
+        <a
+          id="ngg-selected-evageeks"
+          class="pointer-events-auto mt-2 hidden font-mono text-[0.6rem] tracking-[0.2em] text-[color:var(--color-magi-green)] uppercase hover:underline focus-visible:underline sm:text-[0.65rem]"
+          data-testid="ngg-selected-evageeks"
+          target="_blank"
+          rel="noopener noreferrer"
+          href="#"
+        >
+          view on evageeks &rarr;
+        </a>
       </aside>
 
       <!-- Scroll cue (bottom-center). Fades as the user advances through the runway. -->
@@ -266,8 +283,25 @@ const edgeLegend = [
     isOrganization,
     maskLabel,
   } from "../graph";
+  import { evageeksUrlOf } from "../genesis";
   import type { GraphHandle } from "../scripts/graph3d";
   import type { GraphNode } from "../graph/types";
+
+  /**
+   * Walk a node's shortcodes and return the first one that resolves to an
+   * EvaWiki URL. Most nodes carry a single shortcode; the helper still
+   * iterates so the WebGL panel matches the DOM readout's resolution shape
+   * (Readout.astro evageeksUrlForNode).
+   */
+  function evageeksUrlForNode(
+    shortcodes: readonly string[],
+  ): string | null {
+    for (const code of shortcodes) {
+      const url = evageeksUrlOf(code);
+      if (url) return url;
+    }
+    return null;
+  }
 
   function bootstrap() {
     const root = document.getElementById(
@@ -286,6 +320,9 @@ const edgeLegend = [
     const kindEl = panel.querySelector('[data-testid="ngg-selected-kind"]');
     const metaEl = panel.querySelector('[data-testid="ngg-selected-meta"]');
     const notesEl = panel.querySelector('[data-testid="ngg-selected-notes"]');
+    const evageeksEl = panel.querySelector(
+      '[data-testid="ngg-selected-evageeks"]',
+    ) as HTMLAnchorElement | null;
 
     let activeHandle: GraphHandle | null = null;
     let lastSelected: GraphNode | null = null;
@@ -296,6 +333,10 @@ const edgeLegend = [
         panel.classList.add("hidden");
         panel.dataset.empty = "true";
         panel.dataset.masked = "false";
+        if (evageeksEl) {
+          evageeksEl.classList.add("hidden");
+          evageeksEl.removeAttribute("href");
+        }
         return;
       }
       panel.classList.remove("hidden");
@@ -304,6 +345,20 @@ const edgeLegend = [
       const masked = activeHandle?.isNodeMasked(node.id) ?? false;
       panel.dataset.masked = masked ? "true" : "false";
       const mask = (s: string) => (masked ? maskLabel(s) : s);
+
+      // Surface the evageeks URL whenever the node resolves one AND is not
+      // masked. Hidden nodes don't leak their wiki link --- the slug itself
+      // is a spoiler (e.g. /Tabris before Ep. 24).
+      if (evageeksEl) {
+        const url = masked ? null : evageeksUrlForNode(node.shortcodes);
+        if (url) {
+          evageeksEl.href = url;
+          evageeksEl.classList.remove("hidden");
+        } else {
+          evageeksEl.classList.add("hidden");
+          evageeksEl.removeAttribute("href");
+        }
+      }
 
       if (kindEl) {
         if (masked) {
