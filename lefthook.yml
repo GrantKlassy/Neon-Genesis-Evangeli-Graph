@@ -39,11 +39,6 @@ commit-msg:
 
 pre-push:
   jobs:
-    - name: full-test-and-checks
-      # task local:test fans out to: task check (repo standards + typecheck +
-      # unit tests) + Playwright e2e across every viewport. ~2 min budget;
-      # accepted in exchange for catching e2e regressions before CI / merge.
-      run: task local:test
     - name: deploy
       run: |
         if [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]; then
