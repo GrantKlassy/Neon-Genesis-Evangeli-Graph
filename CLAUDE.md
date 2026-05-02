@@ -30,6 +30,18 @@ E2E tests (`tests/e2e/`) cover smoke (page renders, no console errors), WebGL la
 
 `waitForGraphState()` in `tests/e2e/_helpers.ts` is the standard way to wait for the renderer to reach `ready` / `no-webgl` / `error`. The renderer exposes `window.__nggGraph` with `state`, `frames`, `nodeCount`, etc., for test assertions.
 
+## Previewing the graph (visual ground-truth)
+
+Code-level checks (unit invariants, e2e selectors, type safety) confirm the data and DOM are correct, but they don't tell you whether the visualization actually looks right. Before reporting any visual change as done --- color tweaks, layout, gate behavior, new node types, edge styling, mobile fit --- snap a screenshot:
+
+```
+task local:peek
+```
+
+This boots `astro dev`, opens headless Chromium with the spoiler gate pre-revealed via a seeded `localStorage["ngg-spoiler-progress"]` entry (so the gate never paints), waits a random 2.5---9.5s so the auto-rotation lands in a different framing each run, and writes a 4K PNG to `/tmp/ngg-peek.png`.
+
+The script lives at `scripts/peek-graph.mjs`. Env overrides: `OUT`, `PORT`, `DEVICE_SCALE_FACTOR` (default 2 for retina-sharp WebGL), `VIEWPORT_W`, `VIEWPORT_H`, `MIN_WAIT_MS`, `MAX_WAIT_MS`. The localStorage-seed bypass is asserted by `preseeded localStorage bypasses the gate` in `tests/e2e/spoiler.spec.ts` so this workflow can't silently bit-rot --- if the storage key or schema changes, that test fails before peek does.
+
 ## Adding an investigation
 
 1. Encode the GRAPH.md tables as a new module in `src/graph/<id>.ts` matching the `InvestigationGraph` shape.

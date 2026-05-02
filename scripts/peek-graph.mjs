@@ -26,6 +26,11 @@ const MIN_WAIT_MS = Number(process.env.MIN_WAIT_MS ?? 2_500);
 const MAX_WAIT_MS = Number(process.env.MAX_WAIT_MS ?? 9_500);
 const VIEWPORT_W = Number(process.env.VIEWPORT_W ?? 1920);
 const VIEWPORT_H = Number(process.env.VIEWPORT_H ?? 1080);
+// Pixel density. dsf=2 doubles every screenshot dimension --- a 1920x1080
+// layout becomes a 3840x2160 PNG. Crucial for the graph: the WebGL canvas
+// renders to the device-pixel buffer, so dsf=2 produces actual retina-sharp
+// node glyphs and edges instead of blurry CSS upscaling.
+const DEVICE_SCALE_FACTOR = Number(process.env.DEVICE_SCALE_FACTOR ?? 2);
 
 function randInt(min, max) {
   return min + Math.floor(Math.random() * (max - min + 1));
@@ -88,7 +93,7 @@ async function main() {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({
       viewport: { width: VIEWPORT_W, height: VIEWPORT_H },
-      deviceScaleFactor: 1,
+      deviceScaleFactor: DEVICE_SCALE_FACTOR,
     });
 
     // Seed localStorage BEFORE any page script runs so the spoiler gate sees
@@ -158,8 +163,9 @@ async function main() {
     );
     await sleep(waitMs);
 
-    await page.screenshot({ path: OUT, fullPage: false });
-    console.log(`[peek] wrote ${OUT}`);
+    await page.screenshot({ path: OUT, fullPage: false, type: "png" });
+    const dim = `${VIEWPORT_W * DEVICE_SCALE_FACTOR}x${VIEWPORT_H * DEVICE_SCALE_FACTOR}`;
+    console.log(`[peek] wrote ${OUT} (${dim} @ dsf=${DEVICE_SCALE_FACTOR})`);
 
     // Quick stats so the script's stdout proves it actually rendered.
     const stats = await page.evaluate(() => {

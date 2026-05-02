@@ -68,6 +68,34 @@ test.describe("spoiler gate --- persistence + force eject", () => {
     await expect(root).toHaveAttribute("data-spoiler-episode", "8");
   });
 
+  test("preseeded localStorage bypasses the gate (peek-graph.mjs invariant)", async ({
+    page,
+  }) => {
+    // Mirrors what scripts/peek-graph.mjs does: seed a full-reveal
+    // SpoilerProgress before any page script runs. The gate must read it
+    // on bootstrap and stay hidden, and the renderer must broadcast the
+    // seeded tier into data-spoiler-* attributes on the graph root.
+    //
+    // If this breaks (storage key renamed, schema changed, gate stops
+    // honoring persisted state on first paint), `task local:peek` would
+    // silently capture the spoiler gate instead of the graph. Catch it
+    // here, not by squinting at a screenshot.
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "ngg-spoiler-progress",
+        JSON.stringify({ episode: 26, eoe: true, rebuild: true }),
+      );
+    });
+    await page.goto("/");
+
+    const gate = page.getByTestId("ngg-spoiler-gate");
+    await expect(gate).toBeHidden();
+    const root = page.getByTestId("ngg-graph-root");
+    await expect(root).toHaveAttribute("data-spoiler-episode", "26");
+    await expect(root).toHaveAttribute("data-spoiler-eoe", "true");
+    await expect(root).toHaveAttribute("data-spoiler-rebuild", "true");
+  });
+
   test("force-eject row is hidden on first visit (nothing to eject)", async ({
     page,
   }) => {
