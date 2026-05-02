@@ -1,4 +1,7 @@
 import * as THREE from "three";
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import {
   ANGEL_UNIFORM_COLOR,
   CONCEPT_UNIFORM_COLOR,
@@ -99,7 +102,7 @@ interface EdgeLineData {
   edge: Edge;
   fromId: string;
   toId: string;
-  material: THREE.LineBasicMaterial;
+  material: LineMaterial;
   baseOpacity: number;
   masked: boolean;
   /**
@@ -412,12 +415,10 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     nodeMeshById.set(node.id, data);
   }
 
-  // Per-edge-kind base opacity. THREE.LineBasicMaterial.linewidth is
-  // ignored on most platforms (stuck at 1px), so opacity is the only
-  // dimension we have for visual weight. The ranking is canonical-meaning,
-  // not edge count: a connection formed on elimination outranks one
-  // formed on family --- the EVA <-> angel-it-killed bond is the single
-  // most aggressive tie on the graph.
+  // Per-edge-kind base opacity. The ranking is canonical-meaning, not edge
+  // count: a connection formed on elimination outranks one formed on
+  // family --- the EVA <-> angel-it-killed bond is the single most
+  // aggressive tie on the graph.
   //
   //   magi_link        0.95  the 3-in-1 triangle (always-on highlight)
   //   eliminated       0.85  the kill chain --- top ungated bond class
@@ -443,31 +444,61 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     generic: 0.32,
   };
 
+  // Per-edge-kind line width in CSS pixels. Achievable because we render
+  // edges as Line2 instanced screen-space quads (LineMaterial), not the
+  // GPU-clamped THREE.LineBasicMaterial which is stuck at 1px on every
+  // desktop driver. Width tracks meaning the same way opacity does:
+  // structural chrome stays thin so the canonical-bond classes (kill chain,
+  // magi triangle, identity reveals) read as the visually weighty lines.
+  const EDGE_WIDTH: Record<typeof evangelion.edges[number]["kind"], number> = {
+    magi_link: 3.0,
+    eliminated: 3.5,
+    identity_reveal: 3.0,
+    pilots: 2.8,
+    caused: 2.4,
+    angel_sequence: 2.4,
+    member_of_family: 2.2,
+    member_of_org: 2.0,
+    located_in: 2.0,
+    generic: 1.8,
+  };
+
+  // LineMaterial needs its `resolution` uniform updated whenever the
+  // canvas resizes so the screen-space width stays in CSS pixels. We
+  // collect every line material (spines + halos) into one array and the
+  // resize handler walks it.
+  const lineMaterials: LineMaterial[] = [];
+
   // Build edges.
   const edgeLines: EdgeLineData[] = [];
   const edgesByNode = new Map<string, EdgeLineData[]>();
-  // Additional "halo" lines per eliminated edge, drawn slightly fatter at
-  // lower opacity with additive blending --- gives the kill-chain edge
-  // a luminous body the eye reads as a thicker stroke even though
-  // THREE.LineBasicMaterial.linewidth is stuck at 1px on every desktop GPU.
-  // Halos pulse together with their parent line; mask / highlight state
-  // is mirrored from the parent.
+  // Additional "halo" lines per eliminated edge, drawn fatter at lower
+  // opacity with additive blending --- gives the kill-chain edge a
+  // luminous body that reads as a glowing stroke. Halos share geometry
+  // with the parent so they stay in lockstep through every mask,
+  // highlight, and pulse update.
   interface KillChainHalo {
     parent: EdgeLineData;
-    material: THREE.LineBasicMaterial;
+    material: LineMaterial;
   }
   const killChainHalos: KillChainHalo[] = [];
+  // LineGeometry is happy with a flat 6-float buffer per single segment.
   for (const edge of evangelion.edges) {
     const a = layout.positions.get(edge.from);
     const b = layout.positions.get(edge.to);
     if (!a || !b) continue;
     const colorHex = EDGE_COLORS[edge.kind];
     const opacity = EDGE_OPACITY[edge.kind];
+    const width = EDGE_WIDTH[edge.kind];
     const isKillChain = edge.kind === "eliminated";
-    const mat = new THREE.LineBasicMaterial({
-      color: new THREE.Color(colorHex),
+    const mat = new LineMaterial({
+      color: new THREE.Color(colorHex).getHex(),
       transparent: true,
       opacity,
+      linewidth: width,
+      // Resolution gets flushed once the resize handler runs below,
+      // and again on every viewport change.
+      worldUnits: false,
       // Additive blending makes the kill-chain edge glow against the
       // OLED-black background --- the EVA <-> angel bond literally
       // brightens what's behind it, the way a NERV alert lights up
@@ -476,12 +507,12 @@ export function initGraph3D(options: InitOptions): GraphHandle {
       depthWrite: isKillChain ? false : true,
     });
     materials.push(mat);
-    const geo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(a.x, a.y, a.z),
-      new THREE.Vector3(b.x, b.y, b.z),
-    ]);
+    lineMaterials.push(mat);
+    const geo = new LineGeometry();
+    geo.setPositions([a.x, a.y, a.z, b.x, b.y, b.z]);
     geometries.push(geo);
-    const line = new THREE.Line(geo, mat);
+    const line = new Line2(geo, mat);
+    line.computeLineDistances();
     line.userData = { edge };
     if (isKillChain) {
       // Render the kill chain ON TOP of every other edge --- the EVA's
@@ -507,24 +538,29 @@ export function initGraph3D(options: InitOptions): GraphHandle {
       edgesByNode.set(id, list);
     }
 
-    // For eliminated edges: stack two more lines on the same geometry,
-    // each with additive blending and lower opacity. Together they
-    // bloom into a fuzzy red bar of light --- the EVA's overcoming of
-    // the angel made literal in pixel space. Halos share geometry with
-    // the parent so they stay in lockstep through every mask, highlight,
-    // and pulse update.
+    // For eliminated edges: stack two more wider lines on the same
+    // geometry, each with additive blending and lower opacity. Together
+    // they bloom into a fuzzy red bar of light --- the EVA's overcoming
+    // of the angel made literal in pixel space.
     if (isKillChain) {
-      const haloOpacities = [0.45, 0.22];
-      for (const haloOpacity of haloOpacities) {
-        const haloMat = new THREE.LineBasicMaterial({
-          color: new THREE.Color(colorHex),
+      const haloPasses: Array<{ opacity: number; widthMul: number }> = [
+        { opacity: 0.45, widthMul: 2.4 },
+        { opacity: 0.22, widthMul: 4.4 },
+      ];
+      for (const pass of haloPasses) {
+        const haloMat = new LineMaterial({
+          color: new THREE.Color(colorHex).getHex(),
           transparent: true,
-          opacity: haloOpacity,
+          opacity: pass.opacity,
+          linewidth: width * pass.widthMul,
+          worldUnits: false,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         });
         materials.push(haloMat);
-        const haloLine = new THREE.Line(geo, haloMat);
+        lineMaterials.push(haloMat);
+        const haloLine = new Line2(geo, haloMat);
+        haloLine.computeLineDistances();
         haloLine.renderOrder = 4;
         haloLine.userData = { killChainHalo: true };
         sceneGroup.add(haloLine);
@@ -831,6 +867,10 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    // LineMaterial extrudes line quads in screen space; without an
+    // up-to-date resolution every line renders at a width skewed by
+    // whatever the previous viewport was.
+    for (const m of lineMaterials) m.resolution.set(w, h);
   };
   const ro = new ResizeObserver(resize);
   ro.observe(root);
