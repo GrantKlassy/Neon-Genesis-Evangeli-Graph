@@ -32,7 +32,7 @@ test.describe("graph structure visible in the DOM", () => {
     ).toBeVisible();
   });
 
-  test("characters section lists the eight expected pilots/cast", async ({
+  test("characters section lists the seven main pilots/cast plus Keel", async ({
     page,
   }) => {
     await page.goto("/");
@@ -45,7 +45,7 @@ test.describe("graph structure visible in the DOM", () => {
       "char_kaworu",
       "char_gendo",
       "char_ritsuko",
-      "char_mari",
+      "char_keel",
     ]) {
       await expect(
         section.locator(`[data-testid="character-${id}"]`),
@@ -114,7 +114,7 @@ test.describe("graph structure visible in the DOM", () => {
     }
   });
 
-  test("organizations section includes SEELE, WILLE, GEHIRN, JSSDF, Marduk, Japanese Government", async ({
+  test("organizations section includes SEELE, GEHIRN, JSSDF, Marduk, Japanese Government", async ({
     page,
   }) => {
     await page.goto("/");
@@ -122,7 +122,6 @@ test.describe("graph structure visible in the DOM", () => {
     for (const id of [
       "org_nerv",
       "org_seele",
-      "org_wille",
       "org_gehirn",
       "org_jssdf",
       "org_marduk",

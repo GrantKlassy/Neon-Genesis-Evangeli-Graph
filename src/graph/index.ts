@@ -106,9 +106,6 @@ export function isAudience(node: GraphNode): node is AudienceNode {
  * acknowledged finishing both the TV finale AND the film. Used by the
  * dies-by-end-of-series readout badge: the badge is meant as a closing
  * roll-call after every spoiler has fallen, not a live spoiler itself.
- *
- * Rebuild is intentionally not part of this --- it's a parallel timeline,
- * not a continuation.
  */
 export function isShowComplete(progress: SpoilerProgress): boolean {
   return progress.eoe && progress.episode >= 26;
@@ -138,7 +135,7 @@ export const ANGEL_UNIFORM_COLOR = "#ff003c";
  */
 export const EVENT_UNIFORM_COLOR = "#8a2be2";
 
-/** Uniform color for every Organization node (NERV / SEELE / WILLE chrome). */
+/** Uniform color for every Organization node (NERV / SEELE / GEHIRN chrome). */
 export const ORGANIZATION_UNIFORM_COLOR = "#c8102e";
 
 /** Uniform color for every Location node (geofront blue --- "physical world"). */
@@ -239,8 +236,6 @@ export function isVisible(
       return progress.episode >= gate.episode;
     case "eoe":
       return progress.eoe || progress.episode >= 25;
-    case "rebuild":
-      return progress.rebuild;
   }
 }
 
@@ -292,8 +287,6 @@ export function gateLabel(gate: RevealedAt | undefined): string {
       return `Ep. ${gate.episode}+`;
     case "eoe":
       return "End of Evangelion";
-    case "rebuild":
-      return "Rebuild films";
   }
 }
 
@@ -302,22 +295,18 @@ export function gateLabel(gate: RevealedAt | undefined): string {
  * string is missing or malformed. Used by the gate's localStorage read path
  * so a corrupt cookie doesn't blow up the renderer.
  *
- * Hard invariants: EoE implies the user finished Episode 26, and Rebuild
- * implies the user finished EoE. EoE picks up after Ep 26, and the Rebuild
- * films remix the TV run + EoE --- you shouldn't watch Rebuilds without
- * having seen both first. When we encounter the impossible states (eoe=true
- * with ep<26, or rebuild=true without eoe) we lift the prerequisites rather
- * than dropping the flag --- the safer assumption is that the user really
- * has been spoiled and we should not hide content from them.
+ * Hard invariant: EoE implies the user finished Episode 26 --- EoE picks up
+ * after the TV finale. When we encounter the impossible state (eoe=true with
+ * ep<26) we lift the episode rather than dropping the EoE flag --- the safer
+ * assumption is that the user really has been spoiled and we should not hide
+ * content from them.
  */
 export function normalizeSpoilerProgress(p: SpoilerProgress): SpoilerProgress {
   const episode = Math.max(0, Math.min(26, Math.floor(p.episode)));
-  const rebuild = p.rebuild === true;
-  const eoe = p.eoe === true || rebuild;
+  const eoe = p.eoe === true;
   return {
     episode: eoe && episode < 26 ? 26 : episode,
     eoe,
-    rebuild,
   };
 }
 
@@ -329,8 +318,7 @@ export function parseSpoilerProgress(raw: string | null): SpoilerProgress {
     const o = obj as Record<string, unknown>;
     const ep = typeof o.episode === "number" ? o.episode : 0;
     const eoe = o.eoe === true;
-    const rebuild = o.rebuild === true;
-    return normalizeSpoilerProgress({ episode: ep, eoe, rebuild });
+    return normalizeSpoilerProgress({ episode: ep, eoe });
   } catch {
     return { ...SPOILER_PROGRESS_DEFAULT };
   }
@@ -367,7 +355,6 @@ function validateRevealedAt(loc: string, gate: RevealedAt | undefined): void {
       }
       break;
     case "eoe":
-    case "rebuild":
       break;
     default: {
       const _exhaustive: never = gate;
@@ -383,11 +370,10 @@ function validateRevealedAt(loc: string, gate: RevealedAt | undefined): void {
  * than b, 0 if they're equivalent, 1 if a is strictly later (more
  * restrictive). Used by the monotonicity invariant.
  *
- * Total order: undefined < ep1 < ep2 < ... < ep26 < eoe < rebuild.
+ * Total order: undefined < ep1 < ep2 < ... < ep26 < eoe.
  *
  *   - undefined (open) reveals from Ep. 1 onward, the most permissive gate.
  *   - eoe unlocks at episode 25+ OR the eoe flag (effectively post-26).
- *   - rebuild requires watching the Rebuild films, which presupposes EoE.
  */
 function gateRank(gate: RevealedAt | undefined): number {
   if (!gate) return 0;
@@ -397,10 +383,6 @@ function gateRank(gate: RevealedAt | undefined): number {
     case "eoe":
       // EoE sits just after Ep. 26 in the canonical viewing order.
       return 27;
-    case "rebuild":
-      // Rebuild gates require EoE first (see normalizeSpoilerProgress);
-      // place it strictly above EoE.
-      return 28;
   }
 }
 

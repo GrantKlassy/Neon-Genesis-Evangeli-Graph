@@ -33,24 +33,18 @@ describe("isVisible", () => {
 
   it("ep gate compares against episode threshold", () => {
     const gate = { kind: "ep" as const, episode: 8 };
-    expect(isVisible(gate, { episode: 0, eoe: false, rebuild: false })).toBe(false);
-    expect(isVisible(gate, { episode: 7, eoe: false, rebuild: false })).toBe(false);
-    expect(isVisible(gate, { episode: 8, eoe: false, rebuild: false })).toBe(true);
-    expect(isVisible(gate, { episode: 26, eoe: true, rebuild: true })).toBe(true);
+    expect(isVisible(gate, { episode: 0, eoe: false })).toBe(false);
+    expect(isVisible(gate, { episode: 7, eoe: false })).toBe(false);
+    expect(isVisible(gate, { episode: 8, eoe: false })).toBe(true);
+    expect(isVisible(gate, { episode: 26, eoe: true })).toBe(true);
   });
 
   it("eoe gate unlocks via EoE flag OR episode >= 25", () => {
     const gate = { kind: "eoe" as const };
-    expect(isVisible(gate, { episode: 0, eoe: false, rebuild: false })).toBe(false);
-    expect(isVisible(gate, { episode: 24, eoe: false, rebuild: false })).toBe(false);
-    expect(isVisible(gate, { episode: 25, eoe: false, rebuild: false })).toBe(true);
-    expect(isVisible(gate, { episode: 0, eoe: true, rebuild: false })).toBe(true);
-  });
-
-  it("rebuild gate requires the rebuild flag", () => {
-    const gate = { kind: "rebuild" as const };
-    expect(isVisible(gate, { episode: 26, eoe: true, rebuild: false })).toBe(false);
-    expect(isVisible(gate, { episode: 0, eoe: false, rebuild: true })).toBe(true);
+    expect(isVisible(gate, { episode: 0, eoe: false })).toBe(false);
+    expect(isVisible(gate, { episode: 24, eoe: false })).toBe(false);
+    expect(isVisible(gate, { episode: 25, eoe: false })).toBe(true);
+    expect(isVisible(gate, { episode: 0, eoe: true })).toBe(true);
   });
 });
 
@@ -74,7 +68,6 @@ describe("gateLabel", () => {
     expect(gateLabel(undefined)).toBe("open");
     expect(gateLabel({ kind: "ep", episode: 24 })).toBe("Ep. 24+");
     expect(gateLabel({ kind: "eoe" })).toBe("End of Evangelion");
-    expect(gateLabel({ kind: "rebuild" })).toBe("Rebuild films");
   });
 });
 
@@ -91,12 +84,10 @@ describe("parseSpoilerProgress", () => {
     expect(parseSpoilerProgress(JSON.stringify({ episode: -5 }))).toEqual({
       episode: 0,
       eoe: false,
-      rebuild: false,
     });
     expect(parseSpoilerProgress(JSON.stringify({ episode: 999 }))).toEqual({
       episode: 26,
       eoe: false,
-      rebuild: false,
     });
   });
 
@@ -104,16 +95,13 @@ describe("parseSpoilerProgress", () => {
     expect(parseSpoilerProgress(JSON.stringify({ episode: 5 }))).toEqual({
       episode: 5,
       eoe: false,
-      rebuild: false,
     });
   });
 
   it("preserves a fully-formed payload", () => {
     expect(
-      parseSpoilerProgress(
-        JSON.stringify({ episode: 26, eoe: true, rebuild: false }),
-      ),
-    ).toEqual({ episode: 26, eoe: true, rebuild: false });
+      parseSpoilerProgress(JSON.stringify({ episode: 26, eoe: true })),
+    ).toEqual({ episode: 26, eoe: true });
   });
 
   it("forces episode to 26 when EoE is set with a lower episode", () => {
@@ -121,59 +109,63 @@ describe("parseSpoilerProgress", () => {
     // impossible state. We force episode to 26 rather than dropping the EoE
     // flag --- safer to assume the user really has been spoiled.
     expect(
-      parseSpoilerProgress(
-        JSON.stringify({ episode: 7, eoe: true, rebuild: false }),
-      ),
-    ).toEqual({ episode: 26, eoe: true, rebuild: false });
+      parseSpoilerProgress(JSON.stringify({ episode: 7, eoe: true })),
+    ).toEqual({ episode: 26, eoe: true });
     expect(
-      parseSpoilerProgress(
-        JSON.stringify({ episode: 0, eoe: true, rebuild: true }),
-      ),
-    ).toEqual({ episode: 26, eoe: true, rebuild: true });
+      parseSpoilerProgress(JSON.stringify({ episode: 0, eoe: true })),
+    ).toEqual({ episode: 26, eoe: true });
+  });
+
+  it("ignores stale Rebuild keys from old localStorage payloads", () => {
+    // Old payloads may still have a `rebuild` key from the previous
+    // schema. Parsing should silently drop it --- the new shape only
+    // tracks { episode, eoe }.
+    const parsed = parseSpoilerProgress(
+      JSON.stringify({ episode: 12, eoe: false, rebuild: true }),
+    );
+    expect(parsed).toEqual({ episode: 12, eoe: false });
+    expect(
+      (parsed as unknown as Record<string, unknown>).rebuild,
+    ).toBeUndefined();
   });
 });
 
-describe("normalizeSpoilerProgress (EoE/Rebuild invariants)", () => {
+describe("normalizeSpoilerProgress (EoE invariants)", () => {
   it("is a no-op for any valid state", () => {
-    expect(
-      normalizeSpoilerProgress({ episode: 0, eoe: false, rebuild: false }),
-    ).toEqual({ episode: 0, eoe: false, rebuild: false });
-    expect(
-      normalizeSpoilerProgress({ episode: 26, eoe: true, rebuild: true }),
-    ).toEqual({ episode: 26, eoe: true, rebuild: true });
-    expect(
-      normalizeSpoilerProgress({ episode: 26, eoe: true, rebuild: false }),
-    ).toEqual({ episode: 26, eoe: true, rebuild: false });
+    expect(normalizeSpoilerProgress({ episode: 0, eoe: false })).toEqual({
+      episode: 0,
+      eoe: false,
+    });
+    expect(normalizeSpoilerProgress({ episode: 26, eoe: true })).toEqual({
+      episode: 26,
+      eoe: true,
+    });
+    expect(normalizeSpoilerProgress({ episode: 12, eoe: false })).toEqual({
+      episode: 12,
+      eoe: false,
+    });
   });
 
   it("rejects the impossible EoE+ep<26 state by raising episode to 26", () => {
-    expect(
-      normalizeSpoilerProgress({ episode: 7, eoe: true, rebuild: false }),
-    ).toEqual({ episode: 26, eoe: true, rebuild: false });
-    expect(
-      normalizeSpoilerProgress({ episode: 25, eoe: true, rebuild: false }),
-    ).toEqual({ episode: 26, eoe: true, rebuild: false });
-  });
-
-  it("rejects the impossible Rebuild-without-EoE state by lifting EoE/episode", () => {
-    // Rebuilds remix the TV run + EoE; rebuild=true with eoe=false (or
-    // episode<26) is an impossible state. Lift the prerequisites rather
-    // than dropping the rebuild flag.
-    expect(
-      normalizeSpoilerProgress({ episode: 13, eoe: false, rebuild: true }),
-    ).toEqual({ episode: 26, eoe: true, rebuild: true });
-    expect(
-      normalizeSpoilerProgress({ episode: 26, eoe: false, rebuild: true }),
-    ).toEqual({ episode: 26, eoe: true, rebuild: true });
+    expect(normalizeSpoilerProgress({ episode: 7, eoe: true })).toEqual({
+      episode: 26,
+      eoe: true,
+    });
+    expect(normalizeSpoilerProgress({ episode: 25, eoe: true })).toEqual({
+      episode: 26,
+      eoe: true,
+    });
   });
 
   it("clamps episode into [0, 26] in addition to EoE check", () => {
-    expect(
-      normalizeSpoilerProgress({ episode: -3, eoe: false, rebuild: false }),
-    ).toEqual({ episode: 0, eoe: false, rebuild: false });
-    expect(
-      normalizeSpoilerProgress({ episode: 999, eoe: false, rebuild: false }),
-    ).toEqual({ episode: 26, eoe: false, rebuild: false });
+    expect(normalizeSpoilerProgress({ episode: -3, eoe: false })).toEqual({
+      episode: 0,
+      eoe: false,
+    });
+    expect(normalizeSpoilerProgress({ episode: 999, eoe: false })).toEqual({
+      episode: 26,
+      eoe: false,
+    });
   });
 
   it("the default and full preset states are both valid", () => {
@@ -195,8 +187,8 @@ describe("isNodeMasked", () => {
 
   it("ep-gated node masks below threshold, reveals at and above", () => {
     const n = node({ revealedAt: { kind: "ep", episode: 24 } });
-    expect(isNodeMasked(n, { episode: 23, eoe: false, rebuild: false })).toBe(true);
-    expect(isNodeMasked(n, { episode: 24, eoe: false, rebuild: false })).toBe(false);
+    expect(isNodeMasked(n, { episode: 23, eoe: false })).toBe(true);
+    expect(isNodeMasked(n, { episode: 24, eoe: false })).toBe(false);
   });
 });
 
@@ -215,8 +207,8 @@ describe("isEdgeMasked", () => {
       revealedAt: { kind: "ep", episode: 18 },
       notes: "",
     };
-    expect(isEdgeMasked(edge, { episode: 17, eoe: false, rebuild: false }, nodes)).toBe(true);
-    expect(isEdgeMasked(edge, { episode: 18, eoe: false, rebuild: false }, nodes)).toBe(false);
+    expect(isEdgeMasked(edge, { episode: 17, eoe: false }, nodes)).toBe(true);
+    expect(isEdgeMasked(edge, { episode: 18, eoe: false }, nodes)).toBe(false);
   });
 
   it("masks an edge whose endpoint is masked even if the edge gate passes", () => {
@@ -233,8 +225,8 @@ describe("isEdgeMasked", () => {
       // Edge gate is open, but endpoint b is gated.
       notes: "",
     };
-    expect(isEdgeMasked(edge, { episode: 23, eoe: false, rebuild: false }, nodes)).toBe(true);
-    expect(isEdgeMasked(edge, { episode: 24, eoe: false, rebuild: false }, nodes)).toBe(false);
+    expect(isEdgeMasked(edge, { episode: 23, eoe: false }, nodes)).toBe(true);
+    expect(isEdgeMasked(edge, { episode: 24, eoe: false }, nodes)).toBe(false);
   });
 });
 
@@ -264,9 +256,10 @@ describe("evangelion graph spoiler invariants", () => {
     expect(kaworu.revealedAt).toEqual({ kind: "ep", episode: 24 });
   });
 
-  it("Mari is gated to the Rebuild films", () => {
-    const mari = nodes.get("char_mari")!;
-    expect(mari.revealedAt).toEqual({ kind: "rebuild" });
+  it("Keel is gated to Ep 14 (first SEELE committee scene)", () => {
+    const keel = nodes.get("char_keel")!;
+    expect(keel).toBeDefined();
+    expect(keel!.revealedAt).toEqual({ kind: "ep", episode: 14 });
   });
 
   it("the Lilim angel is gated to End of Evangelion", () => {
@@ -328,7 +321,7 @@ describe("evangelion graph spoiler invariants", () => {
       (e) =>
         e.from === "char_toji" && e.to === "angel_13_bardiel",
     )!;
-    const p: SpoilerProgress = { episode: 17, eoe: false, rebuild: false };
+    const p: SpoilerProgress = { episode: 17, eoe: false };
     expect(isEdgeMasked(edge, p, nodes)).toBe(true);
   });
 
@@ -338,7 +331,7 @@ describe("evangelion graph spoiler invariants", () => {
     const edge = evangelion.edges.find(
       (e) => e.from === "char_toji" && e.to === "angel_13_bardiel",
     )!;
-    const p: SpoilerProgress = { episode: 18, eoe: false, rebuild: false };
+    const p: SpoilerProgress = { episode: 18, eoe: false };
     expect(isNodeMasked(toji, p)).toBe(false);
     expect(isNodeMasked(bardiel, p)).toBe(false);
     expect(isEdgeMasked(edge, p, nodes)).toBe(false);
@@ -381,9 +374,9 @@ describe("evangelion graph spoiler invariants", () => {
     expect(visibleIds.has("char_kaworu")).toBe(false);
     expect(visibleIds.has("char_yui")).toBe(false);
     expect(visibleIds.has("char_naoko")).toBe(false);
+    expect(visibleIds.has("char_keel")).toBe(false);
     expect(visibleIds.has("char_toji")).toBe(false);
     expect(visibleIds.has("char_asuka")).toBe(false);
-    expect(visibleIds.has("char_mari")).toBe(false);
     expect(visibleIds.has("angel_17_tabris")).toBe(false);
     expect(visibleIds.has("angel_18_lilim")).toBe(false);
     expect(visibleIds.has("event_third_impact")).toBe(false);

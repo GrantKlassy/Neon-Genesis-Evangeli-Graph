@@ -249,8 +249,8 @@ describe("forceLayout3D", () => {
     // Same invariant as Rei-Yui, asserted on the other identity-reveal pair
     // so a regression in either direction surfaces clearly.
     const nodesIdx = nodeIndex(evangelion);
-    const preReveal = { episode: 17, eoe: false, rebuild: false };
-    const postReveal = { episode: 18, eoe: false, rebuild: false };
+    const preReveal = { episode: 17, eoe: false };
+    const postReveal = { episode: 18, eoe: false };
     const visiblePre = evangelion.edges.filter(
       (e) => !isEdgeMasked(e, preReveal, nodesIdx),
     );

@@ -88,7 +88,5 @@ function isTagVisible(tag: NodeTag, progress: SpoilerProgress): boolean {
       return progress.episode >= gate.episode;
     case "eoe":
       return progress.eoe || progress.episode >= 25;
-    case "rebuild":
-      return progress.rebuild;
   }
 }

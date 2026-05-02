@@ -102,7 +102,7 @@ async function main() {
     // src/components/SpoilerGate.astro saveProgress().
     await context.addInitScript(() => {
       try {
-        const full = { episode: 26, eoe: true, rebuild: true };
+        const full = { episode: 26, eoe: true };
         localStorage.setItem("ngg-spoiler-progress", JSON.stringify(full));
       } catch {
         /* localStorage unavailable; gate will simply prompt --- non-fatal */

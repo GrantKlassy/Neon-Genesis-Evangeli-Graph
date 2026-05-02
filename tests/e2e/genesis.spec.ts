@@ -100,7 +100,7 @@ test.describe("genesis registry CSS variables propagate to the page", () => {
       "kaworu",
       "gendo",
       "ritsuko",
-      "mari",
+      "keel",
       "ikari",
       "ayanami",
     ]) {

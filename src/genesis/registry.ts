@@ -115,22 +115,6 @@ export const genesis = {
     notes: "NERV chief scientist. Blonde hair, lab coat, signature cigarette.",
     evageeksSlug: "Ritsuko_Akagi",
   },
-  mari: {
-    shortcode: "mari",
-    kind: "CHARACTERS",
-    displayName: "Mari Makinami Illustrious",
-    aliases: [
-      "Mari",
-      "Mari Makinami",
-      "Mari Makinami Illustrious",
-      "Makinami Mari",
-    ],
-    primary: "#d51a73",
-    secondary: ["#7a4a3a", "#4a1a3d"],
-    notes:
-      "Rebuild-only pilot. Magenta plug suit, twin braids, round glasses.",
-    evageeksSlug: "Mari_Makinami_Illustrious",
-  },
   toji: {
     shortcode: "toji",
     kind: "CHARACTERS",
@@ -258,6 +242,17 @@ export const genesis = {
       "Shinji's classmate, military otaku, camera glued to his hand. Desperately wants to pilot an EVA.",
     evageeksSlug: "Kensuke_Aida",
   },
+  keel: {
+    shortcode: "keel",
+    kind: "CHARACTERS",
+    displayName: "Keel Lorenz",
+    aliases: ["Keel", "Keel Lorenz", "Lorenz", "Chairman Keel", "SEELE 01"],
+    primary: "#3a1a4a",
+    secondary: ["#8a2be2", "#ff6700"],
+    notes:
+      "Chairman of SEELE. Dead-eyed cyborg in a visor; everything below his neck has been replaced by machine. Holds the Dead Sea Scrolls and runs the Instrumentality scenario from the orange 'SOUND ONLY' monolith. The hand at the very top of the chain Gendo answers to.",
+    evageeksSlug: "Keel_Lorenz",
+  },
 
   // ---- CHARACTERS (family-name shortcodes) ----
   // Surnames get their own shortcode so a node like "Shinji Ikari" can
@@ -318,15 +313,6 @@ export const genesis = {
     primary: "#d6271e",
     secondary: ["#ff7e00", "#fcd35d"],
     notes: "Asuka's German-American lineage --- Langley Soryu.",
-  },
-  makinami: {
-    shortcode: "makinami",
-    kind: "CHARACTERS",
-    displayName: "Makinami (Rebuild line)",
-    aliases: ["Makinami", "Illustrious"],
-    primary: "#d51a73",
-    secondary: ["#7a4a3a", "#4a1a3d"],
-    notes: "Mari's Rebuild-only surname.",
   },
 
   // ---- ANGELS ----
@@ -647,17 +633,6 @@ export const genesis = {
       "Shadow committee. Numbered red triangular monoliths, Sound Only orange screens.",
     evageeksSlug: "Seele",
   },
-  wille: {
-    shortcode: "wille",
-    kind: "ORGANIZATIONS",
-    displayName: "WILLE",
-    aliases: ["WILLE", "Wille"],
-    primary: "#0a6b6b",
-    secondary: ["#f5f5f0", "#c8102e"],
-    notes:
-      "Anti-NERV organization (Rebuild). Military teal aesthetic on the AAA Wunder.",
-    evageeksSlug: "Wille",
-  },
   gehirn: {
     shortcode: "gehirn",
     kind: "ORGANIZATIONS",
@@ -775,6 +750,50 @@ export const genesis = {
     notes:
       "Site of the Katsuragi Expedition's 2000 contact experiment with Adam --- the trigger of Second Impact. Now a frozen red sea.",
     evageeksSlug: "Antarctica",
+  },
+  mtAsama: {
+    shortcode: "mtAsama",
+    kind: "LOCATIONS",
+    displayName: "Mt. Asama",
+    aliases: ["Mt. Asama", "Mt Asama", "Mount Asama", "Asama Caldera"],
+    primary: "#a8480a",
+    secondary: ["#ff6c2a", "#1a1a1a"],
+    notes:
+      "Active volcano in Honshu. The Eighth Angel, Sandalphon, gestates inside the magma chamber; Unit-02 in heat-resistant Type-D armor abseils into the caldera in Ep. 10 to retrieve it.",
+    evageeksSlug: "Mt._Asama",
+  },
+  matsushiro: {
+    shortcode: "matsushiro",
+    kind: "LOCATIONS",
+    displayName: "Matsushiro",
+    aliases: ["Matsushiro", "Matsushiro Test Center", "Second Branch"],
+    primary: "#5a3a3a",
+    secondary: ["#a8131e", "#1a1a1a"],
+    notes:
+      "NERV's Second Branch in Nagano Prefecture, repurposed as the Unit-03 activation test site (Ep. 18). Bardiel's possession of Unit-03 begins here, and the cages around it become the kill site moments later.",
+    evageeksSlug: "Matsushiro",
+  },
+  pribnowBox: {
+    shortcode: "pribnowBox",
+    kind: "LOCATIONS",
+    displayName: "Pribnow Box",
+    aliases: ["Pribnow Box", "Sigma Unit"],
+    primary: "#3a8a6a",
+    secondary: ["#7acaaa", "#1a4a3a"],
+    notes:
+      "Test facility deep inside NERV HQ that houses the Evangelion simulation bodies and their plug controls. Iruel infiltrates NERV through a contaminated 87th protein wall installed here in Ep. 13. Named after the prokaryote DNA promoter site --- biology nerds, not theologians.",
+    evageeksSlug: "Pribnow_box",
+  },
+  nerv2: {
+    shortcode: "nerv2",
+    kind: "LOCATIONS",
+    displayName: "NERV-2 (Nevada)",
+    aliases: ["NERV-2", "Nevada Branch", "US Branch", "NERV 2nd Branch"],
+    primary: "#7a5a2a",
+    secondary: ["#caa078", "#1a1a1a"],
+    notes:
+      "NERV's Second Branch in the Nevada desert, USA. Where Unit-04 was test-fitted with an experimental S² engine in 2015 and was lost --- the entire branch and a Mojave-sized crater of land vanished with it. Unit-03 ships to Matsushiro from here in Ep. 17.",
+    evageeksSlug: "NERV-2",
   },
 
   // ---- CONCEPTS ----
@@ -937,6 +956,59 @@ export const genesis = {
       "The Antarctic counterpart to the Black Moon. Adam's vessel; the Katsuragi Expedition cracked it open and triggered Second Impact.",
     evageeksSlug: "White_Moon",
   },
+  deadSeaScrolls: {
+    shortcode: "deadSeaScrolls",
+    kind: "CONCEPTS",
+    displayName: "Dead Sea Scrolls",
+    aliases: ["Dead Sea Scrolls", "Secret Dead Sea Scrolls", "Scrolls"],
+    primary: "#a89060",
+    secondary: ["#5a4a30", "#fcd35d"],
+    notes:
+      "The prophecy SEELE runs the world by. They predict the angels in numerical order, name the two Moons, and lay out the scenario that ends in Instrumentality. Keel keeps the only complete copy.",
+    evageeksSlug: "Dead_Sea_Scrolls",
+  },
+  soundOnly: {
+    shortcode: "soundOnly",
+    kind: "CONCEPTS",
+    displayName: "Sound Only",
+    aliases: ["Sound Only", "SOUND ONLY", "SEELE Monolith"],
+    primary: "#ff6700",
+    secondary: ["#1a1a1a", "#8a2be2"],
+    notes:
+      "The orange 'SOUND ONLY' monolith. SEELE's twelve members appear to Gendo as numbered red triangles plus this one black-on-orange slab; nobody on the bridge ever sees a face. The most stylish committee meeting in anime history.",
+    evageeksSlug: "Seele",
+  },
+  berserk: {
+    shortcode: "berserk",
+    kind: "CONCEPTS",
+    displayName: "Berserk Mode",
+    aliases: ["Berserk", "Berserk Mode", "F-Type", "berserker"],
+    primary: "#a8131e",
+    secondary: ["#5cf590", "#1a1a1a"],
+    notes:
+      "What happens when the umbilical detaches and Yui decides she's had enough. Unit-01 enters this state in Eps. 2 (Sachiel), 16 (Leliel), and 19 (Zeruel) --- it bites, it screams, it eats S² engines.",
+    evageeksSlug: "Berserk",
+  },
+  yebisu: {
+    shortcode: "yebisu",
+    kind: "CONCEPTS",
+    displayName: "Yebisu",
+    aliases: ["Yebisu", "Yebisu beer"],
+    primary: "#fcd35d",
+    secondary: ["#a8131e", "#1a1a1a"],
+    notes:
+      "Misato's drink. A 500ml gold-label can opened over the head, drained in three seconds flat, followed by the most theatrical 'PUHAAA!' on Japanese television. Basically a load-bearing structural element of the Katsuragi apartment.",
+  },
+  watermelons: {
+    shortcode: "watermelons",
+    kind: "CONCEPTS",
+    displayName: "Watermelons",
+    aliases: ["Watermelons", "Watermelon", "Kaji's watermelons"],
+    primary: "#1a4a2a",
+    secondary: ["#5a7a3a", "#a8131e"],
+    notes:
+      "Kaji's hobby. He is a triple agent running ops for NERV, the Japanese government, and SEELE; on his off days he tends a NERV greenhouse plot of striped melons. A man who runs three jobs wants something that grows back.",
+  },
 
   // ---- EVENTS ----
   // Backstory and on-screen flashpoints. Tied to the `event` graph node
@@ -963,6 +1035,17 @@ export const genesis = {
     notes:
       "September 2000. The Katsuragi Expedition's contact experiment with Adam in Antarctica triggered a global cataclysm --- billions dead, sea levels reshaped, the seasons gone. The show's pre-cause for everything.",
     evageeksSlug: "Second_Impact",
+  },
+  operationYashima: {
+    shortcode: "operationYashima",
+    kind: "EVENTS",
+    displayName: "Operation Yashima",
+    aliases: ["Operation Yashima", "Yashima Operation"],
+    primary: "#62b8ff",
+    secondary: ["#3a8fff", "#fcd35d"],
+    notes:
+      "Ep. 6. Every spare watt of electricity in the Japanese archipelago drains into a single positron rifle so Unit-01 can shoot the Fifth Angel through the head from outside its AT field. Rei in Unit-00 holds the heat shield. The first time the show stops being about the giant robots and starts being about the kids.",
+    evageeksSlug: "Operation_Yashima",
   },
 
   // ---- AUDIENCE ----

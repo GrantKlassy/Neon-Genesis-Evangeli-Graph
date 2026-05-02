@@ -639,7 +639,6 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     root.dataset.visibleEdges = String(visibleEdges);
     root.dataset.spoilerEpisode = String(progress.episode);
     root.dataset.spoilerEoe = progress.eoe ? "true" : "false";
-    root.dataset.spoilerRebuild = progress.rebuild ? "true" : "false";
     onProgress?.(progress);
   }
 

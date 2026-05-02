@@ -570,8 +570,7 @@ const edgeLegend = [
     //
     // Cadence: 1.8s per TV episode (47s for the 26-step climb), 4s for
     // the EoE beat. Slow enough to feel like a ceremony, short enough
-    // to not hold a user hostage. Rebuild is intentionally NOT walked
-    // --- it's a parallel timeline, not part of the canonical run.
+    // to not hold a user hostage.
     const TIMELINE_STEP_MS = 1800;
     const TIMELINE_EOE_MS = 4000;
     const playBtn = document.getElementById(
@@ -610,7 +609,6 @@ const edgeLegend = [
           handle.applyProgress({
             episode: step,
             eoe: false,
-            rebuild: false,
           });
           setTimelineLabel(`ep ${step}/26`);
           step += 1;
@@ -619,7 +617,6 @@ const edgeLegend = [
           handle.applyProgress({
             episode: 26,
             eoe: true,
-            rebuild: false,
           });
           setTimelineLabel("+ EoE");
           step += 1;

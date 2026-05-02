@@ -113,13 +113,21 @@ describe("genesis registry invariants", () => {
       "kaworu",
       "gendo",
       "ritsuko",
-      "mari",
+      "keel",
     ]) {
       expect(isShortcode(code), `missing CHARACTERS shortcode: ${code}`).toBe(
         true,
       );
       expect(genesis[code as keyof typeof genesis].kind).toBe("CHARACTERS");
     }
+  });
+
+  it("does NOT include Rebuild-only entities (Mari, Makinami, WILLE)", () => {
+    // Canon scope is TV + EoE only --- Rebuild is intentionally out of
+    // scope. Catch any silent re-introduction in the registry.
+    expect(isShortcode("mari")).toBe(false);
+    expect(isShortcode("makinami")).toBe(false);
+    expect(isShortcode("wille")).toBe(false);
   });
 
   it("requires the canonical family-name shortcodes (the user's spec)", () => {
@@ -250,10 +258,10 @@ describe("evageeks links", () => {
       "kaworu",
       "gendo",
       "ritsuko",
-      "mari",
       "toji",
       "yui",
       "naoko",
+      "keel",
     ]) {
       expect(
         evageeksUrlOf(code),

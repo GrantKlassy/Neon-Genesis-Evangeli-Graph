@@ -204,8 +204,7 @@ describe("Invariant: dies-by-end-of-series tag is always gated to End of Evangel
 
 describe("Invariant: 'child' tag is restricted to characters who pilot an EVA", () => {
   // Canonical TV/EoE Children: Shinji (3rd), Asuka (2nd), Rei (1st),
-  // Toji (4th), Kaworu (5th). Mari is Rebuild-only and intentionally
-  // not tagged --- the "Eighth" designation is Rebuild canon, not TV.
+  // Toji (4th), Kaworu (5th).
   const EXPECTED_CHILDREN: ReadonlyArray<string> = [
     "char_shinji",
     "char_rei",
@@ -294,7 +293,7 @@ describe("Invariant: visibleTags spoiler logic", () => {
     const toji = evangelion.nodes.find(
       (n) => n.id === "char_toji",
     ) as CharacterNode;
-    const progress = { episode: 17, eoe: false, rebuild: false };
+    const progress = { episode: 17, eoe: false };
     const visible = visibleTags(toji.tags, progress);
     expect(visible.map((t) => t.id)).toEqual(["child"]);
   });
@@ -308,9 +307,9 @@ describe("Invariant: visibleTags spoiler logic", () => {
         if (t.id === "dies-by-end-of-series") visibleDeaths++;
       }
     }
-    // Tagged: Asuka, Rei, Misato, Kaworu, Gendo, Ritsuko, Kaji, Fuyutsuki
-    // --- 8 deaths.
-    expect(visibleDeaths).toBe(8);
+    // Tagged: Asuka, Rei, Misato, Kaworu, Gendo, Ritsuko, Kaji, Fuyutsuki,
+    // Keel --- 9 deaths.
+    expect(visibleDeaths).toBe(9);
   });
 
   it("a viewer at Ep 25+ unlocks dies-by-end-of-series tags WITHOUT eoe flag (TV finale covers Instrumentality)", () => {
@@ -318,7 +317,7 @@ describe("Invariant: visibleTags spoiler logic", () => {
     const asuka = evangelion.nodes.find(
       (n) => n.id === "char_asuka",
     ) as CharacterNode;
-    const progress = { episode: 25, eoe: false, rebuild: false };
+    const progress = { episode: 25, eoe: false };
     const visible = visibleTags(asuka.tags, progress);
     expect(visible.map((t) => t.id).sort()).toEqual(
       ["child", "dies-by-end-of-series"].sort(),
@@ -332,37 +331,31 @@ describe("Invariant: visibleTags spoiler logic", () => {
 });
 
 /**
- * Rebuild content lives in src/graph/rebuild.ts and is spread into
- * evangelion.ts at the bottom. The module is the single landing pad for
- * Rebuild-only nodes/edges --- this invariant keeps the contract honest:
- * if anything in rebuild.ts forgets its rebuild gate, future Rebuild
- * additions risk leaking into the TV+EoE canon view.
+ * Canon-scope invariant: this graph is TV (1995) + End of Evangelion only.
+ * Rebuild characters / orgs and the rebuild gate kind have been removed
+ * from the schema; this test makes sure nothing slips back in via a stray
+ * import or copy-paste.
  */
-describe("Invariant: Rebuild module entries all carry a rebuild gate", () => {
-  it("every node in rebuild.ts has revealedAt={kind:'rebuild'}", async () => {
-    const { rebuildCharacters, rebuildOrganizations } = await import(
-      "../../src/graph/rebuild"
-    );
-    const all = [...rebuildCharacters, ...rebuildOrganizations];
-    expect(all.length).toBeGreaterThan(0);
-    for (const n of all) {
-      expect(n.revealedAt).toEqual({ kind: "rebuild" });
-      expect(n.revealedAtSource).toBeTruthy();
-    }
-  });
-
-  it("every edge in rebuild.ts has revealedAt={kind:'rebuild'}", async () => {
-    const { rebuildEdges } = await import("../../src/graph/rebuild");
-    expect(rebuildEdges.length).toBeGreaterThan(0);
-    for (const e of rebuildEdges) {
-      expect(e.revealedAt).toEqual({ kind: "rebuild" });
-      expect(e.revealedAtSource).toBeTruthy();
-    }
-  });
-
-  it("the merged evangelion seed includes Mari and WILLE", () => {
+describe("Invariant: canon scope (TV + EoE only, no Rebuild leak)", () => {
+  it("the seed has no Rebuild-only character or organization ids", () => {
     const ids = new Set(evangelion.nodes.map((n) => n.id));
-    expect(ids.has("char_mari")).toBe(true);
-    expect(ids.has("org_wille")).toBe(true);
+    expect(ids.has("char_mari")).toBe(false);
+    expect(ids.has("org_wille")).toBe(false);
+  });
+
+  it("no node carries a deprecated rebuild gate kind", () => {
+    for (const n of evangelion.nodes) {
+      if (n.revealedAt) {
+        expect(n.revealedAt.kind).not.toBe("rebuild");
+      }
+    }
+  });
+
+  it("no edge carries a deprecated rebuild gate kind", () => {
+    for (const e of evangelion.edges) {
+      if (e.revealedAt) {
+        expect(e.revealedAt.kind).not.toBe("rebuild");
+      }
+    }
   });
 });

@@ -83,7 +83,7 @@ test.describe("spoiler gate --- persistence + force eject", () => {
     await page.addInitScript(() => {
       localStorage.setItem(
         "ngg-spoiler-progress",
-        JSON.stringify({ episode: 26, eoe: true, rebuild: true }),
+        JSON.stringify({ episode: 26, eoe: true }),
       );
     });
     await page.goto("/");
@@ -93,7 +93,6 @@ test.describe("spoiler gate --- persistence + force eject", () => {
     const root = page.getByTestId("ngg-graph-root");
     await expect(root).toHaveAttribute("data-spoiler-episode", "26");
     await expect(root).toHaveAttribute("data-spoiler-eoe", "true");
-    await expect(root).toHaveAttribute("data-spoiler-rebuild", "true");
   });
 
   test("force-eject row is hidden on first visit (nothing to eject)", async ({
@@ -318,12 +317,11 @@ test.describe("spoiler dataset attributes", () => {
     await page.goto("/");
     const state = await waitForGraphState(page);
     test.skip(state !== "ready", `graph state was ${state}`);
-    await revealWithProgress(page, { episode: 26, eoe: true, rebuild: false });
+    await revealWithProgress(page, { episode: 26, eoe: true });
 
     const root = page.getByTestId("ngg-graph-root");
     await expect(root).toHaveAttribute("data-spoiler-episode", "26");
     await expect(root).toHaveAttribute("data-spoiler-eoe", "true");
-    await expect(root).toHaveAttribute("data-spoiler-rebuild", "false");
   });
 });
 
@@ -371,56 +369,14 @@ test.describe("spoiler gate --- EoE requires Ep. 26", () => {
   });
 });
 
-test.describe("spoiler gate --- Rebuild requires Ep. 26 + EoE", () => {
-  test("Rebuild is disabled at ep=0, ep=26 without EoE, and ep<26 with EoE off", async ({
-    page,
-  }) => {
+test.describe("spoiler gate --- canon scope is TV + EoE only", () => {
+  test("there is no Rebuild checkbox in the gate", async ({ page }) => {
     await page.goto("/");
-    const rebuild = page.getByTestId("ngg-spoiler-rebuild");
-    const label = page.getByTestId("ngg-spoiler-rebuild-label");
-    const hint = page.getByTestId("ngg-spoiler-rebuild-hint");
-
-    // Default: ep=0, eoe=false --- locked.
-    await expect(rebuild).toBeDisabled();
-    await expect(label).toHaveAttribute("data-disabled", "true");
-    await expect(hint).toBeVisible();
-
-    // ep=26 but EoE still unchecked --- still locked, since Rebuild
-    // requires the user to have actually finished EoE.
-    await page.getByTestId("ngg-spoiler-ep-slider").fill("26");
-    await expect(rebuild).toBeDisabled();
-    await expect(hint).toBeVisible();
-
-    // ep=26 + EoE checked --- unlocked.
-    await page.getByTestId("ngg-spoiler-eoe").check();
-    await expect(rebuild).toBeEnabled();
-    await expect(label).toHaveAttribute("data-disabled", "false");
-    await expect(hint).toBeHidden();
-  });
-
-  test("dropping the slider below 26 unchecks/disables EoE and Rebuild", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page.getByTestId("ngg-spoiler-preset-all").click();
-    const rebuild = page.getByTestId("ngg-spoiler-rebuild");
-    await expect(rebuild).toBeChecked();
-
-    await page.getByTestId("ngg-spoiler-ep-slider").fill("10");
-    await expect(rebuild).not.toBeChecked();
-    await expect(rebuild).toBeDisabled();
-  });
-
-  test("unchecking EoE while at ep=26 also drops Rebuild", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page.getByTestId("ngg-spoiler-preset-all").click();
-    const rebuild = page.getByTestId("ngg-spoiler-rebuild");
-    await expect(rebuild).toBeChecked();
-
-    await page.getByTestId("ngg-spoiler-eoe").uncheck();
-    await expect(rebuild).not.toBeChecked();
-    await expect(rebuild).toBeDisabled();
+    // Catch any silent re-introduction of the Rebuild row. The schema
+    // and gate are TV+EoE only --- if a future change adds a Rebuild
+    // toggle back the user expects this test to scream.
+    await expect(page.getByTestId("ngg-spoiler-rebuild")).toHaveCount(0);
+    await expect(page.getByTestId("ngg-spoiler-rebuild-label")).toHaveCount(0);
+    await expect(page.getByTestId("ngg-spoiler-rebuild-hint")).toHaveCount(0);
   });
 });

@@ -13,22 +13,21 @@ import type {
   OrganizationNode,
 } from "./types";
 import { EDGE_WEIGHT } from "./layoutTuning";
-import {
-  rebuildCharacters,
-  rebuildEdges,
-  rebuildOrganizations,
-} from "./rebuild";
 
 /**
- * Seed for the Neon Genesis Evangeli-Graph. Top-level kinds:
- *   - characters (Shinji, Asuka, ..., plus Naoko Akagi for the Magi line).
+ * Seed for the Neon Genesis Evangeli-Graph. Canon scope: 1995 TV series +
+ * End of Evangelion. Rebuild is a parallel timeline and is OUT OF SCOPE.
+ *
+ * Top-level kinds:
+ *   - characters (Shinji, Asuka, ..., plus Naoko Akagi for the Magi line,
+ *     and Keel Lorenz for SEELE).
  *   - angels: 18 canonical NGE TV-series order (Adam = 1, Lilim = 18).
  *   - magi: 3 nodes in a tight triangle (the "3-in-1" joke).
  *   - families: lineage roll-ups (Ikari, Akagi). Characters point at their
  *     family via member_of_family edges.
  *   - concepts: AT Field, LCL, Third Impact (the last gated to End of
  *     Evangelion / TV ep 25+).
- *   - organizations / locations / EVAs: as before.
+ *   - organizations / locations / EVAs / events: as below.
  *
  * Each node carries EXACTLY ONE genesis shortcode --- the canonical identity
  * of the entity. The family-name registry entries (`ikari`, `akagi`, ...)
@@ -138,8 +137,6 @@ const characters: CharacterNode[] = [
     notes:
       "NERV Chief Scientist. Lead engineer on the Evangelions and operator of the Magi system. Lab coat, blonde hair, ever-present cigarette. The only person on the bridge who can tell the Commander a number is wrong --- and the one who has to live with what the numbers say.",
   },
-  // Mari Makinami lives in src/graph/rebuild.ts --- Rebuild-only pilots are
-  // appended to the character list below via rebuildCharacters.
   {
     id: "char_toji",
     kind: "character",
@@ -278,6 +275,19 @@ const characters: CharacterNode[] = [
       "https://wiki.evageeks.org/Episode_03 --- introduces the three classmates (Kensuke, Toji, Hikari)",
     notes:
       "Shinji's classmate. Camera glued to his hand; would trade a kidney to pilot an EVA.",
+  },
+  {
+    id: "char_keel",
+    kind: "character",
+    displayName: "Keel Lorenz",
+    shortcodes: ["keel"],
+    role: "Chairman of SEELE",
+    revealedAt: { kind: "ep", episode: 14 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Keel_Lorenz --- first on-screen as the SEELE chairman in Ep. 14 ('Weaving a Story') alongside the Human Instrumentality Committee scene",
+    tags: [{ id: "dies-by-end-of-series", revealedAt: { kind: "eoe" } }],
+    notes:
+      "Chairman of SEELE-01 and the man holding the Dead Sea Scrolls. Cyborg from the neck down --- visor, exoskeleton, the works. Believes humanity is overdue to be reduced to a single soul, and runs the Instrumentality scenario from the orange SOUND ONLY monolith. Gendo answers to him until Ep. 24, after which the answers stop arriving on time.",
   },
 ];
 
@@ -602,8 +612,6 @@ const organizations: OrganizationNode[] = [
     notes:
       "Numbered red-monolith committee operating above NERV. The hand behind the Human Instrumentality Project.",
   },
-  // WILLE lives in src/graph/rebuild.ts --- Rebuild-only organizations are
-  // appended to this list below via rebuildOrganizations.
   {
     id: "org_gehirn",
     kind: "organization",
@@ -732,6 +740,54 @@ const locations: LocationNode[] = [
       "https://wiki.evageeks.org/Episode_21 --- 'Antarctica (via flashbacks of the Katsuragi Expedition investigating Second Impact)'",
     notes:
       "Site of the Katsuragi Expedition's contact experiment with Adam --- the trigger of Second Impact. Now a frozen red sea.",
+  },
+  {
+    id: "loc_mt_asama",
+    kind: "location",
+    name: "Mt. Asama",
+    displayName: "Mt. Asama (Location)",
+    shortcodes: ["mtAsama"],
+    revealedAt: { kind: "ep", episode: 10 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Sandalphon --- the embryonic Eighth Angel is recovered from Mt. Asama's caldera in Ep. 10",
+    notes:
+      "Active volcano in Honshu. Sandalphon gestates in the magma chamber; Unit-02 in heat-resistant Type-D armor abseils into the caldera in Ep. 10 to retrieve it. Asuka kicks the angel apart at the bottom of a volcano.",
+  },
+  {
+    id: "loc_matsushiro",
+    kind: "location",
+    name: "Matsushiro",
+    displayName: "Matsushiro (Location)",
+    shortcodes: ["matsushiro"],
+    revealedAt: { kind: "ep", episode: 18 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Matsushiro --- NERV's Second (Japanese) Branch in Nagano, used for Unit-03's activation test in Ep. 18",
+    notes:
+      "NERV's Second Branch in Nagano Prefecture. Repurposed as the Unit-03 activation test site in Ep. 18 --- where Bardiel takes the unit and the Dummy Plug takes Unit-01.",
+  },
+  {
+    id: "loc_pribnow_box",
+    kind: "location",
+    name: "Pribnow Box",
+    displayName: "Pribnow Box (Location)",
+    shortcodes: ["pribnowBox"],
+    revealedAt: { kind: "ep", episode: 13 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Pribnow_box --- the test facility Iruel infiltrates in Ep. 13 ('Lilliputian Hitcher')",
+    notes:
+      "Test facility deep inside NERV HQ. Houses the Evangelion simulation bodies and their plug controls. Iruel infiltrates the building through a contaminated 87th protein wall installed here in Ep. 13.",
+  },
+  {
+    id: "loc_nerv2",
+    kind: "location",
+    name: "NERV-2 (Nevada)",
+    displayName: "NERV-2 (Nevada) (Location)",
+    shortcodes: ["nerv2"],
+    revealedAt: { kind: "ep", episode: 18 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Evangelion_Unit-04 --- the S² engine experiment / Nevada-branch loss is established in Ep. 18 fallout",
+    notes:
+      "NERV's Second Branch in the Nevada desert. Where Unit-04 was test-fitted with an experimental S² engine in 2015 --- the entire branch and a Mojave-sized crater of land vanished in the failure. Unit-03 was shipped from here to Matsushiro.",
   },
 ];
 
@@ -911,6 +967,69 @@ const concepts: ConceptNode[] = [
     notes:
       "Antarctic counterpart to the Black Moon. Adam's vessel; the Katsuragi Expedition cracked it open and triggered Second Impact.",
   },
+  {
+    id: "concept_dead_sea_scrolls",
+    kind: "concept",
+    name: "Dead Sea Scrolls",
+    displayName: "Dead Sea Scrolls",
+    shortcodes: ["deadSeaScrolls"],
+    // Named on screen in Ep. 14 alongside the first Human Instrumentality
+    // Committee meeting --- the Scrolls are the prophecy SEELE runs the
+    // entire scenario by.
+    revealedAt: { kind: "ep", episode: 14 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_14 --- 'first mention of Seele's use of the Dead Sea Scrolls as a guide for their scenario'",
+    notes:
+      "The prophecy SEELE runs the world by. Predicts the angels in numerical order, names the two Moons, and lays out the Instrumentality scenario. Keel keeps the only complete copy.",
+  },
+  {
+    id: "concept_sound_only",
+    kind: "concept",
+    name: "Sound Only",
+    displayName: "Sound Only",
+    shortcodes: ["soundOnly"],
+    revealedAt: { kind: "ep", episode: 14 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Episode_14 --- the SEELE clip-show meeting introduces the SOUND ONLY monolith presentation",
+    notes:
+      "The orange 'SOUND ONLY' monolith. SEELE's twelve members appear to Gendo as numbered red triangles plus this one black-on-orange slab; nobody on the bridge ever sees a face. The most stylish committee meeting in anime.",
+  },
+  {
+    id: "concept_berserk",
+    kind: "concept",
+    name: "Berserk Mode",
+    displayName: "Berserk Mode",
+    shortcodes: ["berserk"],
+    revealedAt: { kind: "ep", episode: 2 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Berserk --- Unit-01 first goes berserk in Ep. 2 finishing off Sachiel with bare hands after umbilical disconnect",
+    notes:
+      "What happens when an EVA's umbilical drops, the sync ratio spikes past 100, and the soul inside decides it has had enough. Unit-01 goes there in Eps. 2 (Sachiel), 16 (Leliel), and 19 (Zeruel) --- it bites, it screams, it eats S² engines.",
+  },
+  {
+    id: "concept_yebisu",
+    kind: "concept",
+    name: "Yebisu",
+    displayName: "Yebisu",
+    shortcodes: ["yebisu"],
+    revealedAt: { kind: "ep", episode: 2 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Misato_Katsuragi --- Misato's Yebisu can introduces the apartment in Ep. 2",
+    notes:
+      "Misato's drink. A 500ml gold-label can opened over the head, drained in three seconds flat, finished with the loudest 'PUHAAA!' on Japanese television. Load-bearing structural element of the Katsuragi apartment.",
+  },
+  {
+    id: "concept_watermelons",
+    kind: "concept",
+    name: "Watermelons",
+    displayName: "Watermelons",
+    shortcodes: ["watermelons"],
+    revealedAt: { kind: "ep", episode: 17 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Ryoji_Kaji --- Kaji's NERV greenhouse watermelon plot is established as his off-hours hobby in Ep. 17",
+    notes:
+      "Kaji's hobby. Triple-agent on three payrolls; on his off days he tends a NERV greenhouse plot of striped melons. A man running three jobs wants something that grows back.",
+  },
 ];
 
 const events: EventNode[] = [
@@ -943,6 +1062,18 @@ const events: EventNode[] = [
     // -> Second Impact 'caused' edge to ep 21.
     notes:
       "September 2000. The Katsuragi Expedition's contact experiment with Adam in Antarctica triggered a global cataclysm. Mentioned from Ep. 1 as 'the catastrophe fifteen years ago'; cause and details revealed late.",
+  },
+  {
+    id: "event_operation_yashima",
+    kind: "event",
+    name: "Operation Yashima",
+    displayName: "Operation Yashima",
+    shortcodes: ["operationYashima"],
+    revealedAt: { kind: "ep", episode: 6 },
+    revealedAtSource:
+      "https://wiki.evageeks.org/Operation_Yashima --- the positron sniper op against Ramiel that defines Ep. 6",
+    notes:
+      "Ep. 6. Every spare watt in the Japanese archipelago drains into a single positron rifle so Unit-01 can shoot the Fifth Angel through the head from outside its AT field range. Rei in Unit-00 holds the heat shield, Shinji takes the shot, and the show stops being about giant robots and starts being about the kids.",
   },
 ];
 
@@ -1600,6 +1731,17 @@ function buildEdges(): Edge[] {
     { from: "char_naoko", to: "org_gehirn", shortcodes: ["naoko", "gehirn"], notes: "Naoko Akagi --- GEHIRN's Magi architect." },
     { from: "char_gendo", to: "org_gehirn", shortcodes: ["gendo", "gehirn"], notes: "Gendo Ikari --- GEHIRN, then NERV." },
     { from: "char_fuyutsuki", to: "org_gehirn", shortcodes: ["fuyutsuki", "gehirn"], notes: "Kozo Fuyutsuki --- GEHIRN, then NERV." },
+
+    // Keel Lorenz chairs SEELE-01. Anchors the SEELE side of the graph
+    // around an actual person instead of just a monolith stand-in.
+    {
+      from: "char_keel",
+      to: "org_seele",
+      shortcodes: ["keel", "seele"],
+      revealedAt: { kind: "ep", episode: 14 },
+      revealedAtSource: "Inherits Keel's Ep. 14 first-appearance gate",
+      notes: "Keel Lorenz --- SEELE-01 chairman.",
+    },
   ];
   for (const e of orgEdges) {
     out.push({
@@ -1670,6 +1812,36 @@ function buildEdges(): Edge[] {
       revealedAtSource: "Inherits Black Moon's EoE gate",
       notes: "The Geofront is the Black Moon's hollow upper shell.",
     },
+    // Pribnow Box sits deep inside NERV HQ (one of the Sigma Unit
+    // sub-bays).
+    {
+      from: "loc_pribnow_box",
+      to: "loc_nerv_hq",
+      shortcodes: ["pribnowBox", "nervHq"],
+      revealedAt: { kind: "ep", episode: 13 },
+      revealedAtSource: "Inherits Pribnow Box's Ep. 13 gate",
+      notes: "The Pribnow Box test facility is a sub-bay inside NERV HQ.",
+    },
+    // Sandalphon (the embryonic Eighth Angel) gestated inside Mt. Asama
+    // until Unit-02 retrieved it.
+    {
+      from: "angel_08_sandalphon",
+      to: "loc_mt_asama",
+      shortcodes: ["sandalphon", "mtAsama"],
+      revealedAt: { kind: "ep", episode: 10 },
+      revealedAtSource: "Inherits Sandalphon's Ep. 10 + Mt. Asama Ep. 10 gates",
+      notes: "Sandalphon gestated inside the Mt. Asama caldera.",
+    },
+    // Unit-04 (the Nevada-branch silver prototype) was located at NERV-2
+    // until the S² experiment took both with it.
+    {
+      from: "eva_unit04",
+      to: "loc_nerv2",
+      shortcodes: ["unit04", "nerv2"],
+      revealedAt: { kind: "ep", episode: 18 },
+      revealedAtSource: "Inherits Unit-04 + NERV-2 Ep. 18 gates",
+      notes: "Unit-04 was the Nevada (NERV-2) branch's prototype, lost with the base.",
+    },
   ];
   for (const e of locatedInEdges) {
     out.push({
@@ -1739,6 +1911,15 @@ function buildEdges(): Edge[] {
       revealedAtSource: "End of Evangelion --- JSSDF assault triggers Third Impact",
       notes: "JSSDF assault on NERV HQ kicks off Third Impact in End of Evangelion.",
     },
+    // Operation Yashima is NERV's response to Ramiel's appearance.
+    {
+      from: "angel_05_ramiel",
+      to: "event_operation_yashima",
+      shortcodes: ["ramiel", "operationYashima"],
+      revealedAt: { kind: "ep", episode: 6 },
+      revealedAtSource: "Inherits Ramiel + Operation Yashima Ep. 5/6 gates",
+      notes: "Ramiel's positron-beam siege forced Operation Yashima.",
+    },
   ];
   for (const e of causedEdges) {
     out.push({
@@ -1760,7 +1941,6 @@ function buildEdges(): Edge[] {
   //   - Unit-02 wields the Lance of Longinus (generic --- weapon use).
   //   - GEHIRN was succeeded by NERV (generic --- predecessor org).
   //   - SEELE controls NERV (generic --- gated authority tie).
-  //   - WILLE opposes NERV (generic, Rebuild gate inherited from WILLE).
   const supportEdges: Array<{
     from: string;
     to: string;
@@ -1781,15 +1961,29 @@ function buildEdges(): Edge[] {
     { from: "concept_lance_of_longinus", to: "loc_terminal_dogma", shortcodes: ["lanceOfLonginus", "terminalDogma"], notes: "The Lance rests against Lilith in Terminal Dogma.", revealedAt: { kind: "ep", episode: 23 }, revealedAtSource: "Inherits Terminal Dogma's Ep. 23 first-labeled gate; Lance shown alongside Lilith" },
     { from: "org_gehirn", to: "org_nerv", shortcodes: ["gehirn", "nerv"], notes: "GEHIRN was the body that became NERV.", revealedAt: { kind: "ep", episode: 21 }, revealedAtSource: "Inherits GEHIRN's Ep. 21 gate" },
     { from: "org_seele", to: "org_nerv", shortcodes: ["seele", "nerv"], notes: "SEELE is NERV's parent committee.", revealedAt: { kind: "ep", episode: 14 }, revealedAtSource: "Inherits SEELE's Ep. 14 gate" },
-    // The WILLE -> NERV edge lives in src/graph/rebuild.ts. Rebuild-only
-    // edges are appended below via rebuildEdges.
     { from: "org_jssdf", to: "loc_nerv_hq", shortcodes: ["jssdf", "nervHq"], notes: "JSSDF assault on NERV HQ kicks off End of Evangelion.", revealedAt: { kind: "eoe" }, revealedAtSource: "End of Evangelion --- JSSDF assault" },
-    { from: "org_marduk", to: "org_nerv", shortcodes: ["marduk", "nerv"], notes: "Marduk Institute --- NERV's Children-selection front. The 108-names paper-tiger reveal lands in Ep. 15 via Kaji's investigation.", revealedAt: { kind: "ep", episode: 15 }, revealedAtSource: "https://wiki.evageeks.org/Marduk_Institute --- 'Ryoji Kaji's investigations in Episode 15' reveal it's a dummy organization" },
+    { from: "org_marduk", to: "org_nerv", shortcodes: ["marduk", "nerv"], notes: "Marduk Institute --- NERV's Children-selection front. The 108 dummy companies reveal lands in Ep. 15 via Kaji's investigation.", revealedAt: { kind: "ep", episode: 15 }, revealedAtSource: "https://wiki.evageeks.org/Marduk_Institute --- 'Ryoji Kaji's investigations in Episode 15' reveal it's a dummy organization composed of 108 front companies" },
     { from: "concept_dummy_plug", to: "char_rei", shortcodes: ["dummyPlug", "rei"], notes: "The Dummy Plug runs on Rei-derived psyche copies.", revealedAt: { kind: "ep", episode: 20 }, revealedAtSource: "https://wiki.evageeks.org/Dummy_Plug --- the Rei-derived personality data is revealed mid-show; Ep. 20 marks the reveal of Yui-in-Unit-01 / Rei lineage" },
     { from: "concept_dummy_plug", to: "eva_unit01", shortcodes: ["dummyPlug", "unit01"], notes: "Unit-01 under Dummy Plug control destroys the possessed Unit-03.", revealedAt: { kind: "ep", episode: 18 }, revealedAtSource: "Inherits Dummy Plug's Ep. 18 first-use gate" },
     { from: "concept_s2_engine", to: "eva_unit01", shortcodes: ["s2Engine", "unit01"], notes: "Unit-01 absorbs Zeruel's S² and goes off-grid.", revealedAt: { kind: "ep", episode: 19 }, revealedAtSource: "https://wiki.evageeks.org/Zeruel --- Unit-01 berserks and absorbs Zeruel's S² in Ep. 19" },
     { from: "concept_entry_plug", to: "concept_lcl", shortcodes: ["entryPlug", "lcl"], notes: "The entry plug floods with LCL on activation." },
     { from: "concept_progressive_knife", to: "eva_unit01", shortcodes: ["progressiveKnife", "unit01"], notes: "Unit-01's prog knife stowed in the shoulder pylon." },
+
+    // Keel + the SEELE chrome --- the chairman holds the Scrolls and runs
+    // the SOUND ONLY meeting that frames every late-show beat.
+    { from: "char_keel", to: "concept_dead_sea_scrolls", shortcodes: ["keel", "deadSeaScrolls"], notes: "Keel keeps the only complete copy of the Dead Sea Scrolls.", revealedAt: { kind: "ep", episode: 14 }, revealedAtSource: "Inherits Keel + Dead Sea Scrolls Ep. 14 gates" },
+    { from: "org_seele", to: "concept_dead_sea_scrolls", shortcodes: ["seele", "deadSeaScrolls"], notes: "SEELE's scenario is whatever the Dead Sea Scrolls predict.", revealedAt: { kind: "ep", episode: 14 }, revealedAtSource: "Inherits SEELE + Dead Sea Scrolls Ep. 14 gates" },
+    { from: "org_seele", to: "concept_sound_only", shortcodes: ["seele", "soundOnly"], notes: "SEELE conducts every meeting through the SOUND ONLY monoliths.", revealedAt: { kind: "ep", episode: 14 }, revealedAtSource: "Inherits SEELE + SOUND ONLY Ep. 14 gates" },
+    // Berserk Mode is Yui-in-Unit-01 finally moving.
+    { from: "eva_unit01", to: "concept_berserk", shortcodes: ["unit01", "berserk"], notes: "Unit-01 goes berserk in Eps. 2, 16, and 19.", revealedAt: { kind: "ep", episode: 2 }, revealedAtSource: "Inherits Berserk Ep. 2 first-occurrence gate" },
+    // Yebisu --- the Misato apartment running gag, and a structural beat
+    // for every cohabitation scene with Shinji.
+    { from: "char_misato", to: "concept_yebisu", shortcodes: ["misato", "yebisu"], notes: "Misato opens a Yebisu over her head every other scene in the apartment.", revealedAt: { kind: "ep", episode: 2 }, revealedAtSource: "Inherits Yebisu Ep. 2 first-appearance gate" },
+    // Watermelons --- Kaji's hobby. The triple-agent's only honest job.
+    { from: "char_kaji", to: "concept_watermelons", shortcodes: ["kaji", "watermelons"], notes: "Kaji tends his watermelon plot in NERV's greenhouse on his off days.", revealedAt: { kind: "ep", episode: 17 }, revealedAtSource: "Inherits Watermelons Ep. 17 first-appearance gate" },
+    // Operation Yashima participants --- both EVAs were on the firing line.
+    { from: "event_operation_yashima", to: "eva_unit01", shortcodes: ["operationYashima", "unit01"], notes: "Unit-01 took the positron-rifle shot in Operation Yashima.", revealedAt: { kind: "ep", episode: 6 }, revealedAtSource: "Inherits Operation Yashima Ep. 6 gate" },
+    { from: "event_operation_yashima", to: "eva_unit00", shortcodes: ["operationYashima", "unit00"], notes: "Unit-00 held the heat shield in Operation Yashima.", revealedAt: { kind: "ep", episode: 6 }, revealedAtSource: "Inherits Operation Yashima Ep. 6 gate" },
   ];
   for (const e of supportEdges) {
     out.push({
@@ -1804,26 +1998,18 @@ function buildEdges(): Edge[] {
     });
   }
 
-  // Rebuild-only edges. These live in their own module so the user can
-  // grow Rebuild content over time without touching this file. Endpoint
-  // masking + the per-edge rebuild gate keep them invisible until the
-  // user explicitly checks the Rebuild box in the spoiler gate.
-  out.push(...rebuildEdges);
-
   return out;
 }
 
 export const evangelion: EvangelionGraph = {
   id: "evangelion",
-  title: "Neon Genesis Evangelion --- canon seed",
-  source: "Neon Genesis Evangelion (TV) + End of Evangelion",
+  title: "Neon Genesis Evangelion --- canon graph",
+  source: "Neon Genesis Evangelion (TV, 1995) + End of Evangelion",
   nodes: [
     ...characters,
-    ...rebuildCharacters,
     ...angels,
     ...magi,
     ...organizations,
-    ...rebuildOrganizations,
     ...locations,
     ...concepts,
     ...families,

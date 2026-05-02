@@ -35,13 +35,15 @@ describe("evangelion graph", () => {
 
   it("has the expected canon node mix", () => {
     expect(evangelion.id).toBe("evangelion");
-    // 11 main cast + 8 supporting (Kaji, Fuyutsuki, the bridge trio,
-    // Pen Pen, Hikari, Kensuke) = 19.
+    // 10 main cast (Shinji/Asuka/Rei/Misato/Kaworu/Gendo/Ritsuko/Toji/Yui/
+    // Naoko) + Keel + 8 supporting (Kaji, Fuyutsuki, bridge trio, Pen Pen,
+    // Hikari, Kensuke) = 19.
     expect(evangelion.nodes.filter(isCharacter)).toHaveLength(19);
     expect(evangelion.nodes.filter(isAngel)).toHaveLength(18);
     expect(evangelion.nodes.filter(isMagi)).toHaveLength(3);
-    // Events are now populated --- First Impact + Second Impact.
-    expect(evangelion.nodes.filter(isEvent).length).toBeGreaterThanOrEqual(2);
+    // Events are now populated --- First Impact, Second Impact, Operation
+    // Yashima.
+    expect(evangelion.nodes.filter(isEvent).length).toBeGreaterThanOrEqual(3);
     expect(evangelion.nodes.filter(isOrganization).length).toBeGreaterThanOrEqual(1);
     expect(evangelion.nodes.filter(isLocation).length).toBeGreaterThanOrEqual(1);
     expect(evangelion.nodes.filter(isConcept).length).toBeGreaterThanOrEqual(3);
@@ -162,7 +164,7 @@ describe("evangelion graph", () => {
     const ids = new Set(evangelion.nodes.filter(isCharacter).map((c) => c.id));
     expect(ids).toEqual(
       new Set([
-        // 10-person main cast plus Naoko (Magi backstory).
+        // 10-person main cast.
         "char_shinji",
         "char_asuka",
         "char_rei",
@@ -170,10 +172,11 @@ describe("evangelion graph", () => {
         "char_kaworu",
         "char_gendo",
         "char_ritsuko",
-        "char_mari",
         "char_toji",
         "char_yui",
         "char_naoko",
+        // SEELE chairman.
+        "char_keel",
         // Supporting cast: Kaji, Fuyutsuki, bridge trio, Pen Pen, classmates.
         "char_kaji",
         "char_fuyutsuki",

@@ -1,13 +1,18 @@
 /**
  * Graph schema. Source of truth for types used across data, rendering, and tests.
  *
+ * Canon scope: the 1995 TV series (26 episodes) plus End of Evangelion. The
+ * Rebuild tetralogy is a parallel timeline and is INTENTIONALLY out of scope
+ * --- this graph is the "true" canon view.
+ *
  * Top-level node kinds:
  *   - character: cast members (Shinji, Asuka, Rei, Misato, ...).
  *   - angel: the 18 canonical angels of NGE, numbered 1-18.
  *   - magi: the three Magi system nodes (Casper-3, Melchior-1, Balthasar-2).
- *   - event: in-universe events (Third Impact, ...). Often disconnected.
- *   - organization: in-universe orgs (NERV, SEELE, WILLE).
- *   - location: physical places (NERV HQ, Tokyo-3, ...).
+ *   - event: in-universe events (First Impact, Second Impact, ...). Often
+ *     disconnected.
+ *   - organization: in-universe orgs (NERV, SEELE, GEHIRN, JSSDF, ...).
+ *   - location: physical places (NERV HQ, Tokyo-3, Mt. Asama, ...).
  *   - concept: abstract / in-universe concepts (AT Field, LCL, ...).
  *   - eva: EVA units (Unit-00 through Mass Production).
  *   - family: family/lineage roll-up nodes (Ikari, Akagi). Characters point
@@ -30,7 +35,6 @@
  *                                    OR has watched TV ep 25+ (the original
  *                                    finale covers the same Instrumentality
  *                                    territory abstractly).
- *   - { kind: "rebuild" }            visible iff user has seen the Rebuild films.
  *
  * Node and edge gates are independent: Rei is open from ep 1, but the
  * Rei <-> Yui edge is gated to a late-show episode --- the character renders
@@ -60,8 +64,7 @@ export type NodeKind =
 
 export type RevealedAt =
   | { kind: "ep"; episode: number }
-  | { kind: "eoe" }
-  | { kind: "rebuild" };
+  | { kind: "eoe" };
 
 /**
  * Closed set of role / status tag identifiers a node can carry. New tags
@@ -161,7 +164,7 @@ export interface EventNode extends NodeBase {
 
 export interface OrganizationNode extends NodeBase {
   kind: "organization";
-  /** Canonical org name ("NERV", "SEELE", "WILLE"). */
+  /** Canonical org name ("NERV", "SEELE", "GEHIRN"). */
   name: string;
 }
 
@@ -260,26 +263,22 @@ export interface EvangelionGraph {
 
 /**
  * The user-declared progress that gates entity visibility. Default state
- * for a brand-new visitor is { episode: 0, eoe: false, rebuild: false }
- * --- nothing reveals until the user steps through the spoiler prompt.
+ * for a brand-new visitor is { episode: 0, eoe: false } --- nothing
+ * reveals until the user steps through the spoiler prompt.
  */
 export interface SpoilerProgress {
   /** TV episode last finished, 0..26. 0 = haven't started. */
   episode: number;
   /** Has seen End of Evangelion. */
   eoe: boolean;
-  /** Has seen the Rebuild films. */
-  rebuild: boolean;
 }
 
 export const SPOILER_PROGRESS_DEFAULT: SpoilerProgress = {
   episode: 0,
   eoe: false,
-  rebuild: false,
 };
 
 export const SPOILER_PROGRESS_FULL: SpoilerProgress = {
   episode: 26,
   eoe: true,
-  rebuild: true,
 };
