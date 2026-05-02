@@ -6,6 +6,15 @@ tasks:
     cmds:
       - pnpm run dev
 
+  peek:
+    desc: |
+      Snap a screenshot of the live graph. Boots astro dev, opens headless
+      Chromium with the spoiler gate pre-revealed (localStorage seed), waits
+      a random 2.5--9.5s so the rotation lands somewhere new, writes a PNG.
+      Default output: /tmp/ngg-peek.png. Override with OUT=/path/foo.png.
+    cmds:
+      - node scripts/peek-graph.mjs
+
   check:
     desc: Repo-local checks --- TS + unit tests + ffmpeg source-asset guard
     cmds:
