@@ -1,0 +1,507 @@
+---
+/**
+ * Spoiler gate overlay. On first visit the gate prompts and the user picks
+ * their canon-knowledge tier; clicking REVEAL persists that tier to
+ * localStorage and the gate stays closed on subsequent visits. The user's
+ * choice is broadcast to the renderer via a CustomEvent on `window`.
+ *
+ * The renderer (src/scripts/graph3d.ts) initializes with everything masked
+ * and only un-masks once the gate fires its first event. A small "spoilers"
+ * pill in the corner re-opens the gate. A FORCE EJECT button inside the gate
+ * flushes the persisted state for users who want a fresh prompt.
+ */
+---
+
+<div
+  id="ngg-spoiler-gate"
+  class="ngg-spoiler-gate-overlay fixed inset-0 z-50 hidden items-center justify-center bg-[color:var(--color-bg)]/92 px-4 backdrop-blur-md"
+  data-testid="ngg-spoiler-gate"
+  data-state="hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="ngg-spoiler-gate-title"
+>
+  <div
+    class="relative w-full max-w-md border border-[color:var(--color-nerv-red)]/50 bg-[color:var(--color-panel)] p-5 shadow-[0_0_60px_rgba(255,42,60,0.15)] sm:p-6"
+  >
+    <p
+      class="ngg-bracket-red font-mono text-[0.6rem] tracking-[0.3em] text-[color:var(--color-nerv-red)] uppercase"
+    >
+      synchro check
+    </p>
+    <h2
+      id="ngg-spoiler-gate-title"
+      class="mt-1 font-mono text-base font-bold tracking-[0.2em] text-[color:var(--color-text)] uppercase sm:text-lg"
+    >
+      Spoiler gate
+    </h2>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      Tell us where you are in the show. Anything past your point will render
+      as <span class="font-mono text-[color:var(--color-nerv-red)]">███████</span> until you advance.
+    </p>
+
+    <fieldset class="mt-5 border border-[color:var(--color-text-dim)]/15 p-3">
+      <legend
+        class="px-2 font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase"
+      >
+        TV (1 -- 26)
+      </legend>
+      <div class="flex items-baseline justify-between">
+        <p class="text-sm text-[color:var(--color-text)]">
+          Last episode finished: <span
+            data-testid="ngg-spoiler-ep-readout"
+            data-spoiler-ep-readout
+            class="font-mono font-bold text-[color:var(--color-magi-green)]"
+            >0</span
+          ><span class="font-mono text-[color:var(--color-text-dim)]"> / 26</span>
+        </p>
+        <button
+          type="button"
+          data-spoiler-preset="all"
+          data-testid="ngg-spoiler-preset-all"
+          class="font-mono text-[0.6rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase underline-offset-2 hover:text-[color:var(--color-text)] hover:underline"
+        >
+          finished it
+        </button>
+      </div>
+      <input
+        type="range"
+        id="ngg-spoiler-ep-slider"
+        data-testid="ngg-spoiler-ep-slider"
+        min="0"
+        max="26"
+        step="1"
+        value="0"
+        class="ngg-spoiler-slider mt-3 w-full"
+        aria-label="Last NGE episode finished"
+      />
+    </fieldset>
+
+    <div class="mt-3 grid grid-cols-1 gap-2">
+      <label
+        id="ngg-spoiler-eoe-label"
+        data-testid="ngg-spoiler-eoe-label"
+        class="ngg-spoiler-eoe-label flex cursor-pointer items-center gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-3 py-2 hover:border-[color:var(--color-magi-green)]/40"
+      >
+        <input
+          type="checkbox"
+          id="ngg-spoiler-eoe"
+          data-testid="ngg-spoiler-eoe"
+          class="h-3.5 w-3.5 accent-[color:var(--color-nerv-red)]"
+        />
+        <span class="font-mono text-[0.7rem] tracking-[0.15em] text-[color:var(--color-text)] uppercase"
+          >End of Evangelion</span
+        >
+      </label>
+    </div>
+    <p
+      id="ngg-spoiler-eoe-hint"
+      data-testid="ngg-spoiler-eoe-hint"
+      class="mt-2 hidden font-mono text-[0.65rem] leading-snug tracking-[0.1em] text-[color:var(--color-nerv-red)]/85 uppercase"
+    >
+      End of Evangelion picks up after Ep. 26. Finish the TV run first.
+    </p>
+
+    <div class="mt-5 flex items-center justify-between gap-2">
+      <button
+        type="button"
+        id="ngg-spoiler-reset"
+        data-testid="ngg-spoiler-reset"
+        class="font-mono text-[0.65rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase underline-offset-2 hover:text-[color:var(--color-text)] hover:underline"
+      >
+        haven't started
+      </button>
+      <button
+        type="button"
+        id="ngg-spoiler-reveal"
+        data-testid="ngg-spoiler-reveal"
+        class="border border-[color:var(--color-nerv-red)]/70 bg-[color:var(--color-nerv-red)]/15 px-4 py-1.5 font-mono text-xs tracking-[0.25em] text-[color:var(--color-text)] uppercase transition-colors hover:bg-[color:var(--color-nerv-red)]/30"
+      >
+        Reveal graph
+      </button>
+    </div>
+
+    <!--
+      Force-eject row. Hidden by default; the bootstrap script un-hides it
+      whenever localStorage holds a persisted progress (i.e. only after the
+      user has actually saved a tier). Sits below the reveal row, separated
+      by a hairline rule, so the destructive action reads as a deliberate
+      override --- not a competing primary action.
+    -->
+    <div
+      id="ngg-spoiler-eject-row"
+      data-testid="ngg-spoiler-eject-row"
+      class="ngg-spoiler-eject-row mt-4 hidden border-t border-[color:var(--color-nerv-red)]/20 pt-3"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <p
+          class="ngg-bracket-red font-mono text-[0.55rem] tracking-[0.3em] text-[color:var(--color-text-dim)] uppercase"
+        >
+          sync log persisted
+        </p>
+        <button
+          type="button"
+          id="ngg-spoiler-eject"
+          data-testid="ngg-spoiler-eject"
+          class="border border-[color:var(--color-nerv-red)]/60 bg-transparent px-3 py-1 font-mono text-[0.65rem] tracking-[0.25em] text-[color:var(--color-nerv-red)] uppercase transition-colors hover:bg-[color:var(--color-nerv-red)]/15"
+          aria-label="Force eject (purge saved sync log)"
+        >
+          force eject
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button
+  type="button"
+  id="ngg-spoiler-reopen"
+  data-testid="ngg-spoiler-reopen"
+  class="fixed right-3 bottom-3 z-40 border border-[color:var(--color-nerv-red)]/40 bg-[color:var(--color-panel)]/90 px-3 py-1 font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-nerv-red)] uppercase backdrop-blur-sm transition-colors hover:bg-[color:var(--color-panel-2)] sm:right-5 sm:bottom-5 sm:text-[0.65rem]"
+  aria-label="Reopen spoiler gate"
+>
+  spoilers
+</button>
+
+<style>
+  /*
+   * Slider track + thumb in NERV red. Range inputs need browser-prefixed
+   * pseudo-elements to style the thumb consistently.
+   */
+  .ngg-spoiler-slider {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    height: 1.5rem;
+  }
+  .ngg-spoiler-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    background: rgba(255, 42, 60, 0.25);
+    border: 1px solid rgba(255, 42, 60, 0.45);
+  }
+  .ngg-spoiler-slider::-moz-range-track {
+    height: 4px;
+    background: rgba(255, 42, 60, 0.25);
+    border: 1px solid rgba(255, 42, 60, 0.45);
+  }
+  .ngg-spoiler-slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -6px;
+    background: var(--color-nerv-red);
+    border: 1px solid #fff;
+    border-radius: 1px;
+    cursor: grab;
+  }
+  .ngg-spoiler-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--color-nerv-red);
+    border: 1px solid #fff;
+    border-radius: 1px;
+    cursor: grab;
+  }
+
+  .ngg-spoiler-gate-overlay[data-state="visible"] {
+    display: flex;
+  }
+
+  /*
+   * EoE requires Ep. 26 finished. While the prerequisite isn't met, dim
+   * the row and show a not-allowed cursor so the gating reads as intentional.
+   */
+  .ngg-spoiler-eoe-label[data-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .ngg-spoiler-eoe-label[data-disabled="true"] input {
+    cursor: not-allowed;
+  }
+</style>
+
+<script>
+  import {
+    SPOILER_EVENT_NAME,
+    SPOILER_PROGRESS_DEFAULT,
+    SPOILER_PROGRESS_FULL,
+    isShowComplete,
+    parseSpoilerProgress,
+  } from "../graph";
+  import type { SpoilerProgress } from "../graph";
+
+  /**
+   * Key under which the user's spoiler tier is persisted. The shape stored
+   * is the raw SpoilerProgress JSON; parseSpoilerProgress (graph/index.ts)
+   * tolerates corrupt values and falls back to default.
+   */
+  const STORAGE_KEY = "ngg-spoiler-progress";
+
+  function saveProgress(p: SpoilerProgress) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+    } catch {
+      /* localStorage unavailable; non-fatal --- session-only fallback. */
+    }
+  }
+
+  function clearProgress() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  function loadProgress(): SpoilerProgress | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw === null) return null;
+      return parseSpoilerProgress(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function hasPersistedProgress(): boolean {
+    try {
+      return localStorage.getItem(STORAGE_KEY) !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  type GateEls = {
+    overlay: HTMLElement;
+    slider: HTMLInputElement;
+    epReadout: HTMLElement;
+    eoeChk: HTMLInputElement;
+    eoeLabel: HTMLElement;
+    eoeHint: HTMLElement;
+    revealBtn: HTMLButtonElement;
+    resetBtn: HTMLButtonElement;
+    presetAllBtn: HTMLButtonElement;
+    reopenBtn: HTMLButtonElement;
+    ejectBtn: HTMLButtonElement;
+    ejectRow: HTMLElement;
+  };
+
+  function getEls(): GateEls | null {
+    const overlay = document.getElementById("ngg-spoiler-gate");
+    const slider = document.getElementById(
+      "ngg-spoiler-ep-slider",
+    ) as HTMLInputElement | null;
+    const epReadout = document.querySelector(
+      "[data-spoiler-ep-readout]",
+    ) as HTMLElement | null;
+    const eoeChk = document.getElementById(
+      "ngg-spoiler-eoe",
+    ) as HTMLInputElement | null;
+    const eoeLabel = document.getElementById(
+      "ngg-spoiler-eoe-label",
+    ) as HTMLElement | null;
+    const eoeHint = document.getElementById(
+      "ngg-spoiler-eoe-hint",
+    ) as HTMLElement | null;
+    const revealBtn = document.getElementById(
+      "ngg-spoiler-reveal",
+    ) as HTMLButtonElement | null;
+    const resetBtn = document.getElementById(
+      "ngg-spoiler-reset",
+    ) as HTMLButtonElement | null;
+    const presetAllBtn = document.querySelector(
+      '[data-spoiler-preset="all"]',
+    ) as HTMLButtonElement | null;
+    const reopenBtn = document.getElementById(
+      "ngg-spoiler-reopen",
+    ) as HTMLButtonElement | null;
+    const ejectBtn = document.getElementById(
+      "ngg-spoiler-eject",
+    ) as HTMLButtonElement | null;
+    const ejectRow = document.getElementById("ngg-spoiler-eject-row");
+    if (
+      !overlay ||
+      !slider ||
+      !epReadout ||
+      !eoeChk ||
+      !eoeLabel ||
+      !eoeHint ||
+      !revealBtn ||
+      !resetBtn ||
+      !presetAllBtn ||
+      !reopenBtn ||
+      !ejectBtn ||
+      !ejectRow
+    ) {
+      return null;
+    }
+    return {
+      overlay,
+      slider,
+      epReadout,
+      eoeChk,
+      eoeLabel,
+      eoeHint,
+      revealBtn,
+      resetBtn,
+      presetAllBtn,
+      reopenBtn,
+      ejectBtn,
+      ejectRow,
+    };
+  }
+
+  /**
+   * Show or hide the force-eject row based on whether the user has a
+   * persisted spoiler tier. The row is destructive --- it's only meaningful
+   * when there's something TO eject --- so we keep it hidden the rest of
+   * the time so first-time users aren't confused by a "purge" affordance
+   * with nothing behind it.
+   */
+  function syncEjectVisibility(els: GateEls) {
+    els.ejectRow.classList.toggle("hidden", !hasPersistedProgress());
+  }
+
+  function applyToControls(els: GateEls, p: SpoilerProgress) {
+    els.slider.value = String(p.episode);
+    els.epReadout.textContent = String(p.episode);
+    els.eoeChk.checked = p.eoe;
+    syncAvailability(els);
+  }
+
+  function readControls(els: GateEls): SpoilerProgress {
+    const ep = Number(els.slider.value);
+    const episode = Math.max(0, Math.min(26, Number.isFinite(ep) ? ep : 0));
+    // EoE only counts if the user finished the TV run --- the gate UI
+    // disables the box when its prerequisite is unmet, but read() defends
+    // in depth.
+    const eoe = els.eoeChk.checked && episode >= 26;
+    return { episode, eoe };
+  }
+
+  /**
+   * Keep the EoE checkbox in sync with its prerequisite: EoE requires
+   * episode >= 26 (EoE picks up after the TV finale). When the
+   * prerequisite isn't met we disable the checkbox, force-uncheck it,
+   * and surface a hint explaining why.
+   */
+  function syncAvailability(els: GateEls) {
+    const ep = Number(els.slider.value);
+    const eoeReady = Number.isFinite(ep) && ep >= 26;
+    els.eoeChk.disabled = !eoeReady;
+    els.eoeLabel.dataset.disabled = eoeReady ? "false" : "true";
+    if (!eoeReady && els.eoeChk.checked) {
+      els.eoeChk.checked = false;
+    }
+    els.eoeHint.classList.toggle("hidden", eoeReady);
+  }
+
+  function showGate(els: GateEls) {
+    els.overlay.dataset.state = "visible";
+    els.overlay.classList.remove("hidden");
+    els.overlay.classList.add("flex");
+    setTimeout(() => els.revealBtn.focus(), 0);
+  }
+
+  function hideGate(els: GateEls) {
+    els.overlay.dataset.state = "hidden";
+    els.overlay.classList.add("hidden");
+    els.overlay.classList.remove("flex");
+  }
+
+  function broadcast(p: SpoilerProgress) {
+    window.dispatchEvent(
+      new CustomEvent<SpoilerProgress>(SPOILER_EVENT_NAME, { detail: p }),
+    );
+    // Body-level "show death" flag drives the dies-by-end-of-series badge
+    // in Readout.astro via pure CSS (see global.css). Set on every
+    // broadcast so live changes (gate reopen + reveal at a higher tier)
+    // flip the badge in real time.
+    document.body.dataset.spoilersShowDeath = isShowComplete(p)
+      ? "true"
+      : "false";
+  }
+
+  function bootstrap() {
+    const els = getEls();
+    if (!els) return;
+
+    // First-visit vs returning-visit branch:
+    //
+    //   - localStorage holds a saved tier --> skip the gate, broadcast the
+    //     stored tier to the renderer, and pre-fill the form so the reopen
+    //     pill shows the user their own state when they re-enter.
+    //   - localStorage empty --> show the gate, start at default. The user
+    //     must reveal to advance.
+    //
+    // Eject visibility tracks the localStorage state on every gate open
+    // (here on bootstrap and again from the reopen handler).
+    const persisted = loadProgress();
+    if (persisted) {
+      applyToControls(els, persisted);
+      broadcast(persisted);
+      // Gate stays hidden; the user already revealed in a prior session.
+    } else {
+      applyToControls(els, SPOILER_PROGRESS_DEFAULT);
+      showGate(els);
+    }
+    syncEjectVisibility(els);
+
+    els.slider.addEventListener("input", () => {
+      els.epReadout.textContent = els.slider.value;
+      syncAvailability(els);
+    });
+
+    // Defense in depth: if the EoE checkbox somehow gets toggled while
+    // disabled, force it back off and re-sync. Browsers normally suppress
+    // click events on disabled inputs, but the underlying label can still
+    // flip the input in edge cases.
+    els.eoeChk.addEventListener("change", () => {
+      const ep = Number(els.slider.value);
+      if (els.eoeChk.checked && (!Number.isFinite(ep) || ep < 26)) {
+        els.eoeChk.checked = false;
+      }
+      syncAvailability(els);
+    });
+
+    els.presetAllBtn.addEventListener("click", () => {
+      applyToControls(els, SPOILER_PROGRESS_FULL);
+    });
+    els.resetBtn.addEventListener("click", () => {
+      applyToControls(els, SPOILER_PROGRESS_DEFAULT);
+    });
+
+    els.revealBtn.addEventListener("click", () => {
+      const p = readControls(els);
+      saveProgress(p);
+      broadcast(p);
+      hideGate(els);
+      syncEjectVisibility(els);
+    });
+
+    els.reopenBtn.addEventListener("click", () => {
+      showGate(els);
+      syncEjectVisibility(els);
+    });
+
+    // Force eject: flush the persisted tier and reset the form to default.
+    // The gate STAYS open --- the user has just dropped the plug, so the
+    // next thing they should be doing is picking a fresh tier and revealing
+    // again. The button hides itself once localStorage is empty.
+    els.ejectBtn.addEventListener("click", () => {
+      clearProgress();
+      applyToControls(els, SPOILER_PROGRESS_DEFAULT);
+      syncEjectVisibility(els);
+    });
+  }
+
+  if (
+    document.readyState === "complete" ||
+    document.readyState === "interactive"
+  ) {
+    bootstrap();
+  } else {
+    document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
+  }
+</script>

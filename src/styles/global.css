@@ -1,0 +1,283 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inclusive Sans", sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+
+  /* NERV / Magi / SEELE palette */
+  --color-nerv-red: #ff2a3c;
+  --color-nerv-red-dim: #a51022;
+  --color-magi-green: #5cf5b6;
+  --color-eva-orange: #ffae00;
+  --color-seele-purple: #8a2be2;
+  --color-edge-blue: #3a8fff;
+  --color-edge-blue-light: #62b8ff;
+  --color-comments-orange: #ff6c2a;
+
+  --color-bg: #050507;
+  --color-panel: #0c0c10;
+  --color-panel-2: #131319;
+  --color-text: #e2e2e2;
+  --color-text-dim: #9aa0a6;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-size: 100%;
+    /*
+     * Scroll-snap docks the page at two natural rest points: the start of
+     * the graph pin section (graph view fully in the viewport) and the
+     * start of the readout section. Proximity (not mandatory) means the
+     * browser only snaps when the user is already close --- never traps
+     * mid-scroll. Combined with the bumped pin runway below, the user
+     * has to put real effort into scrolling past the graph.
+     */
+    scroll-snap-type: y proximity;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    font-smooth: always;
+    overscroll-behavior-y: contain;
+  }
+
+  a,
+  button,
+  summary {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-nerv-red);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-contrast: more) {
+    :root {
+      --color-bg: #000;
+      --color-text: #fff;
+      --color-text-dim: #ddd;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    html {
+      /* No scroll-snap when motion is reduced --- the lock effect requires
+       * the same scroll-driven theatre we're disabling. */
+      scroll-snap-type: none;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * Genesis-highlight inline span. The `--g-color` custom property is set
+   * inline by the highlighter; here we just attach the typography treatment
+   * (slight emphasis, no underline) so matched aliases read as live links
+   * without disrupting line-height.
+   */
+  .g-shortcode {
+    color: var(--g-color, currentColor);
+    font-weight: 600;
+    text-decoration: none;
+    transition: filter 120ms ease-out;
+  }
+  .g-shortcode:hover {
+    filter: brightness(1.18) saturate(1.15);
+  }
+
+  .ngg-bracket-red::before {
+    content: "[";
+    color: var(--color-nerv-red);
+    margin-right: 0.4ch;
+  }
+  .ngg-bracket-red::after {
+    content: "]";
+    color: var(--color-nerv-red);
+    margin-left: 0.4ch;
+  }
+  .ngg-bracket-green::before {
+    content: "[";
+    color: var(--color-magi-green);
+    margin-right: 0.4ch;
+  }
+  .ngg-bracket-green::after {
+    content: "]";
+    color: var(--color-magi-green);
+    margin-left: 0.4ch;
+  }
+
+  .ngg-grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(255, 42, 60, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 42, 60, 0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .ngg-scan {
+    position: relative;
+    overflow: hidden;
+  }
+  .ngg-scan::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0px,
+      rgba(255, 255, 255, 0) 3px,
+      rgba(255, 255, 255, 0.018) 4px,
+      rgba(255, 255, 255, 0) 5px
+    );
+    mix-blend-mode: screen;
+  }
+
+  /*
+   * The 3D graph host. The HTML controls position via Tailwind utilities
+   * (e.g. `absolute inset-0` to fill the sticky stage). Keeping this rule in
+   * @layer components lets utilities win the cascade; an unlayered rule
+   * here would override them.
+   */
+  .ngg-graph-root {
+    background: radial-gradient(
+      ellipse at center,
+      #0a0a12 0%,
+      var(--color-bg) 70%
+    );
+    border: 1px solid rgba(255, 42, 60, 0.18);
+    overflow: hidden;
+  }
+
+  .ngg-graph-root canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    cursor: grab;
+    /*
+     * pan-y lets the browser scroll the page through the pin runway on touch
+     * devices while still leaving horizontal drag for yaw rotation. Trade-off:
+     * pitch (vertical drag rotation) is unavailable on touch.
+     */
+    touch-action: pan-y;
+  }
+  .ngg-graph-root canvas:active {
+    cursor: grabbing;
+  }
+
+  .ngg-graph-root[data-state="no-webgl"] .ngg-fallback,
+  .ngg-graph-root[data-state="error"] .ngg-fallback {
+    display: flex;
+  }
+
+  /*
+   * dies-by-end-of-series badge. Hidden until the SpoilerGate flips
+   * body[data-spoilers-show-death="true"] (only after TV ep 26 + EoE).
+   * Pure CSS gate so the SSR-rendered markup survives without client-side
+   * templating --- the no-WebGL fallback path still gets the badge once
+   * the show is complete.
+   */
+  .ngg-death-badge {
+    display: none;
+  }
+  body[data-spoilers-show-death="true"] .ngg-death-badge {
+    display: block;
+  }
+  .ngg-graph-root[data-state="ready"] .ngg-fallback,
+  .ngg-graph-root[data-state="init"] .ngg-fallback {
+    display: none;
+  }
+  /*
+   * The loading layer fades to invisible once the renderer has reached any
+   * terminal state. Without the no-webgl/error rules, the "Initializing
+   * Magi…" message stays painted on top of the fallback in browsers that
+   * refuse a WebGL context (e.g. LibreWolf with fingerprint protection).
+   */
+  .ngg-graph-root[data-state="ready"] .ngg-loading,
+  .ngg-graph-root[data-state="no-webgl"] .ngg-loading,
+  .ngg-graph-root[data-state="error"] .ngg-loading {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /*
+   * The pinning pattern: a tall outer wrapper hosts a sticky-top stage that
+   * fills the viewport. As the user scrolls, the WebGL stage stays pinned to
+   * the top of the viewport for the runway height (outer height minus stage
+   * height), then releases as the next section scrolls into view.
+   *
+   * The runway is intentionally generous --- 100vh stage plus 300vh of pin
+   * --- so a casual scroll cannot accidentally cut off the top of the
+   * graph. Combined with scroll-snap-align below, the section docks at the
+   * start whenever the user is near it; escaping into the readout requires
+   * deliberate effort.
+   */
+  .ngg-pin {
+    min-height: 400vh;
+    scroll-snap-align: start;
+  }
+  /*
+   * The readout section docks at the top of the viewport once the user has
+   * worked their way through the runway. Together with the .ngg-pin snap
+   * point, the page has two rest positions: graph and readout. Proximity
+   * snapping (set on html) keeps this from feeling forced.
+   */
+  [data-testid="ngg-readout"] {
+    scroll-snap-align: start;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /*
+     * Honor the user's preference: collapse the runway so the page reads as
+     * a conventional, non-pinned layout without scroll-driven theatre. Snap
+     * is also disabled --- snapping is part of the lock-the-graph effect,
+     * not an accessibility-neutral default.
+     */
+    .ngg-pin {
+      min-height: 100vh;
+      scroll-snap-align: none;
+    }
+    [data-testid="ngg-readout"] {
+      scroll-snap-align: none;
+    }
+  }
+}
+
+/*
+ * Unlayered: when the cursor is anywhere over the graph area, brighten the
+ * gray-by-default controls so the user knows they're live. These rules sit
+ * outside `@layer components` so they beat Tailwind utility classes
+ * (`text-[color:...]`, `border-[color:...]`) which live in @layer utilities.
+ * Hover state is set on the root by the renderer (`pointerenter`/`leave`).
+ */
+.ngg-graph-root[data-graph-hovered="true"]
+  [data-testid="ngg-clear-selection"] {
+  color: var(--color-text);
+  border-color: rgba(226, 226, 226, 0.6);
+}
+.ngg-graph-root[data-graph-hovered="true"] [data-testid="ngg-toggle-rotate"] {
+  border-color: rgba(92, 245, 182, 0.85);
+}
+[data-testid="ngg-help"] {
+  transition: color 150ms ease-out;
+}
+.ngg-graph-root[data-graph-hovered="true"] [data-testid="ngg-help"] {
+  color: #fff;
+  font-weight: 700;
+}

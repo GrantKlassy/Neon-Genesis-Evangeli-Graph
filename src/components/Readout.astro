@@ -1,0 +1,686 @@
+---
+import {
+  ANGEL_UNIFORM_COLOR,
+  CONCEPT_UNIFORM_COLOR,
+  EVENT_UNIFORM_COLOR,
+  FAMILY_UNIFORM_COLOR,
+  LOCATION_UNIFORM_COLOR,
+  MAGI_UNIFORM_COLOR,
+  ORGANIZATION_UNIFORM_COLOR,
+  evangelion,
+  isAngel,
+  isCharacter,
+  isConcept,
+  isEva,
+  isEvent,
+  isFamily,
+  isLocation,
+  isMagi,
+  isOrganization,
+} from "../graph";
+import { colorOf, evageeksUrlOf } from "../genesis";
+import G from "./G.astro";
+
+interface CharacterCard {
+  id: string;
+  displayName: string;
+  role: string;
+  color: string;
+  shortcodes: string[];
+  evageeksUrl: string | null;
+  /**
+   * Whether this character carries the dies-by-end-of-series tag. Markup
+   * for the badge is only emitted when this is true; CSS in
+   * src/styles/global.css then keeps the badge hidden until the user
+   * has revealed everything (body[data-spoilers-show-death="true"]).
+   * The flag itself is a static fact derived at build time from the
+   * graph data; the *visibility* is the runtime spoiler-tier check.
+   */
+  diesByEndOfSeries: boolean;
+}
+
+interface EvaCard {
+  id: string;
+  displayName: string;
+  color: string;
+  shortcodes: string[];
+  evageeksUrl: string | null;
+}
+
+interface FamilyCard {
+  id: string;
+  displayName: string;
+  shortcodes: string[];
+  notes: string;
+  evageeksUrl: string | null;
+}
+
+/**
+ * Resolve the EvaWiki URL for a node by walking its shortcodes in order.
+ * Most graph nodes have a single shortcode; the helper still tolerates
+ * aliases-first ordering so future multi-shortcode nodes keep working.
+ */
+function evageeksUrlForNode(shortcodes: readonly string[]): string | null {
+  for (const code of shortcodes) {
+    const url = evageeksUrlOf(code);
+    if (url) return url;
+  }
+  return null;
+}
+
+const characters: CharacterCard[] = evangelion.nodes
+  .filter(isCharacter)
+  .map((c) => ({
+    id: c.id,
+    displayName: c.displayName,
+    role: c.role,
+    color: colorOf(c.shortcodes[0] ?? ""),
+    shortcodes: c.shortcodes,
+    evageeksUrl: evageeksUrlForNode(c.shortcodes),
+    diesByEndOfSeries:
+      c.tags?.some((t) => t.id === "dies-by-end-of-series") ?? false,
+  }));
+
+const angels = evangelion.nodes
+  .filter(isAngel)
+  .sort((a, b) => a.number - b.number)
+  .map((a) => ({
+    ...a,
+    evageeksUrl: evageeksUrlForNode(a.shortcodes),
+  }));
+
+const magi = evangelion.nodes.filter(isMagi).map((m) => ({
+  ...m,
+  evageeksUrl: evageeksUrlForNode(m.shortcodes),
+}));
+const organizations = evangelion.nodes.filter(isOrganization).map((o) => ({
+  ...o,
+  evageeksUrl: evageeksUrlForNode(o.shortcodes),
+}));
+const locations = evangelion.nodes.filter(isLocation).map((l) => ({
+  ...l,
+  evageeksUrl: evageeksUrlForNode(l.shortcodes),
+}));
+const concepts = evangelion.nodes.filter(isConcept).map((c) => ({
+  ...c,
+  evageeksUrl: evageeksUrlForNode(c.shortcodes),
+}));
+const families: FamilyCard[] = evangelion.nodes.filter(isFamily).map((f) => ({
+  id: f.id,
+  displayName: f.displayName,
+  shortcodes: f.shortcodes,
+  notes: f.notes,
+  evageeksUrl: evageeksUrlForNode(f.shortcodes),
+}));
+const evas: EvaCard[] = evangelion.nodes
+  .filter(isEva)
+  .sort((a, b) => a.number - b.number)
+  .map((e) => ({
+    id: e.id,
+    displayName: e.displayName,
+    color: colorOf(e.shortcodes[0] ?? ""),
+    shortcodes: e.shortcodes,
+    evageeksUrl: evageeksUrlForNode(e.shortcodes),
+  }));
+const events = evangelion.nodes.filter(isEvent).map((e) => ({
+  ...e,
+  evageeksUrl: evageeksUrlForNode(e.shortcodes),
+}));
+---
+
+<section
+  class="mx-auto mt-8 max-w-6xl px-4 pb-12 sm:mt-12 sm:px-8"
+  data-testid="ngg-readout"
+>
+  <h2
+    class="ngg-bracket-red font-mono text-base font-bold tracking-[0.25em] text-[color:var(--color-text)] uppercase sm:text-lg"
+  >
+    Canon readout
+  </h2>
+
+  <article
+    class="mt-5 border border-[color:var(--color-nerv-red)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-characters"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-nerv-red)] uppercase sm:text-sm"
+    >
+      Characters
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      Cast nodes. Each character maps to a single genesis shortcode and renders in
+      that shortcode's primary color. The full <G text="Shinji Ikari" /> /
+      <G text="Ritsuko Akagi" /> labels resolve as one shortcode now (the
+      character's own); the standalone family-name aliases like
+      <G text="Ikari" /> and <G text="Akagi" /> still tint body copy AND now
+      anchor real <span class="font-mono text-[color:var(--color-edge-blue)]">family</span>
+      nodes below. Spoiler-tagged characters keep their late-show identities
+      gated for now.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        characters.map((c) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`character-${c.id}`}
+            data-shortcodes={c.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${c.color}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={c.displayName} />
+              </p>
+              <p class="font-mono text-[0.65rem] tracking-wider text-[color:var(--color-text-dim)] uppercase">
+                {c.role}
+              </p>
+              <p class="mt-1 font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
+                shortcodes &middot; {c.shortcodes.join(" / ")}
+              </p>
+              {
+                c.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={c.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${c.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+              {
+                /*
+                 * Dies-by-end-of-series badge. Only emitted for characters
+                 * who carry the tag; visibility is gated globally by a
+                 * body-level data attribute (set by SpoilerGate.astro
+                 * once the user has revealed TV ep 26 + EoE). The static
+                 * SSR includes the markup so the no-WebGL fallback path
+                 * still surfaces the death roll-call --- pure CSS, no
+                 * client-side templating.
+                 */
+                c.diesByEndOfSeries && (
+                  <p
+                    class="ngg-death-badge mt-1 font-mono text-[0.6rem] font-bold tracking-[0.25em] text-[color:var(--color-nerv-red)] uppercase"
+                    data-testid={`ngg-death-badge-${c.id}`}
+                  >
+                    dies by end of series
+                  </p>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-eva-orange)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-angels"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-eva-orange)] uppercase sm:text-sm"
+    >
+      Angels (1 -- 18, canonical order)
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      The 18 canonical angels of the TV series, numbered as <G text="Adam" />
+      = 1 through <G text="Lilim" /> = 18. Spoiler-flagged entries keep their
+      cross-character connections locked until the spoiler gate is unlocked.
+    </p>
+    <ol class="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        angels.map((a) => (
+          <li
+            class:list={[
+              "flex items-baseline gap-2 border border-[color:var(--color-text-dim)]/15 bg-[color:var(--color-panel-2)]/40 px-2 py-1.5",
+              a.revealedAt
+                ? "border-l-2 border-l-[color:var(--color-nerv-red)]/70"
+                : "",
+            ]}
+            data-testid={`angel-${a.number}`}
+            data-revealed-at={a.revealedAt ? a.revealedAt.kind : "open"}
+            data-shortcodes={a.shortcodes.join(",")}
+          >
+            <span
+              class="font-mono text-[0.7rem] tracking-wider"
+              style={`color:${ANGEL_UNIFORM_COLOR}`}
+            >
+              #{String(a.number).padStart(2, "0")}
+            </span>
+            <span class="truncate text-sm font-bold text-[color:var(--color-text)]">
+              <G text={a.name} />
+            </span>
+            {
+              a.evageeksUrl && (
+                <a
+                  class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                  href={a.evageeksUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid={`evageeks-link-${a.id}`}
+                >
+                  evageeks
+                </a>
+              )
+            }
+            <span class="ml-auto font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)] uppercase">
+              {a.introducedEpisode}
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-magi-green)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-magi"
+  >
+    <h3
+      class="ngg-bracket-green font-mono text-xs tracking-[0.2em] text-[color:var(--color-magi-green)] uppercase sm:text-sm"
+    >
+      Magi system (3-in-1)
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      The three Magi share one color and one tight spring in the layout ---
+      a visual rendering of the show's "three personalities, one machine" gag.
+      <G text="Casper" />, <G text="Melchior" />, and <G text="Balthasar" />
+      carry Naoko Akagi's woman, scientist, and mother fragments respectively.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      {
+        magi.map((m) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-magi-green)]/30 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`magi-${m.id}`}
+            data-shortcodes={m.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${MAGI_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={m.name} />
+              </p>
+              <p class="font-mono text-[0.65rem] tracking-wider text-[color:var(--color-magi-green)] uppercase">
+                {m.personality}
+              </p>
+              {
+                m.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={m.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${m.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-eva-orange)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-evas"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-eva-orange)] uppercase sm:text-sm"
+    >
+      EVA Units
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      The mecha. Each unit pairs with its pilot via a <span
+        class="font-mono text-[color:var(--color-eva-orange)]">pilots</span
+      > edge in the graph; later units carry the same spoiler gate as the show's
+      reveals.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        evas.map((e) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`eva-${e.id}`}
+            data-shortcodes={e.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${e.color}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={e.displayName} />
+              </p>
+              <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
+                shortcodes &middot; {e.shortcodes.join(" / ")}
+              </p>
+              {
+                e.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={e.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${e.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-edge-blue)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-families"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-edge-blue)] uppercase sm:text-sm"
+    >
+      Families
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      Lineage roll-up nodes. Every family paints in the same uniform family
+      color --- families don't inherit a per-shortcode hue, the visual
+      punchline is "this is a family, not a person." Each family's
+      displayName carries the
+      <span class="font-mono text-[color:var(--color-text)]">(Family)</span>
+      suffix so the 3D label is unmistakable, and
+      <span class="font-mono text-[color:var(--color-edge-blue)]"
+        >member_of_family</span
+      > edges connect each character to their family.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {
+        families.map((f) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`family-${f.id}`}
+            data-shortcodes={f.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${FAMILY_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p
+                class="truncate text-sm font-bold"
+                style={`color:${FAMILY_UNIFORM_COLOR}`}
+                data-testid={`family-displayname-${f.id}`}
+              >
+                {f.displayName}
+              </p>
+              <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
+                shortcode &middot; {f.shortcodes.join(" / ")}
+              </p>
+              <p class="mt-1 text-[0.7rem] leading-snug text-[color:var(--color-text-dim)]">
+                {f.notes}
+              </p>
+              {
+                f.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={f.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${f.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-nerv-red)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-organizations"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-nerv-red)] uppercase sm:text-sm"
+    >
+      Organizations
+    </h3>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        organizations.map((o) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`organization-${o.id}`}
+            data-shortcodes={o.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${ORGANIZATION_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={o.name} />
+              </p>
+              {
+                o.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={o.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${o.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-edge-blue)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-locations"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-edge-blue)] uppercase sm:text-sm"
+    >
+      Locations
+    </h3>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        locations.map((l) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`location-${l.id}`}
+            data-shortcodes={l.shortcodes.join(",")}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${LOCATION_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p
+                class="truncate text-sm font-bold text-[color:var(--color-text)]"
+                data-testid={`location-displayname-${l.id}`}
+              >
+                {l.displayName}
+              </p>
+              {
+                l.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={l.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${l.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-text-dim)]/30 bg-[color:var(--color-panel)] p-4"
+    data-testid="ngg-section-concepts"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] text-[color:var(--color-text)] uppercase sm:text-sm"
+    >
+      Concepts
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      Abstract / in-universe concept nodes. <G text="AT Field" />,
+      <G text="LCL" />, and <G text="Third Impact" /> are first-class nodes
+      now --- promoted out of registry-only entries so they can carry edges as
+      the investigation grows. Third Impact stays gated to End of Evangelion.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        concepts.map((c) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`concept-${c.id}`}
+            data-shortcodes={c.shortcodes.join(",")}
+            data-revealed-at={c.revealedAt ? c.revealedAt.kind : "open"}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${CONCEPT_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={c.name} />
+              </p>
+              <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
+                shortcode &middot; {c.shortcodes.join(" / ")}
+              </p>
+              {
+                c.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={c.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${c.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <article
+    class="mt-5 border border-[color:var(--color-seele-purple)]/30 bg-[color:var(--color-panel)] p-4"
+    style={`border-color:${EVENT_UNIFORM_COLOR}55`}
+    data-testid="ngg-section-events"
+  >
+    <h3
+      class="ngg-bracket-red font-mono text-xs tracking-[0.2em] uppercase sm:text-sm"
+      style={`color:${EVENT_UNIFORM_COLOR}`}
+    >
+      Events
+    </h3>
+    <p class="mt-2 text-sm leading-snug text-[color:var(--color-text-dim)]">
+      The flashpoints. <G text="First Impact" /> formed the Moon and stranded
+      Adam's vessel; <G text="Second Impact" /> blew open Antarctica when the
+      Katsuragi Expedition made contact with Adam in 2000. Backstory in the
+      early run, cause-and-effect spelled out in the Ep. 21 director's-cut
+      drop.
+    </p>
+    <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {
+        events.map((ev) => (
+          <li
+            class="flex items-start gap-2 border border-[color:var(--color-text-dim)]/20 bg-[color:var(--color-panel-2)]/40 p-2"
+            data-testid={`event-${ev.id}`}
+            data-shortcodes={ev.shortcodes.join(",")}
+            data-revealed-at={ev.revealedAt ? ev.revealedAt.kind : "open"}
+          >
+            <span
+              class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={`background:${EVENT_UNIFORM_COLOR}`}
+              aria-hidden="true"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-[color:var(--color-text)]">
+                <G text={ev.name} />
+              </p>
+              <p class="font-mono text-[0.6rem] tracking-wider text-[color:var(--color-text-dim)]/80 uppercase">
+                shortcode &middot; {ev.shortcodes.join(" / ")}
+              </p>
+              {
+                ev.evageeksUrl && (
+                  <a
+                    class="mt-1 inline-block font-mono text-[0.6rem] tracking-wider text-[color:var(--color-magi-green)] uppercase hover:underline"
+                    href={ev.evageeksUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`evageeks-link-${ev.id}`}
+                  >
+                    evageeks &rarr;
+                  </a>
+                )
+              }
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <footer
+    class="mt-10 border-t border-[color:var(--color-text-dim)]/15 pt-5 font-mono text-[0.7rem] tracking-wider text-[color:var(--color-text-dim)] uppercase sm:text-xs"
+    data-testid="ngg-footer"
+  >
+    <p>
+      source &middot; <span class="text-[color:var(--color-magi-green)]"
+        >{evangelion.source}</span
+      >
+    </p>
+    <p class="mt-1">
+      visualization &middot; three.js webgl &middot; force-directed 3d layout
+      &middot; deterministic seed
+    </p>
+    <p class="mt-1">
+      basic seed &middot; relationship layers &amp; spoiler-gated edges to
+      follow
+    </p>
+  </footer>
+</section>

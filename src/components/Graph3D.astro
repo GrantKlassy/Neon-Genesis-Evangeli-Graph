@@ -1,0 +1,707 @@
+---
+import {
+  ANGEL_UNIFORM_COLOR,
+  AUDIENCE_UNIFORM_COLOR,
+  CONCEPT_UNIFORM_COLOR,
+  EDGE_COLORS,
+  EVA_UNIFORM_COLOR,
+  EVENT_UNIFORM_COLOR,
+  FAMILY_UNIFORM_COLOR,
+  LOCATION_UNIFORM_COLOR,
+  MAGI_UNIFORM_COLOR,
+  ORGANIZATION_UNIFORM_COLOR,
+} from "../graph";
+import { colorOf } from "../genesis";
+
+// Characters are individually colored; the legend uses Asuka's primary as
+// the swatch sample because the show's marketing has trained the eye on it.
+const nodeLegend = [
+  {
+    id: "character",
+    label: "Characters (per shortcode)",
+    color: colorOf("asuka"),
+  },
+  {
+    id: "angel",
+    label: "Angels (1-18)",
+    color: ANGEL_UNIFORM_COLOR,
+  },
+  {
+    id: "magi",
+    label: "Magi (3-in-1)",
+    color: MAGI_UNIFORM_COLOR,
+  },
+  {
+    id: "eva",
+    label: "EVA Units",
+    color: EVA_UNIFORM_COLOR,
+  },
+  {
+    id: "organization",
+    label: "Organizations",
+    color: ORGANIZATION_UNIFORM_COLOR,
+  },
+  {
+    id: "location",
+    label: "Locations",
+    color: LOCATION_UNIFORM_COLOR,
+  },
+  {
+    id: "concept",
+    label: "Concepts",
+    color: CONCEPT_UNIFORM_COLOR,
+  },
+  {
+    id: "family",
+    label: "Families (uniform)",
+    color: FAMILY_UNIFORM_COLOR,
+  },
+  {
+    id: "event",
+    label: "Events",
+    color: EVENT_UNIFORM_COLOR,
+  },
+  // Singular audience node --- gated to End of Evangelion. Sits last in the
+  // legend so the eye reads it as the punchline after the canon roster.
+  {
+    id: "audience",
+    label: "You (post-EoE)",
+    color: AUDIENCE_UNIFORM_COLOR,
+  },
+] as const;
+
+const edgeLegend = [
+  { id: "magi_link", label: "Magi link" },
+  { id: "angel_sequence", label: "Angel sequence" },
+  { id: "pilots", label: "Pilots EVA" },
+  { id: "member_of_family", label: "Member of family" },
+  { id: "member_of_org", label: "Member of org" },
+  { id: "located_in", label: "Located in" },
+  { id: "caused", label: "Caused" },
+  { id: "eliminated", label: "Eliminated" },
+] as const;
+---
+
+<section
+  class="ngg-pin relative w-full"
+  data-testid="ngg-graph-section"
+  id="ngg-graph"
+>
+  <div class="ngg-pin-stage sticky top-0 h-screen w-full overflow-hidden">
+    <div
+      class="ngg-graph-root ngg-scan absolute inset-x-3 inset-y-6 sm:inset-x-5 sm:inset-y-10 md:inset-x-8 md:inset-y-14 lg:inset-x-12 lg:inset-y-20"
+      data-testid="ngg-graph-root"
+      data-state="init"
+      data-graph-hovered="false"
+      id="ngg-graph-root"
+    >
+      <canvas
+        class="block"
+        data-testid="ngg-canvas"
+        id="ngg-graph-canvas"
+        aria-label="3D graph of characters, angels, and the Magi"></canvas>
+
+      <div
+        class="ngg-loading pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-500"
+        data-testid="ngg-loading"
+      >
+        <p
+          class="font-mono text-xs tracking-[0.3em] text-[color:var(--color-magi-green)] uppercase"
+        >
+          Initializing Magi&hellip;
+        </p>
+      </div>
+
+      <div
+        class="ngg-fallback absolute inset-0 flex-col items-center justify-center gap-3 px-6 text-center"
+        data-testid="ngg-fallback"
+      >
+        <p
+          class="font-mono text-sm tracking-[0.2em] text-[color:var(--color-nerv-red)] uppercase"
+        >
+          AT field collapse :: WebGL unavailable
+        </p>
+        <p class="max-w-sm text-sm text-[color:var(--color-text-dim)]">
+          This browser is missing a WebGL context. The graph still loads as raw
+          data below.
+        </p>
+      </div>
+
+      <!-- Node + edge legend (top-left overlay). -->
+      <aside
+        class="pointer-events-none absolute top-3 left-3 z-10 max-w-[55%] sm:top-5 sm:left-5 sm:max-w-xs"
+        data-testid="ngg-legend"
+      >
+        <div
+          class="border border-[color:var(--color-nerv-red)]/30 bg-[color:var(--color-panel)]/85 p-2 backdrop-blur-sm sm:p-3"
+        >
+          <p
+            class="font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase sm:text-[0.65rem]"
+          >
+            Nodes
+          </p>
+          <ul class="mt-1 space-y-0.5 text-[0.7rem] sm:text-xs">
+            {
+              nodeLegend.map((c) => (
+                <li class="flex items-center gap-2">
+                  <span
+                    class="inline-block h-2.5 w-2.5 rounded-full"
+                    style={`background:${c.color}`}
+                    aria-hidden="true"
+                  />
+                  <span class="leading-tight">{c.label}</span>
+                </li>
+              ))
+            }
+          </ul>
+          <p
+            class="mt-2 font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase sm:text-[0.65rem]"
+          >
+            Edges
+          </p>
+          <ul class="mt-1 space-y-0.5 text-[0.7rem] sm:text-xs">
+            {
+              edgeLegend.map((e) => (
+                <li class="flex items-center gap-2">
+                  <span
+                    class="inline-block h-0.5 w-3"
+                    style={`background:${EDGE_COLORS[e.id]}`}
+                    aria-hidden="true"
+                  />
+                  <span class="leading-tight">{e.label}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Controls (top-right overlay). -->
+      <div
+        class="absolute top-3 right-3 z-10 flex gap-2 sm:top-5 sm:right-5"
+        data-testid="ngg-controls"
+      >
+        <button
+          id="ngg-toggle-rotate"
+          type="button"
+          class="border border-[color:var(--color-magi-green)]/40 bg-[color:var(--color-panel)]/85 px-3 py-1 font-mono text-[0.65rem] tracking-[0.2em] text-[color:var(--color-magi-green)] uppercase backdrop-blur-sm transition-colors hover:bg-[color:var(--color-panel-2)] sm:text-xs"
+          data-testid="ngg-toggle-rotate"
+          aria-pressed="true"
+        >
+          <span data-rotate-label>rotating</span>
+        </button>
+        <!--
+          View Show: walks the spoiler gate from ep 0 -> ep 26 -> +EoE while
+          the orb keeps rotating. Bypasses the gate persistence (the user's
+          saved tier is preserved across the playthrough); click again
+          during playback to abort and snap back to the persisted tier.
+        -->
+        <button
+          id="ngg-play-timeline"
+          type="button"
+          class="border border-[color:var(--color-magi-green)]/40 bg-[color:var(--color-panel)]/85 px-3 py-1 font-mono text-[0.65rem] tracking-[0.2em] text-[color:var(--color-magi-green)] uppercase backdrop-blur-sm transition-colors hover:bg-[color:var(--color-panel-2)] sm:text-xs"
+          data-testid="ngg-play-timeline"
+          data-state="idle"
+          aria-label="View show timeline (animate spoiler gate ep 0 -> EoE)"
+        >
+          <span data-timeline-label>view show</span>
+        </button>
+        <button
+          id="ngg-clear-selection"
+          type="button"
+          class="border border-[color:var(--color-text-dim)]/30 bg-[color:var(--color-panel)]/85 px-3 py-1 font-mono text-[0.65rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase backdrop-blur-sm transition-colors hover:bg-[color:var(--color-panel-2)] hover:text-[color:var(--color-text)] sm:text-xs"
+          data-testid="ngg-clear-selection"
+        >
+          clear
+        </button>
+      </div>
+
+      <!-- Selected node panel (bottom overlay). Hidden when nothing selected. -->
+      <aside
+        id="ngg-selected"
+        class="pointer-events-none absolute right-3 bottom-3 left-3 z-10 hidden max-w-md border border-[color:var(--color-magi-green)]/40 bg-[color:var(--color-panel)]/92 p-3 backdrop-blur-sm sm:right-5 sm:bottom-5 sm:left-auto sm:p-4"
+        data-testid="ngg-selected"
+        data-empty="true"
+      >
+        <p
+          class="font-mono text-[0.6rem] tracking-[0.25em] text-[color:var(--color-magi-green)] uppercase"
+        >
+          <span data-testid="ngg-selected-kind">node</span>
+        </p>
+        <p
+          class="mt-1 truncate text-sm font-bold text-[color:var(--color-text)] sm:text-base"
+          data-testid="ngg-selected-title"
+        >
+          ---
+        </p>
+        <dl
+          class="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[0.65rem] sm:text-xs"
+          data-testid="ngg-selected-meta"
+        >
+        </dl>
+        <p
+          class="mt-2 text-[0.7rem] leading-snug text-[color:var(--color-text-dim)] sm:text-xs"
+          data-testid="ngg-selected-notes"
+        >
+        </p>
+        <!--
+          Evageeks "view source" link. The panel itself is pointer-events-none
+          (so the canvas under it stays clickable for drag/select), so the
+          link individually opts back in via pointer-events-auto. Hidden by
+          default, populated by the renderer when the selected node has a
+          resolvable EvaWiki slug.
+        -->
+        <a
+          id="ngg-selected-evageeks"
+          class="pointer-events-auto mt-2 hidden font-mono text-[0.6rem] tracking-[0.2em] text-[color:var(--color-magi-green)] uppercase hover:underline focus-visible:underline sm:text-[0.65rem]"
+          data-testid="ngg-selected-evageeks"
+          target="_blank"
+          rel="noopener noreferrer"
+          href="#"
+        >
+          view on evageeks &rarr;
+        </a>
+        <!--
+          Dies-by-end-of-series readout badge. Only renders when the
+          selected node carries the tag AND the user has revealed TV
+          ep 26 + EoE (the show-complete gate). The badge is the closing
+          roll-call --- we deliberately do NOT show it pre-completion,
+          since the dies tag is itself a finale-grade spoiler.
+        -->
+        <p
+          id="ngg-selected-death"
+          class="mt-2 hidden font-mono text-[0.65rem] font-bold tracking-[0.25em] text-[color:var(--color-nerv-red)] uppercase sm:text-xs"
+          data-testid="ngg-selected-death"
+        >
+          dies by end of series
+        </p>
+      </aside>
+
+      <!-- Scroll cue (bottom-center). Fades as the user advances through the runway. -->
+      <div
+        class="ngg-scroll-cue pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 transition-opacity duration-300 sm:bottom-5"
+        data-testid="ngg-scroll-cue"
+        aria-hidden="true"
+      >
+        <p
+          class="font-mono text-[0.55rem] tracking-[0.3em] text-[color:var(--color-text-dim)] uppercase sm:text-[0.65rem]"
+        >
+          scroll to continue
+        </p>
+        <span
+          class="ngg-scroll-cue-arrow font-mono text-base leading-none text-[color:var(--color-magi-green)] sm:text-lg"
+          >&#x2193;</span
+        >
+      </div>
+
+      <!-- Help line (interaction hints). Bottom-left, hidden on small screens. -->
+      <p
+        class="pointer-events-none absolute bottom-3 left-3 z-0 hidden font-mono text-[0.6rem] tracking-[0.2em] text-[color:var(--color-text-dim)] uppercase sm:bottom-5 sm:left-5 sm:block sm:text-xs"
+        data-testid="ngg-help"
+      >
+        drag &middot; ctrl+wheel to zoom &middot; tap nodes for readout
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initGraph3D } from "../scripts/graph3d";
+  import {
+    SPOILER_EVENT_NAME,
+    SPOILER_PROGRESS_DEFAULT,
+    evangelion,
+    gateLabel,
+    isAngel,
+    isAudience,
+    isCharacter,
+    isConcept,
+    isEva,
+    isEvent,
+    isFamily,
+    isLocation,
+    isMagi,
+    isOrganization,
+    isShowComplete,
+    maskLabel,
+    parseSpoilerProgress,
+  } from "../graph";
+  import { evageeksUrlOf } from "../genesis";
+  import type { GraphHandle } from "../scripts/graph3d";
+  import type { GraphNode } from "../graph/types";
+
+  /**
+   * Walk a node's shortcodes and return the first one that resolves to an
+   * EvaWiki URL. Most nodes carry a single shortcode; the helper still
+   * iterates so the WebGL panel matches the DOM readout's resolution shape
+   * (Readout.astro evageeksUrlForNode).
+   */
+  function evageeksUrlForNode(
+    shortcodes: readonly string[],
+  ): string | null {
+    for (const code of shortcodes) {
+      const url = evageeksUrlOf(code);
+      if (url) return url;
+    }
+    return null;
+  }
+
+  function bootstrap() {
+    const root = document.getElementById(
+      "ngg-graph-root",
+    ) as HTMLElement | null;
+    const canvas = document.getElementById(
+      "ngg-graph-canvas",
+    ) as HTMLCanvasElement | null;
+    const panelEl = document.getElementById(
+      "ngg-selected",
+    ) as HTMLElement | null;
+    if (!root || !canvas || !panelEl) return;
+    const panel: HTMLElement = panelEl;
+
+    const titleEl = panel.querySelector('[data-testid="ngg-selected-title"]');
+    const kindEl = panel.querySelector('[data-testid="ngg-selected-kind"]');
+    const metaEl = panel.querySelector('[data-testid="ngg-selected-meta"]');
+    const notesEl = panel.querySelector('[data-testid="ngg-selected-notes"]');
+    const evageeksEl = panel.querySelector(
+      '[data-testid="ngg-selected-evageeks"]',
+    ) as HTMLAnchorElement | null;
+    const deathEl = panel.querySelector(
+      '[data-testid="ngg-selected-death"]',
+    ) as HTMLElement | null;
+
+    let activeHandle: GraphHandle | null = null;
+    let lastSelected: GraphNode | null = null;
+
+    function renderSelected(node: GraphNode | null) {
+      lastSelected = node;
+      if (!node) {
+        panel.classList.add("hidden");
+        panel.dataset.empty = "true";
+        panel.dataset.masked = "false";
+        if (evageeksEl) {
+          evageeksEl.classList.add("hidden");
+          evageeksEl.removeAttribute("href");
+        }
+        if (deathEl) deathEl.classList.add("hidden");
+        return;
+      }
+      panel.classList.remove("hidden");
+      panel.dataset.empty = "false";
+
+      const masked = activeHandle?.isNodeMasked(node.id) ?? false;
+      panel.dataset.masked = masked ? "true" : "false";
+      const mask = (s: string) => (masked ? maskLabel(s) : s);
+
+      // Dies-by-end-of-series badge: surfaces only when the show is
+      // complete AND this node carries the tag. The tag itself is a
+      // finale-grade spoiler, so we deliberately gate the badge stricter
+      // than the tag's own visibility (which unlocks at ep 25+ via the
+      // EoE-equivalent rule). Closing roll-call, not a live spoiler.
+      if (deathEl) {
+        const showComplete =
+          activeHandle != null && isShowComplete(activeHandle.progress);
+        const hasTag =
+          !masked &&
+          node.tags?.some((t) => t.id === "dies-by-end-of-series") === true;
+        if (showComplete && hasTag) {
+          deathEl.classList.remove("hidden");
+        } else {
+          deathEl.classList.add("hidden");
+        }
+      }
+
+      // Surface the evageeks URL whenever the node resolves one AND is not
+      // masked. Hidden nodes don't leak their wiki link --- the slug itself
+      // is a spoiler (e.g. /Tabris before Ep. 24).
+      if (evageeksEl) {
+        const url = masked ? null : evageeksUrlForNode(node.shortcodes);
+        if (url) {
+          evageeksEl.href = url;
+          evageeksEl.classList.remove("hidden");
+        } else {
+          evageeksEl.classList.add("hidden");
+          evageeksEl.removeAttribute("href");
+        }
+      }
+
+      if (kindEl) {
+        if (masked) {
+          kindEl.textContent = `${node.kind} ███`;
+        } else if (isCharacter(node)) {
+          kindEl.textContent = `character ${node.id}`;
+        } else if (isAngel(node)) {
+          kindEl.textContent = `angel #${node.number}`;
+        } else if (isMagi(node)) {
+          kindEl.textContent = `magi ${node.id}`;
+        } else if (isEvent(node)) {
+          kindEl.textContent = `event ${node.id}`;
+        } else if (isOrganization(node)) {
+          kindEl.textContent = `organization ${node.id}`;
+        } else if (isLocation(node)) {
+          kindEl.textContent = `location ${node.id}`;
+        } else if (isConcept(node)) {
+          kindEl.textContent = `concept ${node.id}`;
+        } else if (isEva(node)) {
+          kindEl.textContent = `eva ${node.id}`;
+        } else if (isFamily(node)) {
+          kindEl.textContent = `family ${node.id}`;
+        } else if (isAudience(node)) {
+          kindEl.textContent = "audience --- 18th angel";
+        }
+      }
+      if (titleEl) {
+        if (isCharacter(node)) titleEl.textContent = mask(node.displayName);
+        else if (isAngel(node))
+          titleEl.textContent = masked
+            ? `#?? --- ${maskLabel(node.name)}`
+            : `#${node.number} --- ${node.name}`;
+        else if (isMagi(node)) titleEl.textContent = mask(node.name);
+        else if (isEvent(node)) titleEl.textContent = mask(node.name);
+        else if (isOrganization(node)) titleEl.textContent = mask(node.name);
+        else if (isLocation(node)) titleEl.textContent = mask(node.displayName);
+        else if (isConcept(node)) titleEl.textContent = mask(node.name);
+        else if (isEva(node)) titleEl.textContent = mask(node.name);
+        else if (isFamily(node)) titleEl.textContent = mask(node.displayName);
+        else if (isAudience(node)) titleEl.textContent = mask(node.name);
+      }
+      if (metaEl) {
+        metaEl.innerHTML = "";
+        const rows: [string, string][] = [];
+        const codes = mask(node.shortcodes.join(" / "));
+        if (isCharacter(node)) {
+          rows.push(["role", mask(node.role)]);
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isAngel(node)) {
+          rows.push(["number", masked ? "███" : String(node.number)]);
+          rows.push(["intro", mask(node.introducedEpisode)]);
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isMagi(node)) {
+          rows.push(["personality", mask(node.personality)]);
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isEvent(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isOrganization(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isLocation(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isConcept(node)) {
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isEva(node)) {
+          rows.push(["unit", masked ? "███" : node.name]);
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isFamily(node)) {
+          rows.push(["family", mask(node.name)]);
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        } else if (isAudience(node)) {
+          rows.push(["role", "the 18th angel"]);
+          rows.push(["shortcodes", codes]);
+          rows.push(["gate", gateLabel(node.revealedAt)]);
+        }
+        for (const [k, v] of rows) {
+          const dt = document.createElement("dt");
+          dt.className = "text-[color:var(--color-text-dim)] uppercase";
+          dt.textContent = k;
+          const dd = document.createElement("dd");
+          dd.className = "text-[color:var(--color-text)]";
+          dd.textContent = v;
+          metaEl.appendChild(dt);
+          metaEl.appendChild(dd);
+        }
+      }
+      if (notesEl) notesEl.textContent = mask(node.notes);
+    }
+
+    const handle = initGraph3D({
+      root,
+      canvas,
+      onSelect: renderSelected,
+      // Re-render the current selection whenever the gate state changes,
+      // so the readout panel re-masks (or unmasks) live.
+      onProgress: () => {
+        if (lastSelected) renderSelected(lastSelected);
+      },
+    });
+    activeHandle = handle;
+
+    // Sanity: surface counts for tests via dataset.
+    root.dataset.expectedNodes = String(evangelion.nodes.length);
+    root.dataset.expectedEdges = String(evangelion.edges.length);
+
+    // Wire pause/play toggle.
+    const toggleBtn = document.getElementById("ngg-toggle-rotate");
+    const rotateLabel = toggleBtn?.querySelector("[data-rotate-label]");
+    const updateToggle = () => {
+      if (!toggleBtn || !rotateLabel) return;
+      toggleBtn.setAttribute(
+        "aria-pressed",
+        handle.autoRotate ? "true" : "false",
+      );
+      rotateLabel.textContent = handle.autoRotate ? "rotating" : "paused";
+    };
+    toggleBtn?.addEventListener("click", () => {
+      handle.setAutoRotate(!handle.autoRotate);
+      updateToggle();
+    });
+    updateToggle();
+
+    // Wire clear-selection.
+    const clearBtn = document.getElementById("ngg-clear-selection");
+    clearBtn?.addEventListener("click", () => {
+      handle.selectNodeById(null);
+    });
+
+    // ---- View Show timeline ----
+    //
+    // Walks the spoiler gate from ep 0 -> ep 26 -> +EoE in slow steps
+    // while the orb keeps rotating, and the readout panel restats live
+    // with each step. Runs ENTIRELY through handle.applyProgress so the
+    // gate's localStorage tier is untouched; aborts if the user reopens
+    // the gate and reveals during playback.
+    //
+    // Cadence: 1.8s per TV episode (47s for the 26-step climb), 4s for
+    // the EoE beat. Slow enough to feel like a ceremony, short enough
+    // to not hold a user hostage.
+    const TIMELINE_STEP_MS = 1800;
+    const TIMELINE_EOE_MS = 4000;
+    const playBtn = document.getElementById(
+      "ngg-play-timeline",
+    ) as HTMLButtonElement | null;
+    const playLabel = playBtn?.querySelector(
+      "[data-timeline-label]",
+    ) as HTMLElement | null;
+
+    let timelineHandle: number | null = null;
+
+    function setTimelineLabel(text: string) {
+      if (playLabel) playLabel.textContent = text;
+    }
+
+    function setTimelineState(state: "idle" | "playing") {
+      if (playBtn) playBtn.dataset.state = state;
+    }
+
+    function loadPersistedProgress() {
+      try {
+        const raw = localStorage.getItem("ngg-spoiler-progress");
+        if (raw === null) return { ...SPOILER_PROGRESS_DEFAULT };
+        return parseSpoilerProgress(raw);
+      } catch {
+        return { ...SPOILER_PROGRESS_DEFAULT };
+      }
+    }
+
+    function startTimeline() {
+      if (timelineHandle !== null) return;
+      setTimelineState("playing");
+      let step = 0; // 0..26 = TV episodes, 27 = EoE beat, 28 = done
+      const tick = () => {
+        if (step <= 26) {
+          handle.applyProgress({
+            episode: step,
+            eoe: false,
+          });
+          setTimelineLabel(`ep ${step}/26`);
+          step += 1;
+          timelineHandle = window.setTimeout(tick, TIMELINE_STEP_MS);
+        } else if (step === 27) {
+          handle.applyProgress({
+            episode: 26,
+            eoe: true,
+          });
+          setTimelineLabel("+ EoE");
+          step += 1;
+          timelineHandle = window.setTimeout(tick, TIMELINE_EOE_MS);
+        } else {
+          // Natural completion --- leave the graph at ep 26 + EoE so the
+          // viewer can dwell on the fully-revealed scene. The user's
+          // persisted tier is unchanged; a reload returns them to it.
+          timelineHandle = null;
+          setTimelineState("idle");
+          setTimelineLabel("view show");
+        }
+      };
+      tick();
+    }
+
+    function abortTimeline() {
+      if (timelineHandle === null) return;
+      clearTimeout(timelineHandle);
+      timelineHandle = null;
+      handle.applyProgress(loadPersistedProgress());
+      setTimelineState("idle");
+      setTimelineLabel("view show");
+    }
+
+    playBtn?.addEventListener("click", () => {
+      if (timelineHandle !== null) {
+        abortTimeline();
+      } else {
+        startTimeline();
+      }
+    });
+
+    // If the user reopens the gate and reveals (or ejects) during
+    // playback, the gate broadcasts a new tier --- abort the timeline
+    // so the user's intentional choice wins. The renderer's own
+    // SPOILER_EVENT_NAME listener applies the gate progress on top of
+    // whatever step the timeline last set.
+    window.addEventListener(SPOILER_EVENT_NAME, () => {
+      if (timelineHandle !== null) {
+        clearTimeout(timelineHandle);
+        timelineHandle = null;
+        setTimelineState("idle");
+        setTimelineLabel("view show");
+      }
+    });
+
+    // Fade the scroll cue once the user has begun advancing through the
+    // pinned section. The pin stage is `position: sticky`, so its
+    // bounding-box top tracks how far the user has progressed: it stays at 0
+    // while pinned and starts going negative as the runway is consumed.
+    const stage = root.parentElement as HTMLElement | null;
+    const cue = document.querySelector(
+      '[data-testid="ngg-scroll-cue"]',
+    ) as HTMLElement | null;
+    if (stage && cue) {
+      const updateCue = () => {
+        const section = stage.parentElement as HTMLElement | null;
+        if (!section) return;
+        const rect = section.getBoundingClientRect();
+        const total = section.offsetHeight - window.innerHeight;
+        if (total <= 0) {
+          cue.style.opacity = "1";
+          return;
+        }
+        const progressed = Math.min(
+          1,
+          Math.max(0, -rect.top / total),
+        );
+        // Start visible, fade out across the first 35% of pin progress.
+        const opacity = Math.max(0, 1 - progressed / 0.35);
+        cue.style.opacity = String(opacity);
+      };
+      updateCue();
+      window.addEventListener("scroll", updateCue, { passive: true });
+      window.addEventListener("resize", updateCue);
+    }
+  }
+
+  if (
+    document.readyState === "complete" ||
+    document.readyState === "interactive"
+  ) {
+    bootstrap();
+  } else {
+    document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
+  }
+</script>

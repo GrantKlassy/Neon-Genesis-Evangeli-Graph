@@ -1,0 +1,122 @@
+version: "3"
+
+tasks:
+  dev:
+    desc: Start the Astro dev server
+    cmds:
+      - pnpm run dev
+
+  peek:
+    desc: |
+      Snap a screenshot of the live graph. Boots astro dev, opens headless
+      Chromium with the spoiler gate pre-revealed (localStorage seed), waits
+      a random 2.5--9.5s so the rotation lands somewhere new, writes a PNG.
+      Default output: /tmp/ngg-peek.png. Override with OUT=/path/foo.png.
+    cmds:
+      - node scripts/peek-graph.mjs
+
+  check:
+    desc: Repo-local checks --- TS + unit tests + ffmpeg source-asset guard
+    cmds:
+      - task: check:assets-size
+      - pnpm run check
+      - pnpm run test:unit
+
+  check:graph-invariants:
+    desc: Graph + genesis invariants. Fast subset for the pre-commit hook.
+    cmds:
+      - pnpm run test:invariants
+
+  check:assets-size:
+    desc: Verify ./assets exists and is > 1 GiB (ffmpeg pipeline needs the source video in place)
+    cmds:
+      - |
+        if [ ! -d assets ]; then
+          echo "ERROR: ./assets is missing --- ffmpeg pipeline needs source video here"
+          exit 1
+        fi
+        BYTES=$(du -sb assets | awk '{print $1}')
+        MIN=1073741824
+        if [ "$BYTES" -lt "$MIN" ]; then
+          HUMAN=$(du -sh assets | awk '{print $1}')
+          echo "ERROR: ./assets is $HUMAN ($BYTES bytes) --- expected > 1 GiB ($MIN bytes)"
+          exit 1
+        fi
+        HUMAN=$(du -sh assets | awk '{print $1}')
+        echo "OK: ./assets is $HUMAN (> 1 GiB)"
+
+  test:
+    desc: |
+      Run ALL tests AND ALL checks --- the green-bar gate before pushing.
+      Fans out to:
+        - task check       (parent's standard repo checks: author/readme/license/history/last-updated/env-hygiene/no-emdash; AND triggers local:check, which runs assets-size + astro check (typecheck) + vitest unit suite)
+        - pnpm run test:e2e (Playwright across every configured viewport)
+    cmds:
+      - cmd: task check
+      - pnpm run test:e2e
+
+  assets:bake:
+    desc: |
+      Loudness-normalize the JP + EN theme tracks into public/ so astro
+      build emits them into dist/. Both run through ffmpeg's loudnorm
+      (EBU R128) and re-encode as libopus 256k stereo, with cover art
+      and video streams stripped.
+
+      Targets are deliberately asymmetric:
+        JP --- I=-16 LUFS (broadcast-ish, comfortable)
+        EN --- I=-22 LUFS (6 LU quieter than JP)
+
+      Why asymmetric: integrated LUFS captures perceived loudness over
+      time, but a track with crushed dynamics (small LRA, brick-wall
+      limiting) feels louder than a track with the same LUFS and a wide
+      LRA, because more of the signal sits near the peak. The bluray
+      JP extract has LRA ~5 LU, the AmaLee EN cover has LRA ~1.5 LU
+      (heavily limited modern-pop master). At a shared -16 LUFS target
+      the EN sounded markedly louder; the 6-LU offset compensates so
+      the language flag toggle is dynamics-balanced, not just
+      loudness-meter-balanced.
+    cmds:
+      - |
+        if [ ! -f ./assets/sound/theme.opus ]; then
+          echo "ERROR: ./assets/sound/theme.opus missing --- run 'task local:extract:theme' first"
+          exit 1
+        fi
+        if [ ! -f ./assets/sound/theme_en.opus ]; then
+          echo "ERROR: ./assets/sound/theme_en.opus missing --- drop the full-song English cover at this path"
+          exit 1
+        fi
+        rm -rf ./public/sound
+        mkdir -p ./public/sound
+        ffmpeg -hide_banner -loglevel warning -y \
+          -i ./assets/sound/theme.opus \
+          -map 0:a \
+          -af 'loudnorm=I=-16:TP=-1.5:LRA=11' \
+          -c:a libopus -b:a 256k -vbr on -application audio -ac 2 \
+          -map_metadata 0 -vn -sn \
+          ./public/sound/theme.opus
+        ffmpeg -hide_banner -loglevel warning -y \
+          -i ./assets/sound/theme_en.opus \
+          -map 0:a \
+          -af 'loudnorm=I=-22:TP=-3:LRA=11' \
+          -c:a libopus -b:a 256k -vbr on -application audio -ac 2 \
+          -map_metadata 0 -vn -sn \
+          ./public/sound/theme_en.opus
+        echo "OK: baked theme.opus (-16 LUFS) + theme_en.opus (-22 LUFS) into public/sound/"
+
+  build:
+    desc: Static build to dist/
+    cmds:
+      - task: assets:bake
+      - pnpm run build
+
+  deploy:
+    desc: Build and deploy dist/ to Cloudflare Pages production
+    cmds:
+      - task: build
+      - pnpm dlx wrangler@3 pages deploy dist --project-name=neongenesisevangeligraph --branch=main
+
+  extract:theme:
+    desc: Lossless stream-copy of the Japanese audio (0:00-1:30) from S01E01 to ./assets/sound/
+    cmds:
+      - rm -f ./assets/sound/theme.flac ./assets/sound/theme.opus
+      - bash scripts/extract-theme.sh

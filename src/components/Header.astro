@@ -1,0 +1,110 @@
+---
+import G from "./G.astro";
+
+interface Props {
+  graphId: string;
+  characterCount: number;
+  angelCount: number;
+  magiCount: number;
+  edgeCount: number;
+}
+
+const { graphId, characterCount, angelCount, magiCount, edgeCount } =
+  Astro.props;
+---
+
+<header
+  class="border-b border-[color:var(--color-nerv-red)]/30 px-4 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6"
+  data-testid="ngg-header"
+>
+  <div class="mx-auto max-w-6xl">
+    <p
+      class="font-mono text-[0.65rem] tracking-[0.3em] text-[color:var(--color-magi-green)] uppercase sm:text-xs"
+      data-testid="ngg-header-tagline"
+    >
+      <G text="NERV" /> &middot; magi system &middot; canon graph &middot; rev. 1
+    </p>
+    <h1
+      class="mt-2 text-center font-bold tracking-tight text-[#FFFFFF] uppercase"
+    >
+      <span class="block text-2xl leading-none sm:text-4xl lg:text-5xl">
+        Neon Genesis
+      </span>
+      <span
+        class="ngg-bracket-red mt-1 block text-3xl leading-none sm:text-5xl lg:text-7xl"
+      >
+        Evangeli-Graph
+      </span>
+    </h1>
+    <p
+      class="mt-2 text-center font-mono text-[0.6rem] tracking-[0.2em] text-[#FFFFFF]"
+    >
+      created by Claude 🧡 prompted by <a
+        href="https://github.com/GrantKlassy"
+        class="underline hover:text-[color:var(--color-magi-green)]"
+        target="_blank"
+        rel="noopener noreferrer">Grant Klassy</a>
+    </p>
+    <p
+      class="mt-3 max-w-2xl text-sm text-[color:var(--color-text-dim)] sm:text-base"
+      data-testid="ngg-header-blurb"
+    >
+      A three-dimensional reading of the
+      <code class="font-mono text-[color:var(--color-magi-green)]">{graphId}</code> canon
+      centered on <G text="Shinji Ikari" />: ten <G text="CHARACTERS" />,
+      eighteen <G text="ANGELS" /> in canonical order, and the three
+      <G text="Magi" /> bound as one. The spoiler gate masks anything past
+      your watch progress --- adjust it from the
+      <span class="font-mono text-[color:var(--color-nerv-red)]">spoilers</span>
+      pill in the corner. Scroll down to enter the graph.
+    </p>
+    <dl
+      class="mt-4 grid grid-cols-2 gap-2 font-mono text-[0.65rem] tracking-wider uppercase sm:max-w-xl sm:grid-cols-4 sm:text-xs"
+    >
+      <div
+        class="border border-[color:var(--color-nerv-red)]/30 bg-[color:var(--color-panel)] px-3 py-2"
+      >
+        <dt class="text-[color:var(--color-text-dim)]">characters</dt>
+        <dd
+          class="mt-1 text-base text-[color:var(--color-nerv-red)] sm:text-lg"
+          data-testid="stat-characters"
+        >
+          {characterCount}
+        </dd>
+      </div>
+      <div
+        class="border border-[color:var(--color-eva-orange)]/30 bg-[color:var(--color-panel)] px-3 py-2"
+      >
+        <dt class="text-[color:var(--color-text-dim)]">angels</dt>
+        <dd
+          class="mt-1 text-base text-[color:var(--color-eva-orange)] sm:text-lg"
+          data-testid="stat-angels"
+        >
+          {angelCount}
+        </dd>
+      </div>
+      <div
+        class="border border-[color:var(--color-magi-green)]/30 bg-[color:var(--color-panel)] px-3 py-2"
+      >
+        <dt class="text-[color:var(--color-text-dim)]">magi</dt>
+        <dd
+          class="mt-1 text-base text-[color:var(--color-magi-green)] sm:text-lg"
+          data-testid="stat-magi"
+        >
+          {magiCount}
+        </dd>
+      </div>
+      <div
+        class="border border-[color:var(--color-edge-blue)]/30 bg-[color:var(--color-panel)] px-3 py-2"
+      >
+        <dt class="text-[color:var(--color-text-dim)]">edges</dt>
+        <dd
+          class="mt-1 text-base text-[color:var(--color-edge-blue)] sm:text-lg"
+          data-testid="stat-edges"
+        >
+          {edgeCount}
+        </dd>
+      </div>
+    </dl>
+  </div>
+</header>
