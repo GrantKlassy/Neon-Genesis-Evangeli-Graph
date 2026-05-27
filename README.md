@@ -2,21 +2,6 @@
 
 # [Neon Genesis Evangeli-Graph](https://neongenesisevangeligraph.com/)
 
-Code last updated @ [2026-05-05](https://github.com/GrantKlassy/Neon-Genesis-Evangeli-Graph/commits/main)
-
-A 3D WebGL visualization of *Neon Genesis Evangelion* canon, rendered as an interactive force-directed graph in the browser. Eighty-eight nodes, one hundred twenty-three edges --- characters, the eighteen canonical Angels (Adam through Lilim, numbered 1 through 18), the three Magi drawn together as a tight triangle, the EVA units in their canon body colors, NERV / SEELE / GEHIRN / JSSDF, all the canon locations (Tokyo-3 to Mt. Asama to the Pribnow Box), the abstract concepts the show keeps gnawing on (AT Field, LCL, Hedgehog's Dilemma, Yebisu), and the singular YOU=Lilim audience node that snaps into existence after End of Evangelion.
-
-Drag to rotate. Ctrl/cmd+scroll to zoom. Tap a node to open the readout panel.
-
-## Canon scope
-
-**1995 TV series + End of Evangelion only.** The Rebuild tetralogy is a parallel timeline and is intentionally not part of this graph. The schema has no rebuild gate kind, the genesis registry has no Mari, no WILLE, and a unit-test invariant guards against any of those slipping back in.
-
-When in doubt, the graph cites:
-
-- the [EvaGeeks Wiki](https://wiki.evageeks.org/) (every gated entity carries a `revealedAtSource` URL pointing here)
-- the [Evangelion Fandom Wiki](https://evangelion.fandom.com/wiki/Neon_Genesis_Evangelion_Wiki)
-
 ## What it shows
 
 - **Characters** --- Shinji, Asuka, Rei, Misato, Kaworu, Gendo, Ritsuko, Toji, Yui, Naoko, plus Keel Lorenz at the head of SEELE and the eight-person supporting cast (Kaji, Fuyutsuki, Maya / Hyuga / Aoba on the bridge, Pen Pen, Hikari, Kensuke). Each character renders in its own canon palette primary.
