@@ -56,10 +56,13 @@ test.describe("WebGL launches", () => {
     expect(handle!.nodeCount).toBe(90);
     // 3 magi_link + 17 angel_sequence + 17 identity_reveal + 4 pilots
     // + 5 member_of_family + 18 member_of_org + 19 located_in + 11 caused
-    // + 131 generic + 17 eliminated = 242. (2026-05-24 EvaGeeks re-scan added
-    // 40 edges --- the A.T. Field hub, angel-attack target sites, EVA/concept
-    // mechanics, and the missing core character ties incl. Gendo<->Shinji.)
-    expect(handle!.edgeCount).toBe(242);
+    // + 30 relationship + 20 afflicts + 18 attacked + 8 manifests
+    // + 105 generic + 17 eliminated = 292. (2026-06-15 categorization pass
+    // carved four typed classes out of the generic bucket --- character<->
+    // character relationships, the psych-wound `afflicts` hubs, Angel
+    // `attacked` target sites/units/pilots, and the A.T. Field `manifests`
+    // ties --- dropping generic from 181 to 105 without changing the total.)
+    expect(handle!.edgeCount).toBe(292);
     const root = rootEl(page);
     await expect(root).toHaveAttribute("data-node-count", "90");
   });

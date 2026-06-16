@@ -1,6 +1,6 @@
 # Neon-Genesis-Evangeli-Graph
 
-3D WebGL visualization of *Neon Genesis Evangelion* canon, rendered as a force-directed graph in the browser. The current dataset spans 90 nodes / 242 edges across characters, the eighteen canonical Angels, the three Magi (now wired to NERV and Tokyo-3 as the majority-vote rulers of both), EVA units, organizations, locations, concepts (including the psych-trait hubs --- trauma, rejection, abandonment, hedgehog's dilemma, depression --- wired to the characters who carry them, and the A.T. Field wired in as a cross-cutting hub), events, and the singular YOU=Lilim audience node.
+3D WebGL visualization of *Neon Genesis Evangelion* canon, rendered as a force-directed graph in the browser. The current dataset spans 90 nodes / 292 edges across characters, the eighteen canonical Angels, the three Magi (now wired to NERV and Tokyo-3 as the majority-vote rulers of both), EVA units, organizations, locations, concepts (including the psych-trait hubs --- trauma, rejection, abandonment, hedgehog's dilemma, depression --- wired to the characters who carry them, and the A.T. Field wired in as a cross-cutting hub), events, and the singular YOU=Lilim audience node.
 
 Tech: Astro 5 + Tailwind CSS 4 + TypeScript strict + three.js. Vitest for unit, Playwright for e2e across 5 viewports.
 
@@ -71,7 +71,7 @@ The script lives at `scripts/peek-graph.mjs`. Env overrides: `OUT`, `PORT`, `DEV
 1. Add a genesis registry entry to `src/genesis/registry.ts` (shortcode, kind, display name, hex colors, aliases, optional EvaWiki slug).
 2. Add a graph node to the appropriate array in `src/graph/evangelion.ts` (characters / angels / magi / organizations / locations / concepts / events / evas / families / audience).
 3. If the entity introduces canon-spoilery information, gate it: set `revealedAt` on the node AND cite the source in `revealedAtSource`. The validator throws on a gate without a source.
-4. Add edges connecting it to the rest of the graph. For typed edges (pilots / member_of_family / member_of_org / located_in / caused / eliminated / identity_reveal) the validator enforces an endpoint-kind shape --- a `pilots` edge MUST be character <-> eva, an `eliminated` edge MUST be eva -> angel, etc.
+4. Add edges connecting it to the rest of the graph. For typed edges (pilots / member_of_family / member_of_org / located_in / caused / eliminated / identity_reveal / relationship / afflicts / attacked / manifests) the validator enforces an endpoint-kind shape --- a `pilots` edge MUST be character <-> eva, an `eliminated` edge MUST be eva -> angel, an `attacked` edge MUST be angel -> location/eva/character, a `relationship` edge MUST be character <-> character, etc. Only `generic` carries no shape constraint --- it is the catch-all for ties that fit no typed class (the EVA<->EVA mesh, equipment mechanics, the SEELE/Instrumentality scheming web).
 5. Bump the unit-test counts in `tests/unit/graph.test.ts` and the e2e counts in `tests/e2e/webgl.spec.ts`.
 6. Run `pnpm run test:unit && pnpm run check && pnpm run build`. If the visual result matters, also run `task local:peek` and check the screenshot.
 

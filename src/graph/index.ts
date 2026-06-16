@@ -190,6 +190,19 @@ export const EDGE_COLORS: Record<EdgeKind, string> = {
   // Causation tone: warm amber, distinct from both the angel-sequence orange
   // and the event-purple chrome, so cause/effect arcs read on their own.
   caused: "#e0b400",
+  // Rose --- interpersonal bonds read as a warm, human class of their own,
+  // distinct from the structural family blue (member_of_family ties to a
+  // roll-up node, relationship ties two people).
+  relationship: "#ff6fae",
+  // Dusty indigo --- the psych-wound hubs read muted and melancholy, set
+  // apart from the saturated identity-reveal purple.
+  afflicts: "#7a6fc0",
+  // Hot magenta --- an Angel's assault on a target. Aggressive but distinct
+  // from the eva-kill `eliminated` red and the org-chrome NERV reds.
+  attacked: "#e0218a",
+  // Electric cyan --- the A.T. Field as a manifest energy barrier, distinct
+  // from the muted geofront teal used for spatial nesting.
+  manifests: "#25d0e0",
   // Plain gray --- generic links carry no canonical meaning, just "these
   // two nodes are related." Reads as background chrome behind the
   // semantically-loaded edge classes.
@@ -468,6 +481,34 @@ const EDGE_ENDPOINT_SHAPES: Partial<
     from: ["character", "angel", "eva", "magi", "audience"],
     to: ["character", "angel", "eva", "magi", "audience"],
     symmetric: true,
+  },
+  relationship: {
+    // Interpersonal bond between two cast members. Symmetric --- authored
+    // in whichever "natural language" direction reads best.
+    from: ["character"],
+    to: ["character"],
+    symmetric: true,
+  },
+  afflicts: {
+    // A psych-wound concept (trauma, rejection, abandonment, hedgehog's
+    // dilemma, depression) weighing on a character.
+    from: ["concept"],
+    to: ["character"],
+    symmetric: false,
+  },
+  attacked: {
+    // An Angel's assault on a site, a unit, or a pilot. The inbound
+    // complement of `eliminated` (eva -> angel); directed angel -> target.
+    from: ["angel"],
+    to: ["location", "eva", "character"],
+    symmetric: false,
+  },
+  manifests: {
+    // An entity projecting an A.T. Field (concept_at_field -> the Angel /
+    // Evangelion / human that manifests one). Directed concept -> bearer.
+    from: ["concept"],
+    to: ["eva", "angel", "character"],
+    symmetric: false,
   },
   // generic intentionally absent --- no shape constraint, that's the
   // point of generic.

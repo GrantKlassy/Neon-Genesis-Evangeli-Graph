@@ -1155,6 +1155,70 @@ describe("pipeline invariants: edge shape, gate monotonicity, citations", () => 
         }),
       ).toThrow(/violates endpoint shape/);
     });
+
+    it("test-the-test: rejects a relationship edge between a character and an org", () => {
+      const broken = {
+        from: "char_shinji",
+        to: "org_nerv",
+        kind: "relationship" as const,
+        weight: EDGE_WEIGHT.relationship,
+        notes: "bogus relationship edge",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/violates endpoint shape/);
+    });
+
+    it("test-the-test: rejects an afflicts edge whose 'to' is not a character", () => {
+      const broken = {
+        from: "concept_trauma",
+        to: "eva_unit01",
+        kind: "afflicts" as const,
+        weight: EDGE_WEIGHT.afflicts,
+        notes: "bogus afflicts edge",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/violates endpoint shape/);
+    });
+
+    it("test-the-test: rejects an attacked edge whose 'from' is not an angel", () => {
+      const broken = {
+        from: "char_shinji",
+        to: "loc_tokyo3",
+        kind: "attacked" as const,
+        weight: EDGE_WEIGHT.attacked,
+        notes: "bogus attacked edge",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/violates endpoint shape/);
+    });
+
+    it("test-the-test: rejects a manifests edge whose 'to' is a location", () => {
+      const broken = {
+        from: "concept_at_field",
+        to: "loc_tokyo3",
+        kind: "manifests" as const,
+        weight: EDGE_WEIGHT.manifests,
+        notes: "bogus manifests edge",
+      };
+      expect(() =>
+        validateGraph({
+          ...evangelion,
+          edges: [...evangelion.edges, broken],
+        }),
+      ).toThrow(/violates endpoint shape/);
+    });
   });
 
   // ---------- Spoiler-gate monotonicity ----------

@@ -93,6 +93,24 @@ export type EdgeKind =
   | "member_of_org"
   | "located_in"
   | "caused"
+  // Interpersonal bond between two cast members (character <-> character):
+  // family, romance, friendship, mentorship, rivalry, guardianship. The
+  // spine of the show --- distinct from member_of_family, which ties a
+  // character to a family ROLL-UP node rather than to another person.
+  | "relationship"
+  // A psychological wound / condition concept weighing on a character
+  // (concept -> character). The trauma hubs --- rejection, abandonment,
+  // trauma, hedgehog's dilemma, depression --- wired to the cast who carry
+  // them on screen.
+  | "afflicts"
+  // An Angel's assault on a target (angel -> location | eva | character):
+  // attack target sites, units engaged/dismembered, pilots struck. The
+  // inbound complement of `eliminated` (eva -> angel, the kill).
+  | "manifests"
+  // An entity projecting an A.T. Field (concept_at_field -> eva | angel |
+  // character). Per wiki/A.T._Field every Angel, every Evangelion, and
+  // every human manifests one --- the barrier Instrumentality collapses.
+  | "attacked"
   | "generic"
   | "eliminated";
 
