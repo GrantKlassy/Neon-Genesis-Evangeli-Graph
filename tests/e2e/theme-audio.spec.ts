@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("theme audio", () => {
-  // The spoiler gate intercepts clicks until dismissed. The flag toggle
-  // is a chrome control unrelated to the gate, so seed localStorage to
-  // skip the overlay --- same trick scripts/peek-graph.mjs uses.
+  // The spoiler gate intercepts clicks until dismissed. The mute pill is a
+  // chrome control unrelated to the gate, so seed localStorage to skip the
+  // overlay --- same trick scripts/peek-graph.mjs uses.
   test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => {
       try {
@@ -17,63 +17,51 @@ test.describe("theme audio", () => {
     });
   });
 
-  test("flag toggle swaps the audio source between JP and US", async ({
+  test("theme audio has no source until a playback gesture lands", async ({
     page,
   }) => {
     await page.goto("/");
 
     const audio = page.getByTestId("ngg-theme-audio");
-    const langToggle = page.getByTestId("ngg-theme-lang-toggle");
+    // Source is bound lazily: nothing is fetched on load, so a gitignored /
+    // absent theme file never 404s. The element starts with no src.
+    await expect(audio).toHaveJSProperty("src", "");
 
-    // Defaults: JP source, JP flag visible.
-    await expect(langToggle).toHaveAttribute("data-lang", "jp");
+    // A gesture (the mute pill click counts) wires the single JP source.
+    await page.getByTestId("ngg-theme-toggle").click();
     await expect(audio).toHaveJSProperty(
       "src",
-      `${new URL("/sound/theme.opus", page.url()).toString()}`,
-    );
-
-    // Click flag once: source flips to the English ADV dub.
-    await langToggle.click();
-    await expect(langToggle).toHaveAttribute("data-lang", "us");
-    await expect(audio).toHaveJSProperty(
-      "src",
-      `${new URL("/sound/theme_en.opus", page.url()).toString()}`,
-    );
-
-    // Click again: back to JP. The toggle is symmetric.
-    await langToggle.click();
-    await expect(langToggle).toHaveAttribute("data-lang", "jp");
-    await expect(audio).toHaveJSProperty(
-      "src",
-      `${new URL("/sound/theme.opus", page.url()).toString()}`,
+      new URL("/sound/theme.opus", page.url()).toString(),
     );
   });
 
-  test("language preference persists across reloads", async ({ page }) => {
+  test("mute pill toggles muted state and persists it", async ({ page }) => {
     await page.goto("/");
-    const langToggle = page.getByTestId("ngg-theme-lang-toggle");
-    await langToggle.click();
-    await expect(langToggle).toHaveAttribute("data-lang", "us");
+    const toggle = page.getByTestId("ngg-theme-toggle");
 
+    // Default is unmuted (audio.muted=false), so the first gesture starts
+    // audible playback. The pill therefore renders in the "playing" state.
+    await expect(toggle).toHaveAttribute("data-state", "playing");
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+    // Click mutes.
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("data-state", "muted");
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(
+      await page.evaluate(() => localStorage.getItem("ngg.theme.muted")),
+    ).toBe("true");
+
+    // Preference persists across reloads.
     await page.reload();
-    const langToggle2 = page.getByTestId("ngg-theme-lang-toggle");
-    await expect(langToggle2).toHaveAttribute("data-lang", "us");
-    const audio = page.getByTestId("ngg-theme-audio");
-    await expect(audio).toHaveJSProperty(
-      "src",
-      `${new URL("/sound/theme_en.opus", page.url()).toString()}`,
-    );
+    const toggle2 = page.getByTestId("ngg-theme-toggle");
+    await expect(toggle2).toHaveAttribute("data-state", "muted");
+    await expect(toggle2).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("both opus assets respond with audio content", async ({ page }) => {
-    // The component sets audio.src directly; if either file 404s the flag
-    // toggle becomes a silent footgun. Hit both paths and verify the
-    // server returns binary audio bytes, not an HTML 404 fallback.
-    for (const path of ["/sound/theme.opus", "/sound/theme_en.opus"]) {
-      const res = await page.request.get(path);
-      expect(res.status(), `${path} status`).toBe(200);
-      const ct = res.headers()["content-type"] ?? "";
-      expect(ct, `${path} content-type`).toMatch(/audio|opus|ogg/i);
-    }
+  test("there is no language switcher", async ({ page }) => {
+    await page.goto("/");
+    // The dual-theme JP/US flag toggle was removed; only the mute pill ships.
+    await expect(page.getByTestId("ngg-theme-lang-toggle")).toHaveCount(0);
   });
 });

@@ -57,33 +57,23 @@ tasks:
 
   assets:bake:
     desc: |
-      Loudness-normalize the JP + EN theme tracks into public/ so astro
-      build emits them into dist/. Both run through ffmpeg's loudnorm
-      (EBU R128) and re-encode as libopus 256k stereo, with cover art
+      Loudness-normalize the JP theme track into public/ so astro build
+      emits it into dist/. Runs through ffmpeg's loudnorm (EBU R128,
+      I=-16 LUFS) and re-encodes as libopus 256k stereo, with cover art
       and video streams stripped.
 
-      Targets are deliberately asymmetric:
-        JP --- I=-16 LUFS (broadcast-ish, comfortable)
-        EN --- I=-22 LUFS (6 LU quieter than JP)
-
-      Why asymmetric: integrated LUFS captures perceived loudness over
-      time, but a track with crushed dynamics (small LRA, brick-wall
-      limiting) feels louder than a track with the same LUFS and a wide
-      LRA, because more of the signal sits near the peak. The bluray
-      JP extract has LRA ~5 LU, the AmaLee EN cover has LRA ~1.5 LU
-      (heavily limited modern-pop master). At a shared -16 LUFS target
-      the EN sounded markedly louder; the 6-LU offset compensates so
-      the language flag toggle is dynamics-balanced, not just
-      loudness-meter-balanced.
+      The source (./assets/sound/theme.opus) is baked from a gitignored
+      bluray rip and is itself gitignored, so it will not exist on a clean
+      checkout or in CI. When it is absent this step SKIPS (exit 0) with a
+      warning instead of failing, so `task local:build` / `task
+      local:deploy` still succeed --- the site just ships without audio.
+      Run `task local:extract:theme` first when you want the theme baked in.
     cmds:
       - |
         if [ ! -f ./assets/sound/theme.opus ]; then
-          echo "ERROR: ./assets/sound/theme.opus missing --- run 'task local:extract:theme' first"
-          exit 1
-        fi
-        if [ ! -f ./assets/sound/theme_en.opus ]; then
-          echo "ERROR: ./assets/sound/theme_en.opus missing --- drop the full-song English cover at this path"
-          exit 1
+          echo "SKIP: ./assets/sound/theme.opus missing (gitignored source) --- building without theme audio."
+          echo "      Run 'task local:extract:theme' first to bake the theme in."
+          exit 0
         fi
         rm -rf ./public/sound
         mkdir -p ./public/sound
@@ -94,14 +84,7 @@ tasks:
           -c:a libopus -b:a 256k -vbr on -application audio -ac 2 \
           -map_metadata 0 -vn -sn \
           ./public/sound/theme.opus
-        ffmpeg -hide_banner -loglevel warning -y \
-          -i ./assets/sound/theme_en.opus \
-          -map 0:a \
-          -af 'loudnorm=I=-22:TP=-3:LRA=11' \
-          -c:a libopus -b:a 256k -vbr on -application audio -ac 2 \
-          -map_metadata 0 -vn -sn \
-          ./public/sound/theme_en.opus
-        echo "OK: baked theme.opus (-16 LUFS) + theme_en.opus (-22 LUFS) into public/sound/"
+        echo "OK: baked theme.opus (-16 LUFS) into public/sound/"
 
   build:
     desc: Static build to dist/
