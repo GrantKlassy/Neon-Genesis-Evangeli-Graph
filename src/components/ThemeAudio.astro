@@ -1,39 +1,39 @@
 ---
 /**
- * Opening theme (A Cruel Angel's Thesis). Two tracks ship side by side:
+ * Opening theme (A Cruel Angel's Thesis). One track ships:
  *
  *   - /sound/theme.opus       original Japanese vocal, 90s TV-size cut
  *                             from the 1995 bluray (extract-theme.sh)
- *   - /sound/theme_en.opus    full English cover, externally sourced
- *                             (no English vocal exists in the canon
- *                             bluray --- ADV/Netflix dubs replace
- *                             dialogue only, not the OP)
  *
- * The two tracks differ in length. The audio element loops, so the
- * longer English cover simply loops at its own boundary; nothing in
- * the toggle code assumes equal duration.
+ * The audio element loops the TV-size cut at its own boundary.
  *
- * The mute pill toggles audio. The flag pill switches between languages
- * and persists the choice. Clicking either is a user gesture and starts
+ * The mute pill toggles audio. Clicking it is a user gesture and starts
  * playback if it has not started yet.
+ *
+ * The theme file is baked out of a gitignored source rip (see
+ * `task local:assets:bake`) and is itself gitignored --- a clean checkout
+ * ships no audio. To keep that case silent (no 404 on load, no console
+ * error), the <audio> uses preload="none" and its `src` is assigned lazily
+ * on the first playback trigger, never at page load.
  *
  * Playback NEVER starts automatically. There is no muted-autoplay, no
  * resume-from-cookie, no "they granted permission last time" path. The
  * first user gesture (pointerdown or keydown anywhere on the page, or a
- * click on either pill) is the only trigger that starts playback.
+ * click on the pill) is the only trigger that starts playback.
  */
 ---
 
 <audio
   id="ngg-theme-audio"
   data-testid="ngg-theme-audio"
-  preload="auto"
+  preload="none"
   playsinline
   loop
-  aria-label="Neon Genesis Evangelion opening theme"
-></audio>
+  aria-label="Neon Genesis Evangelion opening theme"></audio>
 
-<div class="fixed bottom-3 left-3 z-40 flex items-stretch gap-2 sm:bottom-5 sm:left-5">
+<div
+  class="fixed bottom-3 left-3 z-40 flex items-stretch gap-2 sm:bottom-5 sm:left-5"
+>
   <button
     type="button"
     id="ngg-theme-toggle"
@@ -43,37 +43,14 @@
     aria-pressed="false"
     aria-label="Toggle opening theme audio"
   >
-    <span data-theme-label-muted>♪ unmute theme</span>
-    <span data-theme-label-playing class="hidden">♪ mute theme</span>
-  </button>
-
-  <button
-    type="button"
-    id="ngg-theme-lang-toggle"
-    data-testid="ngg-theme-lang-toggle"
-    data-lang="jp"
-    class="flex items-center justify-center border border-[color:var(--color-magi-green)]/40 bg-[color:var(--color-panel)]/90 px-2 py-1 font-mono text-base leading-none backdrop-blur-sm transition-colors hover:bg-[color:var(--color-panel-2)]"
-    aria-label="Switch theme language"
-  >
-    <span data-theme-flag-jp aria-hidden="true">&#x1F1EF;&#x1F1F5;</span>
-    <span data-theme-flag-us class="hidden" aria-hidden="true">&#x1F1FA;&#x1F1F8;</span>
+    <span data-theme-label-muted>&#9834; unmute theme</span>
+    <span data-theme-label-playing class="hidden">&#9834; mute theme</span>
   </button>
 </div>
 
 <script>
   const STORAGE_KEY_MUTED = "ngg.theme.muted";
-  const STORAGE_KEY_LANG = "ngg.theme.lang";
-
-  type Lang = "jp" | "us";
-
-  const SOURCES: Record<Lang, string> = {
-    jp: "/sound/theme.opus",
-    us: "/sound/theme_en.opus",
-  };
-
-  function isLang(v: unknown): v is Lang {
-    return v === "jp" || v === "us";
-  }
+  const THEME_SRC = "/sound/theme.opus";
 
   function bootstrap() {
     const audio = document.getElementById(
@@ -82,10 +59,7 @@
     const toggle = document.getElementById(
       "ngg-theme-toggle",
     ) as HTMLButtonElement | null;
-    const langToggle = document.getElementById(
-      "ngg-theme-lang-toggle",
-    ) as HTMLButtonElement | null;
-    if (!audio || !toggle || !langToggle) return;
+    if (!audio || !toggle) return;
 
     const labelMuted = toggle.querySelector<HTMLElement>(
       "[data-theme-label-muted]",
@@ -93,36 +67,21 @@
     const labelPlaying = toggle.querySelector<HTMLElement>(
       "[data-theme-label-playing]",
     );
-    const flagJp = langToggle.querySelector<HTMLElement>(
-      "[data-theme-flag-jp]",
-    );
-    const flagUs = langToggle.querySelector<HTMLElement>(
-      "[data-theme-flag-us]",
-    );
-    if (!labelMuted || !labelPlaying || !flagJp || !flagUs) return;
+    if (!labelMuted || !labelPlaying) return;
 
     let savedMuted: string | null = null;
-    let savedLang: string | null = null;
     try {
       savedMuted = localStorage.getItem(STORAGE_KEY_MUTED);
-      savedLang = localStorage.getItem(STORAGE_KEY_LANG);
     } catch {
       /* localStorage unavailable; fall back to defaults. */
     }
     const startMuted = savedMuted === "true";
-    const startLang: Lang = isLang(savedLang) ? savedLang : "jp";
 
     function paintMute(muted: boolean) {
       toggle!.dataset.state = muted ? "muted" : "playing";
       toggle!.setAttribute("aria-pressed", muted ? "false" : "true");
       labelMuted!.classList.toggle("hidden", !muted);
       labelPlaying!.classList.toggle("hidden", muted);
-    }
-
-    function paintLang(lang: Lang) {
-      langToggle!.dataset.lang = lang;
-      flagJp!.classList.toggle("hidden", lang !== "jp");
-      flagUs!.classList.toggle("hidden", lang !== "us");
     }
 
     function persistMute(muted: boolean) {
@@ -133,48 +92,23 @@
       }
     }
 
-    function persistLang(lang: Lang) {
-      try {
-        localStorage.setItem(STORAGE_KEY_LANG, lang);
-      } catch {
-        /* localStorage unavailable; non-fatal. */
-      }
-    }
-
     audio.muted = startMuted;
-    audio.src = SOURCES[startLang];
     paintMute(startMuted);
-    paintLang(startLang);
-    // Intentionally no audio.play() here. Autoplay is forbidden in this
-    // component, even muted-autoplay that browsers would otherwise allow.
+    // Intentionally no src assignment and no audio.play() here. The source is
+    // wired lazily on first playback so a gitignored/absent theme file never
+    // 404s on load. Autoplay is forbidden, even muted-autoplay.
 
     let started = false;
     function startPlayback() {
       if (started) return;
       started = true;
+      // Lazily bind the source on the first real playback attempt.
+      if (!audio!.getAttribute("src")) audio!.src = THEME_SRC;
       audio!.play().catch(() => {
-        // Playback rejected (rare once a gesture has landed); the user
-        // can retry by clicking either pill, which calls this again.
+        // Playback rejected (rare once a gesture has landed, or the theme
+        // file is absent); the user can retry by clicking the pill.
         started = false;
       });
-    }
-
-    function setLang(lang: Lang) {
-      if (langToggle!.dataset.lang === lang) return;
-      const target = SOURCES[lang];
-      const wasPlaying = !audio!.paused;
-      audio!.pause();
-      audio!.src = target;
-      audio!.load();
-      paintLang(lang);
-      persistLang(lang);
-      if (wasPlaying || started) {
-        audio!.play().catch(() => {
-          // The new track may need a fresh user gesture on some browsers
-          // if the source change is treated as a new media request.
-          started = false;
-        });
-      }
     }
 
     const gestureEvents = ["pointerdown", "keydown"] as const;
@@ -193,12 +127,6 @@
       audio.muted = next;
       paintMute(next);
       persistMute(next);
-      startPlayback();
-    });
-
-    langToggle.addEventListener("click", () => {
-      const current = (langToggle.dataset.lang as Lang) ?? "jp";
-      setLang(current === "jp" ? "us" : "jp");
       startPlayback();
     });
   }
