@@ -13,6 +13,33 @@ const {
 } = Astro.props;
 
 const paletteCss = genesisAsCssVars();
+
+// Prefix public/ assets with the deploy base so they resolve both at the
+// domain root (local dev / preview / tests) and under the GitHub Pages
+// project subpath. import.meta.env.BASE_URL is "/" locally and
+// "/Neon-Genesis-Evangeli-Graph/" in the production build.
+// BASE_URL may or may not carry a trailing slash depending on the base value,
+// so normalize to exactly one separator.
+const asset = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/$/, "")}/${path}`;
+const faviconHref = asset("favicon.svg");
+const fontRegular = asset("fonts/inclusive-sans-v4-latin-regular.woff2");
+const fontBold = asset("fonts/inclusive-sans-v4-latin-700.woff2");
+const fontFaceCss = `
+      @font-face {
+        font-family: "Inclusive Sans";
+        src: url("${fontRegular}") format("woff2");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Inclusive Sans";
+        src: url("${fontBold}") format("woff2");
+        font-weight: bold;
+        font-style: normal;
+        font-display: swap;
+      }`;
 ---
 
 <!doctype html>
@@ -24,39 +51,24 @@ const paletteCss = genesisAsCssVars();
     <meta name="description" content={description} />
     <meta name="theme-color" content="#050507" />
     <meta name="color-scheme" content="dark" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href={faviconHref} />
 
     <link
       rel="preload"
-      href="/fonts/inclusive-sans-v4-latin-regular.woff2"
+      href={fontRegular}
       as="font"
       type="font/woff2"
       crossorigin
     />
     <link
       rel="preload"
-      href="/fonts/inclusive-sans-v4-latin-700.woff2"
+      href={fontBold}
       as="font"
       type="font/woff2"
       crossorigin
     />
 
-    <style is:inline>
-      @font-face {
-        font-family: "Inclusive Sans";
-        src: url("/fonts/inclusive-sans-v4-latin-regular.woff2") format("woff2");
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: "Inclusive Sans";
-        src: url("/fonts/inclusive-sans-v4-latin-700.woff2") format("woff2");
-        font-weight: bold;
-        font-style: normal;
-        font-display: swap;
-      }
-    </style>
+    <style is:inline set:html={fontFaceCss}></style>
     <style is:inline set:html={paletteCss} data-testid="ngg-palette-vars"
     ></style>
   </head>
