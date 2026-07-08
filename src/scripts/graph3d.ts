@@ -659,6 +659,11 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     root.dataset.visibleEdges = String(visibleEdges);
     root.dataset.spoilerEpisode = String(progress.episode);
     root.dataset.spoilerEoe = progress.eoe ? "true" : "false";
+    // Re-mask can flip an edge's visibility, which changes who counts as a
+    // direct neighbor --- re-apply the focus so a live gate change is
+    // reflected without needing a re-click. applyNodeMask above also resets
+    // visible/opacity, so this restores the correct focus levels.
+    refreshFocus();
     onProgress?.(progress);
   }
 
@@ -705,6 +710,80 @@ export function initGraph3D(options: InitOptions): GraphHandle {
       }
     }
     root.dataset.highlightedNode = highlightId;
+  }
+
+  // Opacity a direct neighbor drops to when a node is selected --- 50%
+  // transparency, per the focus spec.
+  const FOCUS_NEIGHBOR_OPACITY = 0.5;
+
+  // Push a node mesh (sphere + halo + label) to one of three focus levels.
+  //   "full"     --- fully opaque (the selected node, or the resting state)
+  //   "neighbor" --- 50% transparent (a direct, one-hop connection)
+  //   "hidden"   --- not rendered at all (everything further out)
+  function setNodeFocusLevel(
+    data: NodeMeshData,
+    level: "full" | "neighbor" | "hidden",
+  ) {
+    if (level === "hidden") {
+      data.mesh.visible = false;
+      data.haloMesh.visible = false;
+      data.labelSprite.visible = false;
+      return;
+    }
+    data.mesh.visible = true;
+    data.haloMesh.visible = true;
+    data.labelSprite.visible = true;
+    const opacity = level === "neighbor" ? FOCUS_NEIGHBOR_OPACITY : 1;
+    const mat = data.meshMaterial;
+    const transparent = opacity < 1;
+    if (mat.transparent !== transparent) {
+      mat.transparent = transparent;
+      mat.needsUpdate = true;
+    }
+    mat.opacity = opacity;
+    // A transparent sphere must not write depth or it punches a hole in
+    // whatever renders behind it; an opaque one writes depth as normal.
+    mat.depthWrite = !transparent;
+    data.haloMaterial.opacity = data.baseHaloOpacity * opacity;
+    data.labelMaterial.opacity = opacity;
+  }
+
+  /**
+   * Spotlight a clicked selection and its DIRECT (one-hop) neighbors. The
+   * selected node stays fully opaque, every node joined to it by a visible
+   * edge drops to 50% transparency, and everything else is hidden. Only
+   * depth-1 connectivity counts --- neighbors-of-neighbors do NOT open.
+   * Passing null restores every node to full opacity.
+   */
+  function applyNodeFocus(focusId: string | null) {
+    if (!focusId) {
+      for (const data of nodeMeshes) setNodeFocusLevel(data, "full");
+      return;
+    }
+    // Direct neighbors only: the opposite endpoint of every unmasked edge
+    // that touches the focused node. Masked (spoiler-gated) edges reveal
+    // nothing, so a hidden relationship never opens a neighbor.
+    const neighbors = new Set<string>();
+    for (const e of edgesByNode.get(focusId) ?? []) {
+      if (e.masked) continue;
+      neighbors.add(e.fromId === focusId ? e.toId : e.fromId);
+    }
+    for (const data of nodeMeshes) {
+      const id = data.node.id;
+      if (id === focusId) {
+        setNodeFocusLevel(data, "full");
+      } else if (neighbors.has(id)) {
+        setNodeFocusLevel(data, "neighbor");
+      } else {
+        setNodeFocusLevel(data, "hidden");
+      }
+    }
+  }
+
+  // Node focus follows the SELECTION only (never hover), so the graph stays
+  // stable as the pointer drifts.
+  function refreshFocus() {
+    applyNodeFocus(handle.selectedNodeId);
   }
 
   // ---- Interaction: drag to rotate, right-drag to pan, wheel to zoom ----
@@ -814,7 +893,9 @@ export function initGraph3D(options: InitOptions): GraphHandle {
   function pickNode(e: { clientX: number; clientY: number }): GraphNode | null {
     pointerToNdc(e);
     raycaster.setFromCamera(ndc, camera);
-    const meshes = nodeMeshes.map((m) => m.mesh);
+    // Only pick nodes that are actually rendered --- while a selection is
+    // focused, the hidden (non-neighbor) nodes are not interactive.
+    const meshes = nodeMeshes.filter((m) => m.mesh.visible).map((m) => m.mesh);
     const hits = raycaster.intersectObjects(meshes, false);
     if (hits.length === 0) return null;
     const node = hits[0]!.object.userData.node as GraphNode | undefined;
@@ -851,6 +932,7 @@ export function initGraph3D(options: InitOptions): GraphHandle {
     handle.selectedNodeId = node?.id ?? null;
     refreshScales();
     refreshHighlight();
+    refreshFocus();
     onSelect?.(node);
   }
 
